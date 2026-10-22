@@ -3,7 +3,7 @@
 </p>
 
 <h3 align="center">
-  <img src="assets/Harness2-wordmark.png" alt="SecAgentHarness" width="360"><br>
+  <img src="assets/Harness2-wordmark.png" alt="SecAgentHarness²" width="360"><br>
   递归智能体运行套件 (Harness²) 在网络安全领域的适配、优化与基准评测
 </h3>
 
@@ -17,7 +17,7 @@
 
 > [!NOTE]
 > **上游开源基石与致谢声明**：
-> SecAgentHarness 的核心递归智能体运行套件引擎基于 [Google Research 的 Harness² 开源项目](https://github.com/google-research/harness2)（[论文链接](https://arxiv.org/abs/2610.14224)）。本项目在其创新的“提议–探测–组合（Propose–Probe–Compose）”递归运行套件架构基础上深度扩展，面向网络安全攻防、渗透测试、漏洞挖掘与防御分析等多元化网安基准场景以及 8 大组件体系提供完整的评测与能力支撑。
+> SecAgentHarness² (SecAgentHarness2) 的核心递归智能体运行套件引擎基于 [Google Research 的 Harness² 开源项目](https://github.com/google-research/harness2)（[论文链接](https://arxiv.org/abs/2610.14224)）。本项目在其创新的“提议–探测–组合（Propose–Probe–Compose）”递归运行套件架构基础上深度扩展，面向网络安全攻防、渗透测试、漏洞挖掘与防御分析等多元化网安基准场景以及 8 大组件体系提供完整的评测与能力支撑。
 
 <p align="center">
   <a href="docs/BENCHMARKS_zh.md#jobbench">
@@ -27,7 +27,7 @@
 
 **智能体运行套件（Harness）** 是围绕基础模型构建的一整套使之能够作为智能体（Agent）行动的系统组件，包括提示词（Prompts）、工具（Tools）、记忆（Memory）、技能（Skills）、编排（Orchestration）等。**运行套件优化（Harnessing）** 则是优化这套系统的过程。
 
-**SecAgentHarness** 是一个将 Google Research 的 Harness² 递归套件优化范式迁移应用于**网络安全领域**的评测与优化框架。面向开放网络安全攻防与实战场景，它支持在多领域网安基准任务与 8 大组件体系下，对网络安全智能体进行全流程能力评估与运行套件递归提炼，在保持模型权重冻结不变的前提下串联了两个层次的递归循环：
+**SecAgentHarness²**（仓库代码：`SecAgentHarness2`）是一个将 Google Research 的 Harness² 递归套件优化范式迁移应用于**网络安全领域**的评测与优化框架。面向开放网络安全攻防与实战场景，它支持在多领域网安基准任务与 8 大组件体系下，对网络安全智能体进行全流程能力评估与运行套件递归提炼，在保持模型权重冻结不变的前提下串联了两个层次的递归循环：
 
 * **任务级递归（Task-level recursion）**：针对当前任务，通过对比式的 **提议–探测–组合（Propose–Probe–Compose）** 步骤优化执行套件——提议修改建议（Propose edits）、在同一任务上探测其执行效果（Probe effects），并在没有任何真实标注（ground-truth）反馈的情况下，基于不同执行之间的行为对比差异组合出精炼后的运行套件（Compose refined harness）。
 * **套件级递归（Harnessing-level recursion）**：利用各任务中采纳的运行套件与证据支持的经验总结，动态更新持久化的*优化套件（Improvement harness）*，以持续指导后续任务的优化提炼。
@@ -195,7 +195,7 @@ harness2 pipeline --bench lab --preset smoke
 <a id="acknowledgements"></a>
 ## 致谢与上游声明 (Acknowledgements)
 
-SecAgentHarness 基于 [Google Research 的 Harness²](https://github.com/google-research/harness2) 开源项目衍生与演进。我们由衷感谢 Google Research 原作者团队开源了突破性的递归智能体运行套件架构及基础代码。关于开源许可及版权沿革，请参阅根目录 [NOTICE](NOTICE) 文件。
+SecAgentHarness² (SecAgentHarness2) 基于 [Google Research 的 Harness²](https://github.com/google-research/harness2) 开源项目衍生与演进。我们由衷感谢 Google Research 原作者团队开源了突破性的递归智能体运行套件架构及基础代码。关于开源许可及版权沿革，请参阅根目录 [NOTICE](NOTICE) 文件。
 
 <a id="citation"></a>
 ## 论文引用

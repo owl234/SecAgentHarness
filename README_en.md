@@ -3,7 +3,7 @@
 </p>
 
 <h3 align="center">
-  <img src="assets/Harness2-wordmark.png" alt="SecAgentHarness" width="360"><br>
+  <img src="assets/Harness2-wordmark.png" alt="SecAgentHarness²" width="360"><br>
   Applying Recursive Agent Harnessing (Harness²) to Cybersecurity
 </h3>
 
@@ -17,7 +17,7 @@
 
 > [!NOTE]
 > **Upstream & Core Origin Notice**:
-> SecAgentHarness is a specialized cybersecurity extension and benchmark evaluation suite originating from and built upon [Google Research's Harness²](https://github.com/google-research/harness2) ([Paper](https://arxiv.org/abs/2610.14224)). The core recursive agent harnessing engine and contrastive Propose–Probe–Compose pipeline are derived from the upstream project, extending its capabilities toward multi-domain cybersecurity benchmarks, red/blue teaming evaluations, and 8-component agent harnesses.
+> SecAgentHarness² (SecAgentHarness2) is a specialized cybersecurity extension and benchmark evaluation suite originating from and built upon [Google Research's Harness²](https://github.com/google-research/harness2) ([Paper](https://arxiv.org/abs/2610.14224)). The core recursive agent harnessing engine and contrastive Propose–Probe–Compose pipeline are derived from the upstream project, extending its capabilities toward multi-domain cybersecurity benchmarks, red/blue teaming evaluations, and 8-component agent harnesses.
 
 <p align="center">
   <a href="docs/BENCHMARKS.md#jobbench">
@@ -29,7 +29,7 @@ A **harness** is the system around a model that enables it to act as an agent:
 prompts, tools, memory, skills, orchestration, and more. **Harnessing** is the
 process of optimizing that system.
 
-**SecAgentHarness** applies recursive agent harnessing ([Google Research's Harness²](https://github.com/google-research/harness2)) to the cybersecurity domain. It provides a plug-and-play framework for evaluating, optimizing, and fortifying security agents across multi-domain cybersecurity benchmarks and 8-component modular architectures in an open world, connecting two levels of recursion while keeping model weights fixed:
+**SecAgentHarness²** (repository: `SecAgentHarness2`) applies recursive agent harnessing ([Google Research's Harness²](https://github.com/google-research/harness2)) to the cybersecurity domain. It provides a plug-and-play framework for evaluating, optimizing, and fortifying security agents across multi-domain cybersecurity benchmarks and 8-component modular architectures in an open world, connecting two levels of recursion while keeping model weights fixed:
 
 * **Task-level recursion** refines the execution harness for the current task
   through a contrastive **Propose–Probe–Compose** step: propose edits, probe
@@ -235,7 +235,7 @@ for details; each command also supports `--help`.
 
 ## Acknowledgements
 
-SecAgentHarness is developed based on and derived from [Google Research's Harness²](https://github.com/google-research/harness2) project. We express our deep appreciation to the Google Research author team for open-sourcing the foundational recursive harnessing architecture and methodology. Please see [NOTICE](NOTICE) for license and provenance notices.
+SecAgentHarness² (SecAgentHarness2) is developed based on and derived from [Google Research's Harness²](https://github.com/google-research/harness2) project. We express our deep appreciation to the Google Research author team for open-sourcing the foundational recursive harnessing architecture and methodology. Please see [NOTICE](NOTICE) for license and provenance notices.
 
 ## Citation
 

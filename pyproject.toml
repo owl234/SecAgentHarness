@@ -3,7 +3,7 @@ requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sec-agent-harness"
+name = "sec-agent-harness2"
 version = "0.1.0"
 description = "Applying recursive agent harnessing (Harness²) to cybersecurity: multi-domain benchmark evaluation & 8-component optimization"
 readme = "README.md"
