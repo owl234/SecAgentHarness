@@ -15,6 +15,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-34A853" alt="License"></a>
 </p>
 
+> [!NOTE]
+> **上游开源基石与致谢声明**：
+> SecAgentHarness 的核心递归智能体运行套件引擎基于 [Google Research 的 Harness² 开源项目](https://github.com/google-research/harness2)（[论文链接](https://arxiv.org/abs/2610.14224)）。本项目在其创新的“提议–探测–组合（Propose–Probe–Compose）”递归运行套件架构基础上深度扩展，面向网络安全攻防、渗透测试、漏洞挖掘与防御分析等多元化网安基准场景以及 8 大组件体系提供完整的评测与能力支撑。
+
 <p align="center">
   <a href="docs/BENCHMARKS_zh.md#jobbench">
     <img src="assets/harness2-setup.gif" alt="安装、配置并运行 JobBench: uv pip install -e '.[render]', harness2-setup jb, 然后执行 harness2 --bench jb --k 1 --mode parallel。点击查看前提条件和命令。" width="640">
@@ -187,6 +191,11 @@ harness2 pipeline --bench lab --preset smoke
 运行结果保存在 `runs/` 目录下，并按基准测试与子集划分归档。输出内容包括任务摘要、最终产出物（Deliverables）、采纳的运行套件、反思总结记录（Reflection notes）以及评测成绩。
 
 重复执行相同命令即可断点续跑（Resume）。更换模型或修改任务范围时，请使用新的 `HARNESS2_RUNS_DIR` 输出目录。详细说明请参考[结果与断点恢复](docs/EXPERIMENTS_zh.md#结果与断点恢复)；所有命令均支持 `--help` 查看参数帮助。
+
+<a id="acknowledgements"></a>
+## 致谢与上游声明 (Acknowledgements)
+
+SecAgentHarness 基于 [Google Research 的 Harness²](https://github.com/google-research/harness2) 开源项目衍生与演进。我们由衷感谢 Google Research 原作者团队开源了突破性的递归智能体运行套件架构及基础代码。关于开源许可及版权沿革，请参阅根目录 [NOTICE](NOTICE) 文件。
 
 <a id="citation"></a>
 ## 论文引用

@@ -1,0 +1,11 @@
+SecAgentHarness
+Copyright 2026 owl234
+
+This product includes software developed by Google LLC.
+Original repository: https://github.com/google-research/harness2
+Paper: "Harness²: Recursive Agent Harnessing for an Open World" (arXiv:2610.14224)
+
+SecAgentHarness is a specialized domain extension and benchmark framework
+originating from and built upon Google Research's open-source Harness² project.
+The core recursive agent harnessing architecture is derived from the upstream
+harness2 codebase, licensed under the Apache License, Version 2.0.

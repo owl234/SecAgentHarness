@@ -15,6 +15,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-34A853" alt="License"></a>
 </p>
 
+> [!NOTE]
+> **Upstream & Core Origin Notice**:
+> SecAgentHarness is a specialized cybersecurity extension and benchmark evaluation suite originating from and built upon [Google Research's Harness²](https://github.com/google-research/harness2) ([Paper](https://arxiv.org/abs/2610.14224)). The core recursive agent harnessing engine and contrastive Propose–Probe–Compose pipeline are derived from the upstream project, extending its capabilities toward multi-domain cybersecurity benchmarks, red/blue teaming evaluations, and 8-component agent harnesses.
+
 <p align="center">
   <a href="docs/BENCHMARKS.md#jobbench">
     <img src="assets/harness2-setup.gif" alt="Install, set up, and run JobBench: uv pip install -e '.[render]', harness2-setup jb, then harness2 --bench jb --k 1 --mode parallel. Click for prerequisites and commands." width="640">
@@ -230,6 +234,10 @@ reflection notes, and evaluation results.
 Repeat the same command to resume. Use a new `HARNESS2_RUNS_DIR` when changing
 models or task selection. See [results and resume](docs/EXPERIMENTS.md#results-and-resume)
 for details; each command also supports `--help`.
+
+## Acknowledgements
+
+SecAgentHarness is developed based on and derived from [Google Research's Harness²](https://github.com/google-research/harness2) project. We express our deep appreciation to the Google Research author team for open-sourcing the foundational recursive harnessing architecture and methodology. Please see [NOTICE](NOTICE) for license and provenance notices.
 
 ## Citation
 
