@@ -1,0 +1,174 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Background task execution runner, process manager, and SSE log broadcaster."""
+
+from __future__ import annotations
+
+import asyncio
+import os
+import sys
+from collections import deque
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, AsyncGenerator
+
+
+class ExecutionManager:
+    """Manages active CLI runs, capturing stdout/stderr and broadcasting events."""
+
+    def __init__(self, workspace_root: Path):
+        self.workspace_root = workspace_root
+        self.process: asyncio.subprocess.Process | None = None
+        self.current_job: dict[str, Any] | None = None
+        self.logs: deque[str] = deque(maxlen=4000)
+        self.subscribers: set[asyncio.Queue[dict[str, Any]]] = set()
+        self._lock = asyncio.Lock()
+
+    def get_status(self) -> dict[str, Any]:
+        if self.current_job is None:
+            return {"status": "idle", "job": None, "recent_logs_count": len(self.logs)}
+        return {
+            "status": self.current_job.get("status", "idle"),
+            "job": self.current_job,
+            "recent_logs_count": len(self.logs),
+        }
+
+    def get_logs(self, limit: int = 500) -> list[str]:
+        logs_list = list(self.logs)
+        return logs_list[-limit:]
+
+    async def subscribe(self) -> AsyncGenerator[dict[str, Any], None]:
+        """Subscribe to live execution events and log output."""
+        queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=1000)
+        self.subscribers.add(queue)
+        try:
+            # Send initial state
+            yield {
+                "event": "init",
+                "data": {
+                    "status": self.current_job.get("status") if self.current_job else "idle",
+                    "job": self.current_job,
+                    "logs": self.get_logs(100),
+                },
+            }
+            while True:
+                msg = await queue.get()
+                yield msg
+        finally:
+            self.subscribers.discard(queue)
+
+    async def broadcast(self, event_type: str, data: Any) -> None:
+        """Send event payload to all connected SSE clients."""
+        msg = {"event": event_type, "data": data}
+        dead_queues = set()
+        for q in self.subscribers:
+            try:
+                q.put_nowait(msg)
+            except asyncio.QueueFull:
+                pass
+            except Exception:
+                dead_queues.add(q)
+        self.subscribers.difference_update(dead_queues)
+
+    async def start_job(
+        self, job_type: str, args: list[str], extra_env: dict[str, str] | None = None
+    ) -> dict[str, Any]:
+        """Spawn a new background CLI run."""
+        async with self._lock:
+            if self.process is not None and self.process.returncode is None:
+                raise RuntimeError("Another job is already running. Please terminate it first.")
+
+            job_id = f"{job_type}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+            self.logs.clear()
+
+            # Resolve python binary from current venv if possible
+            py_bin = sys.executable
+
+            cmd = [py_bin] + args
+
+            env_vars = os.environ.copy()
+            if extra_env:
+                env_vars.update(extra_env)
+
+            self.current_job = {
+                "job_id": job_id,
+                "job_type": job_type,
+                "command": cmd,
+                "status": "running",
+                "started_at": datetime.now(timezone.utc).isoformat(),
+                "finished_at": None,
+                "exit_code": None,
+            }
+
+            try:
+                self.process = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    cwd=str(self.workspace_root),
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT,
+                    env=env_vars,
+                )
+            except Exception as exc:
+                self.current_job["status"] = "failed"
+                self.current_job["error"] = str(exc)
+                await self.broadcast("status", self.current_job)
+                raise
+
+            # Launch output reading task
+            asyncio.create_task(self._watch_process(self.process, self.current_job))
+
+            await self.broadcast("start", self.current_job)
+            return self.current_job
+
+    async def _watch_process(
+        self, proc: asyncio.subprocess.Process, job: dict[str, Any]
+    ) -> None:
+        assert proc.stdout is not None
+        while True:
+            line_bytes = await proc.stdout.readline()
+            if not line_bytes:
+                break
+            line = line_bytes.decode("utf-8", errors="replace").rstrip()
+            self.logs.append(line)
+            await self.broadcast("log", {"line": line, "timestamp": datetime.now(timezone.utc).isoformat()})
+
+        exit_code = await proc.wait()
+        job["exit_code"] = exit_code
+        job["finished_at"] = datetime.now(timezone.utc).isoformat()
+        job["status"] = "completed" if exit_code == 0 else "failed"
+
+        await self.broadcast("finish", job)
+        await self.broadcast("refresh", {"timestamp": datetime.now(timezone.utc).isoformat()})
+
+    async def stop_job(self) -> dict[str, Any]:
+        """Terminate the running job."""
+        async with self._lock:
+            if self.process is None or self.process.returncode is not None:
+                return {"message": "No active job running."}
+
+            try:
+                self.process.terminate()
+                await asyncio.sleep(0.5)
+                if self.process.returncode is None:
+                    self.process.kill()
+            except ProcessLookupError:
+                pass
+
+            if self.current_job:
+                self.current_job["status"] = "terminated"
+                self.current_job["finished_at"] = datetime.now(timezone.utc).isoformat()
+                await self.broadcast("terminate", self.current_job)
+
+            return {"message": "Job terminated successfully."}

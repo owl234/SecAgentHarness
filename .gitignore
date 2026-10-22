@@ -1,0 +1,57 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches and test outputs
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build and packaging
+*.egg-info/
+build/
+dist/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+**/.venv/
+
+# Dynamic benchmark runtimes and tools (downloaded during setup)
+/dependencies/*
+!/dependencies/ASSETS.json
+!/dependencies/PINNED.md
+!/dependencies/README.md
+
+# Experiment and evaluation run traces & outputs
+/runs/*
+!/runs/.gitkeep
+
+# Node.js dependencies and logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment configuration & credentials
+.env
+.env.*
+!.env.example
+
+# Operating System & IDE artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+*.backup
