@@ -4,7 +4,7 @@
 
 <h3 align="center">
   <img src="assets/Harness2-wordmark.png" alt="SecAgentHarness" width="360"><br>
-  SecAgentHarness: 网络安全智能体评测基准与能力框架
+  递归智能体运行套件 (Harness²) 在网络安全领域的适配、优化与基准评测
 </h3>
 
 <p align="center">
@@ -27,7 +27,7 @@
 
 **智能体运行套件（Harness）** 是围绕基础模型构建的一整套使之能够作为智能体（Agent）行动的系统组件，包括提示词（Prompts）、工具（Tools）、记忆（Memory）、技能（Skills）、编排（Orchestration）等。**运行套件优化（Harnessing）** 则是优化这套系统的过程。
 
-Harness² 是一个即插即用（plug-and-play）的 **开放世界递归智能体运行套件优化（Recursive Agent Harnessing）** 框架，面向智能体遭遇设计阶段未见新任务的场景。它在保持模型权重冻结不变的前提下，串联了两个层次的递归循环：
+**SecAgentHarness** 是一个将 Google Research 的 Harness² 递归套件优化范式迁移应用于**网络安全领域**的评测与优化框架。面向开放网络安全攻防与实战场景，它支持在多领域网安基准任务与 8 大组件体系下，对网络安全智能体进行全流程能力评估与运行套件递归提炼，在保持模型权重冻结不变的前提下串联了两个层次的递归循环：
 
 * **任务级递归（Task-level recursion）**：针对当前任务，通过对比式的 **提议–探测–组合（Propose–Probe–Compose）** 步骤优化执行套件——提议修改建议（Propose edits）、在同一任务上探测其执行效果（Probe effects），并在没有任何真实标注（ground-truth）反馈的情况下，基于不同执行之间的行为对比差异组合出精炼后的运行套件（Compose refined harness）。
 * **套件级递归（Harnessing-level recursion）**：利用各任务中采纳的运行套件与证据支持的经验总结，动态更新持久化的*优化套件（Improvement harness）*，以持续指导后续任务的优化提炼。

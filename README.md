@@ -4,7 +4,7 @@
 
 <h3 align="center">
   <img src="assets/Harness2-wordmark.png" alt="SecAgentHarness" width="360"><br>
-  SecAgentHarness: Cybersecurity AI Agent Evaluation Framework & Benchmark Suite
+  Applying Recursive Agent Harnessing (Harness²) to Cybersecurity
 </h3>
 
 <p align="center">
@@ -29,9 +29,7 @@ A **harness** is the system around a model that enables it to act as an agent:
 prompts, tools, memory, skills, orchestration, and more. **Harnessing** is the
 process of optimizing that system.
 
-Harness² is a plug-and-play framework for **recursive agent harnessing** in an
-open world, where agents encounter tasks unseen during harness design. It
-connects two levels of recursion while keeping model weights fixed:
+**SecAgentHarness** applies recursive agent harnessing ([Google Research's Harness²](https://github.com/google-research/harness2)) to the cybersecurity domain. It provides a plug-and-play framework for evaluating, optimizing, and fortifying security agents across multi-domain cybersecurity benchmarks and 8-component modular architectures in an open world, connecting two levels of recursion while keeping model weights fixed:
 
 * **Task-level recursion** refines the execution harness for the current task
   through a contrastive **Propose–Probe–Compose** step: propose edits, probe
