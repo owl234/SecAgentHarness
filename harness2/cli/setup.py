@@ -113,6 +113,8 @@ def main(argv=None):
                 )
         if args.substrate == "cx":
             install.codex(dry_run=dry)
+        elif args.substrate == "claude":
+            install.claude(dry_run=dry)
     except (OSError, RuntimeError, ValueError, subprocess.CalledProcessError) as exc:
         p.exit(1, I18N.t("setup.failed", lang, e=exc) + "\n")
     print(

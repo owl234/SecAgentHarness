@@ -210,7 +210,9 @@ class Proposer:
     def _claude_cli(
         self, cwd: Path, mission: str, system: str, wall: int
     ) -> tuple[str, float, str]:
-        cli = shutil.which("claude") or "claude"
+        from ..substrate.claude import find_claude_binary
+
+        cli = str(find_claude_binary())
         cmd = [
             cli,
             "--dangerously-skip-permissions",

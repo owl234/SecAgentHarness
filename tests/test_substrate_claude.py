@@ -56,6 +56,10 @@ def test_find_claude_binary(monkeypatch, tmp_path):
     found = find_claude_binary()
     assert found == fake_bin
 
+    monkeypatch.delenv("HARNESS2_CLAWGOD_PATH", raising=False)
+    from harness2 import config
+    assert find_claude_binary() == config.CLAUDE_BIN
+
 
 def test_materialise(tmp_path):
     sub = ClaudeSubstrate()
@@ -99,12 +103,60 @@ def test_exec_argv():
     assert "Do task 1" in argv
     assert "--output-format=stream-json" in argv
     assert "--dangerously-skip-permissions" in argv
+    assert "--include-hook-events" in argv
+    assert "--forward-subagent-text" in argv
     assert "--model" in argv
     assert "claude-3-7-sonnet-20250219" in argv
     assert "--effort" in argv
     assert "high" in argv
     assert "--add-dir" in argv
     assert str(ws) in argv
+    # no staged tree -> no --agents flag
+    assert "--agents" not in argv
+
+
+def test_exec_argv_agents_wiring(tmp_path):
+    import json as _json
+
+    from harness2.substrate.claude import agents_json
+
+    staged = tmp_path / "staged"
+    (staged / "sub_agents" / "researcher").mkdir(parents=True)
+    (staged / "sub_agents" / "researcher" / "AGENT.md").write_text(
+        "---\ndescription: Deep research agent\n---\nYou research things.\n",
+        encoding="utf-8",
+    )
+    payload = agents_json(staged)
+    assert payload
+    assert _json.loads(payload)["researcher"]["description"] == "Deep research agent"
+    # empty tree -> empty string, no flag emitted
+    assert agents_json(tmp_path / "nonexistent") == ""
+
+    sub = ClaudeSubstrate()
+    argv = sub.exec_argv("task", Path("/tmp/ws"), "m", harness_dir=staged)
+    assert "--agents" in argv
+
+    argv2 = sub.exec_argv("task", Path("/tmp/ws"), "m")
+    assert "--agents" not in argv2
+
+
+def test_render_forwarded_subagent(tmp_path):
+    stream_file = tmp_path / "sub.jsonl"
+    events = [
+        {
+            "type": "assistant",
+            "parent_tool_use_id": "call_9",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "subagent reporting"}],
+            },
+        },
+    ]
+    with open(stream_file, "w", encoding="utf-8") as f:
+        for ev in events:
+            f.write(json.dumps(ev) + "\n")
+    rendered = render_events(stream_file, obs_trunc=1000, max_chars=10_000)
+    assert "[SUBAGENT ASSISTANT] subagent reporting" in rendered
 
 
 def test_trajectory_rendering(tmp_path):

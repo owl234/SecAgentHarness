@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -90,28 +91,15 @@ CLAUDE_ROOT_ENTRIES = ("CLAUDE.md", ".claude", "scripts", "sub_agents")
 
 
 def find_claude_binary() -> Path:
-    """Find the preferred Claude Code binary (clawgod > system claude)."""
+    """Find the project-local Claude Code binary (clawgod) or explicit override."""
     # 1. Explicit env override
     custom = os.environ.get("HARNESS2_CLAWGOD_PATH")
     if custom and Path(custom).is_file() and os.access(custom, os.X_OK):
         return Path(custom)
 
-    # 2. Local clawgod launcher
-    local_clawgod = Path(os.path.expanduser("~/.local/bin/clawgod"))
-    if local_clawgod.is_file() and os.access(local_clawgod, os.X_OK):
-        return local_clawgod
-
-    which_clawgod = shutil.which("clawgod")
-    if which_clawgod:
-        return Path(which_clawgod)
-
-    # 3. Native claude CLI
-    which_claude = shutil.which("claude")
-    if which_claude:
-        return Path(which_claude)
-
-    # Default fallback path
-    return local_clawgod
+    # 2. Project-level isolated launcher
+    project_bin = config.CLAUDE_BIN
+    return project_bin
 
 
 class ClaudeSubstrate:
@@ -175,8 +163,15 @@ class ClaudeSubstrate:
         model: str,
         *,
         effort: str = "high",
+        harness_dir: Path | None = None,
     ) -> list[str]:
-        """Construct the reference clawgod/claude execution argv."""
+        """Construct the reference clawgod/claude execution argv.
+
+        `harness_dir` (the staged claude_root tree) wires c5: each
+        `sub_agents/<name>/AGENT.md` becomes one `--agents` JSON entry, since the
+        workspace-root `sub_agents/` dir is not auto-discovered by Claude Code.
+        Also forwards subagent text into the stream so the trajectory sees it.
+        """
         binary = find_claude_binary()
         argv = [
             str(binary),
@@ -185,6 +180,8 @@ class ClaudeSubstrate:
             "--output-format=stream-json",
             "--verbose",
             "--dangerously-skip-permissions",
+            "--include-hook-events",
+            "--forward-subagent-text",
             "--add-dir",
             str(workspace),
         ]
@@ -192,16 +189,24 @@ class ClaudeSubstrate:
             argv.extend(["--model", model])
         if effort:
             argv.extend(["--effort", effort])
+        agents = agents_json(harness_dir) if harness_dir is not None else ""
+        if agents:
+            argv.extend(["--agents", agents])
         return argv
 
     def exec_env(self, base_env: Mapping[str, str], *, workspace: Path | None = None) -> dict[str, str]:
         """Build the execution environment for Claude Code / clawgod."""
         env = dict(base_env)
-        # Inherit Anthropic credentials from harness2 config if present
+        # Inherit Anthropic credentials from harness2 config if present; the clawgod
+        # wrapper honours ANTHROPIC_BASE_URL / ANTHROPIC_AUTH_TOKEN for non-Anthropic
+        # endpoints (cli.cjs), so those pass through when the caller sets them.
         if "ANTHROPIC_API_KEY" not in env and hasattr(config, "ANTHROPIC_API_KEY"):
             val = getattr(config, "ANTHROPIC_API_KEY", "")
             if val:
                 env["ANTHROPIC_API_KEY"] = val
+        for key in ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN"):
+            if key not in env and os.environ.get(key):
+                env[key] = os.environ[key]
         return env
 
     def execute(
@@ -228,12 +233,66 @@ class ClaudeSubstrate:
         binary = find_claude_binary()
         if not binary.is_file() or not os.access(binary, os.X_OK):
             raise RuntimeError(
-                f"Claude Code / clawgod binary not found or not executable at {binary}. "
-                "Ensure clawgod is installed at ~/.local/bin/clawgod or on PATH."
+                f"Claude Code (clawgod) is not installed at {binary}; "
+                "run 'harness2 setup <benchmark> --substrate claude' to install the project-level substrate."
             )
+        want = getattr(config, "CLAUDE_VERSION", "")
+        if want:
+            try:
+                import subprocess
+
+                r = subprocess.run(
+                    [str(binary), "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+                if want not in (r.stdout or ""):
+                    raise RuntimeError(
+                        f"clawgod at {binary} reports {r.stdout.strip()!r}, pinned "
+                        f"CLAUDE_VERSION is {want}; rerun "
+                        "'harness2 setup <benchmark> --substrate claude' to repin."
+                    )
+            except OSError as exc:
+                raise RuntimeError(f"could not probe clawgod version: {exc}") from exc
 
 
 _TRUNC_FMT = "…(+{n} chars — render truncation)"
+
+
+def agents_json(staged: Path | None) -> str:
+    """`--agents` JSON for the staged tree's c5 subagents ("" when none).
+
+    Claude Code auto-discovers `.claude/agents/*.md`, not the harness-canonical
+    `sub_agents/*/AGENT.md`, so without this translation a proposal that evolves
+    c5 would never fire. Frontmatter `description:` becomes the agent description;
+    the body becomes the system prompt.
+    """
+    if staged is None:
+        return ""
+    agents: dict[str, dict[str, str]] = {}
+    try:
+        dirs = sorted(p for p in Path(staged).glob("sub_agents/*/AGENT.md") if p.is_file())
+    except OSError:
+        return ""
+    for agent_file in dirs:
+        name = agent_file.parent.name
+        try:
+            body = agent_file.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        desc = ""
+        m = re.search(r"^description:\s*(.+)$", body[:600], re.M)
+        if m:
+            desc = m.group(1).strip()
+        prompt_body = re.sub(r"^---\n.*?\n---\n", "", body, count=1, flags=re.S).strip()
+        agents[name] = {
+            "description": desc or f"Delegated {name} agent",
+            "prompt": prompt_body or body.strip(),
+        }
+    if not agents:
+        return ""
+    return json.dumps(agents, ensure_ascii=False)
 
 
 def _clip(s, n: int) -> str:
@@ -267,7 +326,12 @@ def parse_items(path: Path) -> list[dict]:
 
 
 def render_events(path: Path, *, obs_trunc: int, max_chars: int, args_trunc: int = 2000) -> str:
-    """Render a Claude stream-json event log into the shared grammar."""
+    """Render a Claude stream-json event log into the shared grammar.
+
+    With `--forward-subagent-text`, subagent activity arrives as assistant/user
+    messages carrying `parent_tool_use_id`; those render with a SUBAGENT tag so
+    the selector can tell delegated work from the main agent's.
+    """
     lines: list[str] = []
     events = parse_items(Path(path))
 
@@ -279,6 +343,7 @@ def render_events(path: Path, *, obs_trunc: int, max_chars: int, args_trunc: int
 
         # 1. Assistant messages containing text, thinking, or tool_use blocks
         if etype == "assistant":
+            sub = "SUBAGENT " if ev.get("parent_tool_use_id") else ""
             msg = ev.get("message")
             if isinstance(msg, dict):
                 content = msg.get("content")
@@ -290,11 +355,11 @@ def render_events(path: Path, *, obs_trunc: int, max_chars: int, args_trunc: int
                         if btype == "text":
                             txt = blk.get("text", "").strip()
                             if txt:
-                                lines.append(f"[ASSISTANT] {_clip(txt, obs_trunc)}")
+                                lines.append(f"[{sub}ASSISTANT] {_clip(txt, obs_trunc)}")
                         elif btype == "thinking":
                             thk = blk.get("thinking", "").strip()
                             if thk:
-                                lines.append(f"[THINKING] {_clip(thk, obs_trunc)}")
+                                lines.append(f"[{sub}THINKING] {_clip(thk, obs_trunc)}")
                         elif btype == "tool_use":
                             name = blk.get("name", "tool")
                             inp = blk.get("input", {})
@@ -303,11 +368,12 @@ def render_events(path: Path, *, obs_trunc: int, max_chars: int, args_trunc: int
                                 if isinstance(inp, dict) and "command" in inp and len(inp) == 1
                                 else json.dumps(inp, default=str, ensure_ascii=False)
                             )
-                            lines.append(f"[ACTION] {name}: {_clip(arg_str, args_trunc)}")
+                            lines.append(f"[{sub}ACTION] {name}: {_clip(arg_str, args_trunc)}")
             continue
 
         # 2. User / tool_result messages
         if etype == "user":
+            sub = "SUBAGENT " if ev.get("parent_tool_use_id") else ""
             msg = ev.get("message")
             if isinstance(msg, dict):
                 content = msg.get("content")
@@ -378,4 +444,4 @@ def final_message(path: Path) -> str:
     return last
 
 
-__all__ = ["CLAUDE_SURFACE", "ClaudeSubstrate", "find_claude_binary", "render_events", "parse_items", "final_message"]
+__all__ = ["CLAUDE_SURFACE", "ClaudeSubstrate", "find_claude_binary", "render_events", "parse_items", "final_message", "agents_json"]

@@ -31,6 +31,7 @@ include; setup copies the LAB and WorkBuddy overlays into the upstream checkouts
 
 The upstream dependency locks are used for Python installations. OpenCode uses
 Bun 1.3.11 and the patched lock. Codex uses the version in `config.CODEX_VERSION`.
+Claude Code (clawgod) is isolated inside `dependencies/claude` with its own Bun >= 1.3.14.
 JobBench's Hugging Face revision is resolved once for a download and recorded in
 `dataset/main/.harness2-download.json`. WorkBuddy's dataset fetcher, as patched
 by setup, verifies each archive against the dataset repository's `SHA256SUMS` and

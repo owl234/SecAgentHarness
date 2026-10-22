@@ -142,6 +142,26 @@ changing either. `harness2 check` reports stale configuration until then.
 Codex runs with its sandbox disabled. Review the
 [executor network restrictions](EXPERIMENTS.md#web-access) before evaluation.
 
+## Claude executor
+
+The Claude executor runs a project-local clawgod distribution (pinned at
+`CLAUDE_VERSION` in `harness2/config.py`), isolated under `dependencies/claude/`
+with its own Bun runtime. It does not touch `~/.clawgod`: provider credentials
+stay in the environment (`ANTHROPIC_API_KEY`, optionally `ANTHROPIC_BASE_URL` /
+`ANTHROPIC_AUTH_TOKEN` for non-Anthropic endpoints), and host customisations
+such as `provider.json` / `patches.json` are never cloned in.
+
+```bash
+harness2 setup lab --substrate claude
+harness2 check --bench lab --substrate claude
+```
+
+The substrate wires harness `sub_agents/` through `--agents` (the workspace-root
+`sub_agents/` directory is not auto-discovered by Claude Code) and captures hook
+events with `--include-hook-events --forward-subagent-text`. Like Codex, it runs
+with sandbox bypasses enabled; review the executor network restrictions before
+evaluation.
+
 ## Network access during setup
 
 Setup downloads dependencies from the following hosts:

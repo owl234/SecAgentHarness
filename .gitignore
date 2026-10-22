@@ -55,3 +55,6 @@ Thumbs.db
 *~
 *.bak
 *.backup
+
+# AI Agent local instructions
+AGENTS.md

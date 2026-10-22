@@ -36,8 +36,12 @@ PATCHES = {
 
 RUNNERS = (
     "jb_runner/run_benchmark_codex_cli_adapt.sh",
+    "jb_runner/run_benchmark_claude_cli_adapt.sh",
     "lab_runner/opencode/run_opencode.py",
+    "lab_runner/adapt_runs_claude/run_claude_lab.py",
     "wb_runner/agents/oc_agent.py",
+    "wb_runner/agents/claude_agent.py",
+    "wb_runner/agents/claude_harness_agent.py",
 )
 
 
@@ -131,6 +135,7 @@ def overlays(name: str, *, dry_run=False):
             (assets / "lab_runner" / "opencode", repo / "opencode"),
             (assets / "lab_runner" / "tts_lab", repo / "external" / "tts_lab"),
             (assets / "lab_runner" / "adapt_runs_cx", repo / "external" / "adapt_runs_cx"),
+            (assets / "lab_runner" / "adapt_runs_claude", repo / "external" / "adapt_runs_claude"),
         ]
     if name == "workbuddy-bench":
         pairs = [
@@ -280,6 +285,106 @@ def codex_config_error() -> str | None:
     if stale:
         return f"{path} is stale ({'; '.join(stale)}); {CODEX_CONFIG_REMEDY}"
     return None
+
+
+def claude(*, dry_run=False):
+    root = config.DEPENDENCIES / "claude"
+    if dry_run:
+        print(f"Install Claude Code (clawgod) runtime in {root}", flush=True)
+        return
+    root.mkdir(parents=True, exist_ok=True)
+    # 1. Install dedicated isolated Bun >= 1.3.14 inside dependencies/claude
+    run(["npm", "install", "--prefix", root, "bun@1.3.14"], dry_run=dry_run)
+
+    # 2. Extract or copy clawgod runtime
+    host_clawgod = Path.home() / ".clawgod"
+    if (host_clawgod / "cli.cjs").is_file():
+        print(f"Cloning local clawgod runtime from {host_clawgod} into {root}...", flush=True)
+        for item in (
+            "cli.cjs",
+            "cli.original.cjs",
+            "bun-ant-shim.cjs",
+            "runtime-helpers.cjs",
+            "feature-gates.cjs",
+            "openai-proxy.cjs",
+            "startup-check.cjs",
+            "features.json",
+            ".clawgod-version",
+            ".source-version",
+        ):
+            src_f = host_clawgod / item
+            if src_f.is_file():
+                shutil.copy2(src_f, root / item)
+        # NOTE: provider.json is deliberately NOT cloned: it may carry the user's API
+        # key. cli.cjs auto-creates an empty default on first run; credentials then
+        # come from the environment (see ClaudeSubstrate.exec_env).
+        # Same for patches.json: host customisations must not leak into the pinned
+        # runtime; start from all-gates-default.
+        if not (root / "patches.json").is_file():
+            (root / "patches.json").write_text("{}\n", encoding="utf-8")
+
+        for folder in ("bunfs", "vendor"):
+            src_d = host_clawgod / folder
+            if src_d.is_dir():
+                shutil.copytree(src_d, root / folder, dirs_exist_ok=True)
+        # source-backup.json records the exact upstream bundle this pin came from
+        # (used for provenance, not at runtime).
+        for item in ("source-backup.json",):
+            src_f = host_clawgod / item
+            if src_f.is_file():
+                shutil.copy2(src_f, root / item)
+
+        # Path relocation / decoupling from ~/.clawgod
+        cli_cjs = root / "cli.cjs"
+        if cli_cjs.is_file():
+            txt = cli_cjs.read_text(encoding="utf-8")
+            txt = txt.replace("const clawgodDir = join(homedir(), '.clawgod');", "const clawgodDir = __dirname;")
+            cli_cjs.write_text(txt, encoding="utf-8")
+
+        fg_cjs = root / "feature-gates.cjs"
+        if fg_cjs.is_file():
+            txt = fg_cjs.read_text(encoding="utf-8")
+            txt = txt.replace(
+                "var clawgodDir = require('path').join(require('os').homedir(), '.clawgod');",
+                "var clawgodDir = __dirname;",
+            )
+            fg_cjs.write_text(txt, encoding="utf-8")
+
+        old_bytes = str(host_clawgod.resolve()).encode("utf-8")
+        new_bytes = str(root.resolve()).encode("utf-8")
+        for p in root.rglob("*"):
+            if p.is_file() and p.suffix in (".js", ".cjs", ".json"):
+                b = p.read_bytes()
+                if old_bytes in b:
+                    p.write_bytes(b.replace(old_bytes, new_bytes))
+    else:
+        print(f"Downloading clawgod distribution into {root}...", flush=True)
+        installer = (
+            f'CLAWGOD_DIR="{root}" BIN_DIR="{root}/bin" NO_UPGRADE=0 '
+            'curl -fsSL https://github.com/0Chencc/clawgod/releases/latest/download/install.sh | '
+            f'sed -e "s|CLAWGOD_DIR=.*|CLAWGOD_DIR=\\"{root}\\"|g" '
+            f'-e "s|BIN_DIR=.*|BIN_DIR=\\"{root}/bin\\"|g" | bash'
+        )
+        run(["bash", "-c", installer], dry_run=dry_run)
+
+    # 3. Create standalone launcher script
+    bin_dir = root / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    launcher = bin_dir / "clawgod"
+    launcher_content = (
+        "#!/bin/bash\n"
+        'DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"\n'
+        'BUN_BIN="$DIR/node_modules/.bin/bun"\n'
+        'CLI="$DIR/cli.cjs"\n'
+        'if [ ! -x "$BUN_BIN" ]; then\n'
+        '    echo "Isolated bun not found at $BUN_BIN; run harness2 setup --substrate claude" >&2\n'
+        "    exit 1\n"
+        "fi\n"
+        'exec "$BUN_BIN" "$CLI" "$@"\n'
+    )
+    launcher.write_text(launcher_content, encoding="utf-8")
+    launcher.chmod(launcher.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    print(f"Claude Code (clawgod) installed successfully at {launcher}", flush=True)
 
 
 def download_jobbench(*, dry_run=False):

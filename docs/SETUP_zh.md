@@ -113,6 +113,18 @@ WorkBuddy 会在 Docker 容器内部执行 Codex，因此 Bridge 必须监听 `-
 
 Codex 运行时其内部沙箱处于禁用状态。评测前请仔细阅读[执行器网络限制](EXPERIMENTS_zh.md#网络访问控制)。
 
+<a id="claude-executor"></a>
+## Claude 执行器
+
+Claude 执行器运行项目内隔离的 clawgod 发行版（版本钉在 `harness2/config.py` 的 `CLAUDE_VERSION`），位于 `dependencies/claude/` 下并自带 Bun 运行时。它不触碰 `~/.clawgod`：provider 凭据走环境变量（`ANTHROPIC_API_KEY`，非 Anthropic 端点可另加 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN`），宿主机的 `provider.json` / `patches.json` 等个性化配置不会被克隆进来。
+
+```bash
+harness2 setup lab --substrate claude
+harness2 check --bench lab --substrate claude
+```
+
+该基座通过 `--agents` 接线 harness 的 `sub_agents/`（工作区根的 `sub_agents/` 目录不会被 Claude Code 自动发现），并以 `--include-hook-events --forward-subagent-text` 捕获 hook 事件。与 Codex 一样，沙箱绕过处于启用状态；评测前请先阅读执行器网络限制。
+
 <a id="network-access-during-setup"></a>
 ## 安装期间的网络访问
 

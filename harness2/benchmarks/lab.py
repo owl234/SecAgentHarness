@@ -1027,6 +1027,10 @@ class LabAdapter:
         if self.substrate.name == "oc":
             _require_runner(config.lab_repo() / "opencode" / "run_opencode.py")
             _require_runtime_scripts()
+        elif self.substrate.name == "claude":
+            _require_runner(
+                config.lab_repo() / "external" / "adapt_runs_claude" / "run_claude_lab.py"
+            )
         else:
             _require_runner(config.lab_repo() / "external" / "adapt_runs_cx" / "run_codex_lab.py")
         try:

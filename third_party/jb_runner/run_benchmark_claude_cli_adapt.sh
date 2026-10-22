@@ -158,12 +158,13 @@ append_attempt_index() {
     local started_at="${10}"
     local finished_at="${11}"
     local traj_file="${12}"
+    local binary_version="${13:-}"
 
     if [[ ! -f "$index_file" ]]; then
-        printf 'task_name\tmodel_id\tmodel_name\tattempt\tstatus\texit_code\ttimeout_seconds\tsession_id\tstarted_at\tfinished_at\ttraj_file\n' > "$index_file"
+        printf 'task_name\tmodel_id\tmodel_name\tattempt\tstatus\texit_code\ttimeout_seconds\tsession_id\tstarted_at\tfinished_at\ttraj_file\tbinary_version\n' > "$index_file"
     fi
 
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$task_name" \
         "$model_id" \
         "$model_name" \
@@ -174,7 +175,8 @@ append_attempt_index() {
         "$session_id" \
         "$started_at" \
         "$finished_at" \
-        "$traj_file" >> "$index_file"
+        "$traj_file" \
+        "$binary_version" >> "$index_file"
 }
 
 run_task() {
@@ -270,18 +272,48 @@ traj_file = sys.argv[6]
 
 claude_bin = os.environ.get('HARNESS2_CLAUDE_BIN', 'clawgod')
 
+import json as _json
+import re as _re
+
+def _agents_arg(ws):
+    """--agents JSON for sub_agents/*/AGENT.md (c5 wiring; "" when none)."""
+    agents = {}
+    try:
+        from pathlib import Path as _P
+        files = sorted(_P(ws).glob("sub_agents/*/AGENT.md"))
+    except OSError:
+        return ""
+    for af in files:
+        try:
+            body = af.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        m = _re.search(r"^description:\s*(.+)$", body[:600], _re.M)
+        desc = m.group(1).strip() if m else ""
+        prompt_body = _re.sub(r"^---\n.*?\n---\n", "", body, count=1, flags=_re.S).strip()
+        agents[af.parent.name] = {
+            "description": desc or f"Delegated {af.parent.name} agent",
+            "prompt": prompt_body or body.strip(),
+        }
+    return _json.dumps(agents, ensure_ascii=False) if agents else ""
+
 cmd = [
     claude_bin,
     '-p', prompt_content,
     '--output-format=stream-json',
     '--verbose',
     '--dangerously-skip-permissions',
+    '--include-hook-events',
+    '--forward-subagent-text',
     '--add-dir', working_dir,
 ]
 if model:
     cmd.extend(['--model', model])
 if reasoning_effort:
     cmd.extend(['--effort', reasoning_effort])
+_agents = _agents_arg(working_dir)
+if _agents:
+    cmd.extend(['--agents', _agents])
 
 with open(log_file, 'a', encoding='utf-8') as log, open(traj_file, 'w', encoding='utf-8') as traj:
     result = subprocess.run(
@@ -331,7 +363,8 @@ PYTHON_EXEC
         "${session_id:-}" \
         "$attempt_started_at" \
         "$attempt_finished_at" \
-        "$attempt_traj_file"
+        "$attempt_traj_file" \
+        "${HARNESS2_CLAUDE_VERSION:-$("${HARNESS2_CLAUDE_BIN:-clawgod}" --version 2>/dev/null | head -1)}"
 
     if [[ -d "$temp_output_dir" ]] && [[ -n "$(ls -A "$temp_output_dir" 2>/dev/null)" ]]; then
         mkdir -p "$final_output_dir"

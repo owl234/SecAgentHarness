@@ -755,11 +755,20 @@ class WbAdapter:
 
     def _cell_identity(self) -> dict:
         """What makes two rollouts of one label the same rollout, beyond the harness."""
+        name = self.substrate.name
+        if name == "oc":
+            solver, ver_key, ver = config.SOLVER_MODEL_OC, "oc_ver", config.WB_OC_HARNESS_VER
+        elif name == "claude":
+            solver, ver_key, ver = (
+                config.SOLVER_MODEL_CLAUDE,
+                "claude_ver",
+                config.WB_CLAUDE_HARNESS_VER,
+            )
+        else:
+            solver, ver_key, ver = config.SOLVER_MODEL_CX, "cx_ver", config.WB_CX_HARNESS_VER
         return {
-            "solver": config.SOLVER_MODEL_OC
-            if self.substrate.name == "oc"
-            else config.SOLVER_MODEL_CX,
-            "oc_ver": config.WB_OC_HARNESS_VER,
+            "solver": solver,
+            ver_key: ver,
             "connection": config.WB_MODEL_CONNECTION,
         }
 
@@ -982,6 +991,8 @@ class WbAdapter:
         slugs = (
             [_harness_oc(fork=False), _harness_oc(fork=True)]
             if self.substrate.name == "oc"
+            else [_harness_claude()]
+            if self.substrate.name == "claude"
             else [_harness_cx()]
         )
         for slug in slugs:
