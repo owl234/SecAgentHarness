@@ -231,7 +231,7 @@ _STR: dict[str, tuple[str, str]] = {
     "setup.err_subset": ("--subset only applies to wb", "--subset 仅适用于 wb"),
     "setup.failed": ("setup failed: {e}", "安装失败：{e}"),
     "setup.note": ("Note: {m}", "提示：{m}"),
-    "setup.missing": ("Missing {b}; see README.md", "缺少 {b}；详见 README_zh.md"),
+    "setup.missing": ("Missing {b}; see README_en.md", "缺少 {b}；详见 README.md"),
     "setup.plan_done": ("Setup plan complete.", "方案预览完成（dry-run，未实际安装）。"),
     "setup.done": (
         "Installation complete. Run harness2-check before an experiment.",
@@ -336,8 +336,8 @@ _STR: dict[str, tuple[str, str]] = {
         "缺少 OpenCode 依赖；请运行 harness2-setup {b}",
     ),
     "preflight.binary_missing": (
-        "{b} missing; install pandoc and poppler-utils (README.md)",
-        "缺少 {b}；请安装 pandoc 与 poppler-utils（详见 README_zh.md）",
+        "{b} missing; install pandoc and poppler-utils (README_en.md)",
+        "缺少 {b}；请安装 pandoc 与 poppler-utils（详见 README.md）",
     ),
     # ---------- unified dispatcher ----------
     "cli.desc": (

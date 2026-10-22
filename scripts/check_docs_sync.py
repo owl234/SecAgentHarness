@@ -20,7 +20,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PAIRS = [
-    ("README.md", "README_zh.md"),
+    ("README_en.md", "README.md"),
     ("CONTRIBUTING.md", "CONTRIBUTING_zh.md"),
     ("docs/ARCHITECTURE.md", "docs/ARCHITECTURE_zh.md"),
     ("docs/BENCHMARKS.md", "docs/BENCHMARKS_zh.md"),
@@ -41,7 +41,7 @@ def check_pair(en_rel: str, zh_rel: str, max_drift: float) -> list[str]:
     en_base = pathlib.Path(en_rel).name
     zh_base = pathlib.Path(zh_rel).name
     # cross-links both ways
-    if zh_base not in en_t or "_zh" not in en_t:
+    if zh_base not in en_t:
         errs.append(f"{en_rel}: missing link to {zh_base}")
     if en_base not in zh_t:
         errs.append(f"{zh_rel}: missing link back to {en_base}")
