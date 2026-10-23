@@ -117,7 +117,7 @@ LiteLLM server, using the same Application Default Credentials and
 Install the optional dependencies and start the bridge in a separate session:
 
 ```bash
-uv pip install -e '.[render,bridge]'
+uv pip install -e './backend[render,bridge]'
 harness2-bridge                 # for WorkBuddy: harness2-bridge --host 0.0.0.0
 ```
 
@@ -143,7 +143,7 @@ endpoint provides OpenAI-compatible Chat Completions instead of Responses, run t
 built-in translation bridge:
 
 ```bash
-uv pip install -e '.[responses-bridge]'
+uv pip install -e './backend[responses-bridge]'
 harness2 responses-bridge --upstream https://your-endpoint.example.com/v1 --api-key "$HARNESS2_API_KEY"
 # for WorkBuddy containers: harness2 responses-bridge --host 0.0.0.0 ...
 ```

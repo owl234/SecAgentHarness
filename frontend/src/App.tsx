@@ -1,0 +1,325 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { NavTabType, RunItem, SystemStatus } from './types';
+import { fetchRuns, fetchStatus, fetchLogs } from './api';
+import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import { OverviewView } from './components/OverviewView';
+import { WorkbenchView } from './components/WorkbenchView';
+import { DashboardView } from './components/DashboardView';
+import { ComponentStudio } from './components/ComponentStudio';
+import { PipelineView } from './components/PipelineView';
+import { LibraryView } from './components/LibraryView';
+import { LiveConsole } from './components/LiveConsole';
+import { TerminologyGuideModal } from './components/TerminologyGuideModal';
+import { ExecutorConfigDrawer } from './components/ExecutorConfigDrawer';
+import { useUrlState } from './hooks/useUrlState';
+
+const MAX_LOG_LINES = 2000;
+
+export const App: React.FC = () => {
+  const {
+    currentTab,
+    setCurrentTab,
+    selectedRunId,
+    setSelectedRunId,
+    selectedTaskId,
+    setSelectedTaskId,
+    navigateRunAndTab,
+  } = useUrlState();
+
+  const [runs, setRuns] = useState<RunItem[]>([]);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [showConsole, setShowConsole] = useState(false);
+  const [showTerminologyModal, setShowTerminologyModal] = useState(false);
+  const [showExecutorDrawer, setShowExecutorDrawer] = useState(false);
+  const [executorRefreshVersion, setExecutorRefreshVersion] = useState(0);
+
+  // Theme state: 'dark' | 'light'
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('harness2_theme');
+    return saved === 'light' || saved === 'dark' ? saved : 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('harness2_theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // 1. Initial Data Fetch
+  const loadInitialData = useCallback(async () => {
+    try {
+      const [runsData, statusData, logsData] = await Promise.all([
+        fetchRuns(),
+        fetchStatus(),
+        fetchLogs(200),
+      ]);
+      setRuns(runsData);
+      setSystemStatus(statusData);
+      setLogs(logsData.slice(-MAX_LOG_LINES));
+      if (runsData.length > 0 && !selectedRunId) {
+        setSelectedRunId(runsData[0].id, true);
+      }
+    } catch (err) {
+      console.error('初始加载失败 (Initial load failed):', err);
+    }
+  }, [selectedRunId, setSelectedRunId]);
+
+  useEffect(() => {
+    loadInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Ensure valid selectedRunId when runs list updates
+  useEffect(() => {
+    if (runs.length === 0) return;
+    if (!selectedRunId || !runs.some((r) => r.id === selectedRunId)) {
+      setSelectedRunId(runs[0].id, true);
+    }
+  }, [runs, selectedRunId, setSelectedRunId]);
+
+  // 2. Setup Server-Sent Events (SSE) for real-time live streaming
+  useEffect(() => {
+    let es: EventSource | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const refreshRunsList = () => {
+      fetchRuns()
+        .then((updated) => setRuns(updated))
+        .catch(() => {});
+    };
+
+    const connectSSE = () => {
+      es = new EventSource('/api/events');
+
+      es.onopen = () => {
+        setConnected(true);
+      };
+
+      es.onerror = () => {
+        setConnected(false);
+        es?.close();
+        reconnectTimeout = setTimeout(connectSSE, 3000);
+      };
+
+      es.addEventListener('init', (e: MessageEvent) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (Array.isArray(payload.logs)) {
+            setLogs(payload.logs.slice(-MAX_LOG_LINES));
+          }
+        } catch {}
+      });
+
+      es.addEventListener('log', (e: MessageEvent) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.line) {
+            setLogs((prev) =>
+              prev.length >= MAX_LOG_LINES
+                ? [...prev.slice(-(MAX_LOG_LINES - 1)), payload.line]
+                : [...prev, payload.line]
+            );
+          }
+        } catch {}
+      });
+
+      es.addEventListener('start', (e: MessageEvent) => {
+        try {
+          const job = JSON.parse(e.data);
+          setSystemStatus((prev) =>
+            prev ? { ...prev, status: { ...prev.status, status: 'running', job } } : prev
+          );
+        } catch {}
+      });
+
+      es.addEventListener('finish', (e: MessageEvent) => {
+        try {
+          const job = JSON.parse(e.data);
+          setSystemStatus((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: {
+                    ...prev.status,
+                    status: job.exit_code === 0 ? 'completed' : 'failed',
+                    job,
+                  },
+                }
+              : prev
+          );
+          refreshRunsList();
+        } catch {}
+      });
+
+      es.addEventListener('terminate', () => {
+        setSystemStatus((prev) =>
+          prev ? { ...prev, status: { ...prev.status, status: 'terminated' } } : prev
+        );
+        refreshRunsList();
+      });
+
+      es.addEventListener('refresh', () => {
+        refreshRunsList();
+      });
+    };
+
+    connectSSE();
+
+    return () => {
+      es?.close();
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+    };
+  }, []);
+
+  const handleSelectRun = (runId: string, targetTab?: NavTabType) => {
+    navigateRunAndTab(runId, targetTab);
+  };
+
+  const handleExecutorChanged = () => {
+    setExecutorRefreshVersion((v) => v + 1);
+    loadInitialData();
+  };
+
+  const isRunning = systemStatus?.status.status === 'running';
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white transition-colors duration-200">
+      {/* Slim Top Bar (brand + tools; module nav lives in Sidebar) */}
+      <Navbar
+        systemStatus={systemStatus}
+        connected={connected}
+        onToggleConsole={() => setShowConsole(!showConsole)}
+        showConsole={showConsole}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onOpenTerminology={() => setShowTerminologyModal(true)}
+        onOpenExecutorConfig={() => setShowExecutorDrawer(true)}
+      />
+
+      {/* Body: left module nav + main content */}
+      <div className="flex flex-1 min-h-0">
+        <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
+
+        {/* Main Content Area */}
+        <main
+          className={`flex-1 min-w-0 ${
+            currentTab === 'overview'
+              ? 'max-w-[1720px] px-3 sm:px-6 py-4'
+              : 'max-w-7xl px-4 sm:px-6 lg:px-8 py-8'
+          } w-full mx-auto`}
+        >
+          {currentTab === 'overview' && (
+            <OverviewView
+              runs={runs}
+              selectedRunId={selectedRunId}
+              onSelectRunId={(id) => setSelectedRunId(id)}
+              systemStatus={systemStatus}
+              onNavigateToTab={(tab, runId, taskId) => {
+                navigateRunAndTab(runId || selectedRunId, tab, taskId);
+              }}
+              onOpenConsole={() => setShowConsole(true)}
+            />
+          )}
+
+          {currentTab === 'workbench' && (
+            <WorkbenchView
+              runs={runs}
+              selectedRunId={selectedRunId}
+              systemStatus={systemStatus}
+              logs={logs}
+              onSelectRun={handleSelectRun}
+              onNavigateToDashboard={(runId) => {
+                navigateRunAndTab(runId || selectedRunId, 'dashboard');
+              }}
+              onOpenConsole={() => setShowConsole(true)}
+              onNavigateToStudio={() => setCurrentTab('studio')}
+              onOpenExecutorConfig={() => setShowExecutorDrawer(true)}
+              onOpenTerminology={() => setShowTerminologyModal(true)}
+              executorRefreshVersion={executorRefreshVersion}
+            />
+          )}
+
+          {(currentTab === 'dashboard' || currentTab === 'benchmark') && (
+            <DashboardView
+              runs={runs}
+              selectedRunId={selectedRunId}
+              onSelectRunId={(id) => setSelectedRunId(id)}
+              selectedTaskId={selectedTaskId}
+              onSelectTaskId={setSelectedTaskId}
+              onNavigateToPipeline={(runId, taskId) => {
+                navigateRunAndTab(runId, 'pipeline', taskId);
+              }}
+              onOpenConsole={() => setShowConsole(true)}
+            />
+          )}
+
+          {currentTab === 'studio' && (
+            <ComponentStudio
+              runs={runs}
+              onNavigateToRun={(runId) => {
+                navigateRunAndTab(runId, 'pipeline');
+              }}
+            />
+          )}
+
+          {currentTab === 'pipeline' && (
+            <PipelineView
+              runs={runs}
+              selectedRunId={selectedRunId}
+              onSelectRunId={(id) => setSelectedRunId(id)}
+              selectedTaskId={selectedTaskId}
+              onSelectTaskId={setSelectedTaskId}
+            />
+          )}
+
+          {currentTab === 'library' && (
+            <LibraryView
+              runs={runs}
+              selectedRunId={selectedRunId}
+              onSelectRunId={(id) => setSelectedRunId(id)}
+              selectedTaskId={selectedTaskId}
+              onSelectTaskId={setSelectedTaskId}
+              onNavigateToStudio={() => setCurrentTab('studio')}
+            />
+          )}
+        </main>
+      </div>
+
+      {/* Floating Live Console */}
+      <LiveConsole
+        logs={logs}
+        isOpen={showConsole}
+        onClose={() => setShowConsole(false)}
+        isRunning={isRunning}
+        onClear={() => setLogs([])}
+      />
+
+      {/* Terminology Guide Modal */}
+      <TerminologyGuideModal
+        isOpen={showTerminologyModal}
+        onClose={() => setShowTerminologyModal(false)}
+      />
+
+      {/* Executor and Model Config Drawer */}
+      <ExecutorConfigDrawer
+        isOpen={showExecutorDrawer}
+        onClose={() => setShowExecutorDrawer(false)}
+        onExecutorChanged={handleExecutorChanged}
+      />
+    </div>
+  );
+};
+
+export default App;

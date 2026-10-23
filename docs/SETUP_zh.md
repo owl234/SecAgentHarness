@@ -97,7 +97,7 @@ Codex 执行器连接到 Responses API 端点。对于 Vertex AI 上的 Gemini�
 在单独的终端会话中安装可选依赖并启动 Bridge：
 
 ```bash
-uv pip install -e '.[render,bridge]'
+uv pip install -e './backend[render,bridge]'
 harness2-bridge                 # WorkBuddy 场景需使用：harness2-bridge --host 0.0.0.0
 ```
 
@@ -115,7 +115,7 @@ WorkBuddy 会在 Docker 容器内部执行 Codex，因此 Bridge 必须监听 `-
 如需使用其他 Responses API 端点，可直接设置 `HARNESS2_CODEX_BASE_URL`、`HARNESS2_CODEX_API_KEY` 以及 `HARNESS2_CODEX_MODEL`。若上游为通用 OpenAI Chat Completions 端点（未提供原生 `/v1/responses`），可启动内置 Responses 转换桥：
 
 ```bash
-uv pip install -e '.[responses-bridge]'
+uv pip install -e './backend[responses-bridge]'
 harness2 responses-bridge --upstream https://your-endpoint.example.com/v1 --api-key "$HARNESS2_API_KEY"
 # WorkBuddy 容器场景需指定 --host 0.0.0.0 ...
 ```

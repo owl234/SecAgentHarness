@@ -17,7 +17,7 @@
 
 > [!NOTE]
 > **上游开源基石与致谢声明**：
-> SecAgentHarness² (SecAgentHarness2) 的核心递归智能体运行套件引擎基于 [Google Research 的 Harness² 开源项目](https://github.com/google-research/harness2)（[论文链接](https://arxiv.org/abs/2610.14224)）。本项目在其创新的“提议–探测–组合（Propose–Probe–Compose）”递归运行套件架构基础上深度扩展，面向网络安全攻防、渗透测试、漏洞挖掘与防御分析等多元化网安基准场景以及 8 大组件体系提供完整的评测与能力支撑。
+> SecAgentHarness² (SecAgentHarness2) 的核心递归智能体运行套件引擎基于 [Google Research 的 Harness² 开源项目](https://github.com/google-research/harness2)（[论文链接](https://arxiv.org/abs/2610.14224)）。本项目在其创新的“提议–探测–组合（Propose–Probe–Compose）”递归运行套件架构基础上深度扩展，面向网络安全攻防、渗透测试、漏洞挖掘与防御分析等多元化网安基准场景以及 9 大组件体系提供完整的评测与能力支撑。
 
 <p align="center">
   <a href="docs/BENCHMARKS_zh.md#jobbench">
@@ -27,7 +27,7 @@
 
 **智能体运行套件（Harness）** 是围绕基础模型构建的一整套使之能够作为智能体（Agent）行动的系统组件，包括提示词（Prompts）、工具（Tools）、记忆（Memory）、技能（Skills）、编排（Orchestration）等。**运行套件优化（Harnessing）** 则是优化这套系统的过程。
 
-**SecAgentHarness²**（仓库代码：`SecAgentHarness2`）是一个将 Google Research 的 Harness² 递归套件优化范式迁移应用于**网络安全领域**的评测与优化框架。面向开放网络安全攻防与实战场景，它支持在多领域网安基准任务与 8 大组件体系下，对网络安全智能体进行全流程能力评估与运行套件递归提炼，在保持模型权重冻结不变的前提下串联了两个层次的递归循环：
+**SecAgentHarness²**（仓库代码：`SecAgentHarness2`）是一个将 Google Research 的 Harness² 递归套件优化范式迁移应用于**网络安全领域**的评测与优化框架。面向开放网络安全攻防与实战场景，它支持在多领域网安基准任务与 9 大组件体系下，对网络安全智能体进行全流程能力评估与运行套件递归提炼，在保持模型权重冻结不变的前提下串联了两个层次的递归循环：
 
 * **任务级递归（Task-level recursion）**：针对当前任务，通过对比式的 **提议–探测–组合（Propose–Probe–Compose）** 步骤优化执行套件——提议修改建议（Propose edits）、在同一任务上探测其执行效果（Probe effects），并在没有任何真实标注（ground-truth）反馈的情况下，基于不同执行之间的行为对比差异组合出精炼后的运行套件（Compose refined harness）。
 * **套件级递归（Harnessing-level recursion）**：利用各任务中采纳的运行套件与证据支持的经验总结，动态更新持久化的*优化套件（Improvement harness）*，以持续指导后续任务的优化提炼。
@@ -67,23 +67,25 @@ https://github.com/user-attachments/assets/76b10548-b14b-4c8f-9aa5-a93662df4d56
 <a id="web-console"></a>
 ## 可视化 Web 控制台
 
-Harness² 提供开箱即用的交互式可视化 Web 控制台，支持直观查看 Propose–Probe–Compose 递归流水线、8 大套件组件 Diff 比对、Agent 执行轨迹以及跨任务经验库累积：
+Harness² 提供开箱即用的交互式可视化 Web 控制台，支持直观查看 Propose–Probe–Compose 递归流水线、9 大套件组件 Diff 比对、Agent 执行轨迹以及跨任务经验库累积：
 
 ```bash
-uv pip install -e '.[ui]'
+uv pip install -e './backend[ui]'
+cd frontend && npm install && npm run build && cd ..
 harness2-ui
 ```
 
-启动后会自动在浏览器中打开控制台（默认 `http://127.0.0.1:8520`），涵盖四大核心模块：
+启动后会自动在浏览器中打开控制台（默认 `http://127.0.0.1:8520`），涵盖五大核心模块：
+- **流程展示大屏 (Flow Showcase)**：高科技沉浸式全景展示大屏，内置「标准架构沙盘」与「实机运行遥测」双模切换，直观呈现双层递归流水线全阶段、9 大可编辑组件矩阵透视、三轴正交分离底座，并支持一键自动轮播演进与全屏展厅沉浸模式。
 - **运行工作台 (Workbench)**：一键启动 Demo 或基准测试 Sweep，通过 SSE 实时流式监控终端日志与阶段状态。
 - **递归流水线透视 (Recursive Pipeline)**：交互式 DAG 流程拓扑图（Base -> INV/DOM -> AGG/SEQ），可点击查看每个节点的提议意图 (notes)、执行轨迹 (trajectory)、输出物 (deliverables) 与组件行级差异对比 (Harness Diff)。
-- **套件与经验库 (Harness & Library)**：8 大套件组件状态查看器与跨任务套件级递归累积的经验池 (Cue / Lesson / Evidence)。
+- **套件与经验库 (Harness & Library)**：9 大套件组件状态查看器与跨任务套件级递归累积的经验池 (Cue / Lesson / Evidence)。
 - **评测分析大盘 (Benchmark Metrics)**：优化前后各项基准测试得分、通过率 (Pass Rate) 与性能增益对比。
 
 <a id="harness-components"></a>
 ## 运行套件组件
 
-Harness² 围绕模型开放了八个可编辑组件：**系统提示词（system prompt）、安全护栏（guardrails）、记忆（memory）、工具指引（tool guidance）、子智能体（subagents）、技能（skills）、脚本（scripts）以及插件（plugins）**。它们分别控制着上下文构建、工具接口定义、工作委托编排以及工具循环内部的行为表现。
+Harness² 围绕模型开放了九个可编辑组件：**系统提示词（system prompt）、安全护栏（guardrails）、记忆（memory）、工具指引（tool guidance）、子智能体（subagents）、技能（skills）、脚本（scripts）、插件（plugins）以及 MCP 协议服务（MCP servers）**。它们分别控制着上下文构建、工具与有状态协议接口定义、工作委托编排以及工具循环内部的行为表现。
 
 <p align="center">
   <a href="assets/components.png">
@@ -100,7 +102,7 @@ Harness² 围绕模型开放了八个可编辑组件：**系统提示词（syste
 ```bash
 uv venv --python 3.12 .venv
 source .venv/bin/activate
-uv pip install -e '.[render]'
+uv pip install -e './backend[render]'
 harness2-demo --output runs/demo --k 2
 ```
 

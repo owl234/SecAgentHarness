@@ -18,7 +18,7 @@ This guide provides three modernized, professionally styled Mermaid architectura
 Harness² strictly enforces a **Three-Axis Orthogonal Separation**:
 * **Method Axis**: Recursion schedules, prompts, evidence packaging, unsupervised blind selection, and cross-task library.
 * **Substrate Axis**: Agent execution framework (e.g. OpenCode, Codex), completely free of benchmark logic.
-* **Benchmark Axis**: Static task specification ([`BenchSpec`](../harness2/core/spec.py)) and dataset adapters. Grader rubrics and ground truth are strictly isolated from the improver.
+* **Benchmark Axis**: Static task specification ([`BenchSpec`](../backend/harness2/core/spec.py)) and dataset adapters. Grader rubrics and ground truth are strictly isolated from the improver.
 
 ### 1.1 System Architecture & Code Mapping Diagram
 
@@ -109,11 +109,11 @@ flowchart TD
 
 | Layer | Key Source File | Responsibility |
 | :--- | :--- | :--- |
-| **Entry & UI** | [`harness2/cli/run_sweep.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/cli/run_sweep.py)<br>[`harness2/ui/server.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/ui/server.py) | CLI argument parsing, SSE event broadcasting, and the interactive web workbench. |
-| **Scheduling** | [`harness2/core/schedule.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/schedule.py) | Task stream sequencing, file-locked state merging, and fingerprint-validated checkpoint resumption. |
-| **Recursion** | [`harness2/core/recursion.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/recursion.py) | Schedules $4k$ candidate rollouts and $3k$ improver sessions in parallel (`agg`) or sequential (`seq`) mode. |
-| **Substrates** | [`harness2/substrate/base.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/substrate/base.py) | Protocol contract for materializing and staging harness trees onto underlying agent runners. |
-| **Benchmarks** | [`harness2/core/spec.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/spec.py) | Declares task constraints and prompt templates without exposing measurement rubrics. |
+| **Entry & UI** | [`harness2/cli/run_sweep.py`](../backend/harness2/cli/run_sweep.py)<br>[`harness2/ui/server.py`](../backend/harness2/ui/server.py) | CLI argument parsing, SSE event broadcasting, and the interactive web workbench. |
+| **Scheduling** | [`harness2/core/schedule.py`](../backend/harness2/core/schedule.py) | Task stream sequencing, file-locked state merging, and fingerprint-validated checkpoint resumption. |
+| **Recursion** | [`harness2/core/recursion.py`](../backend/harness2/core/recursion.py) | Schedules $4k$ candidate rollouts and $3k$ improver sessions in parallel (`agg`) or sequential (`seq`) mode. |
+| **Substrates** | [`harness2/substrate/base.py`](../backend/harness2/substrate/base.py) | Protocol contract for materializing and staging harness trees onto underlying agent runners. |
+| **Benchmarks** | [`harness2/core/spec.py`](../backend/harness2/core/spec.py) | Declares task constraints and prompt templates without exposing measurement rubrics. |
 
 ---
 
@@ -222,21 +222,21 @@ flowchart TD
 ### 2.2 Deep Dive into Key Mechanisms
 
 1. **Contrastive Evidence Packaging**:
-   - Built by [`context.build()`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/context.py#L55). The proposer inspects not just a single trace, but behavioral contrasts between executions (diffs, tool call errors, and deliverable quality).
+   - Built by [`context.build()`](../backend/harness2/core/context.py#L55). The proposer inspects not just a single trace, but behavioral contrasts between executions (diffs, tool call errors, and deliverable quality).
    - `assert_tree_has_no_grader_verdicts()` enforces absolute isolation against test leakage.
 2. **Parallel (`agg`) vs. Sequential (`seq`)**:
    - **`run_parallel`**: Maximizes exploratory diversity. Samples $k$ INV and $k$ DOM proposals in parallel ($2k$ total), followed by $k$ independent compositions (`agg1` through `aggk`).
    - **`run_sequential`**: Focuses on deep iterative refinement. Each round $t$ refines $c_{t-1}$ into $c_t$ using candidate feedback from that round.
 3. **Unsupervised Blind Selection**:
-   - [`assign_ids()`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/selection.py#L71) computes a SHA-1 seeded shuffle to randomize candidate names into `A`, `B`, `C`..., eliminating order and naming bias.
+   - [`assign_ids()`](../backend/harness2/core/selection.py#L71) computes a SHA-1 seeded shuffle to randomize candidate names into `A`, `B`, `C`..., eliminating order and naming bias.
    - The selection prompt judges deliverables without ground-truth answers.
 
 ---
 
-<a id="3-the-8-editable-harness-components"></a>
-## 3. The 8 Editable Harness Components
+<a id="3-the-9-editable-harness-components"></a>
+## 3. The 9 Editable Harness Components
 
-A Harness wraps an agent model. Harness² decomposes this editable space into **eight components (c1 through c8)** grouped into 4 runtime roles:
+A Harness wraps an agent model. Harness² decomposes this editable space into **nine components (c1 through c9)** grouped into 4 runtime roles:
 
 ```mermaid
 flowchart LR
@@ -265,9 +265,10 @@ flowchart LR
 
     subgraph G_Output["2. Tool Interface & Delegation"]
         direction TB
-        subgraph Sub_Tools["Tool Interface"]
+        subgraph Sub_Tools["Tool & Protocol Interface"]
             c4["c4: Tool Guidance<br>API interaction schemas"]:::iface
             c7["c7: Scripts<br>Python standalone helper scripts"]:::iface
+            c9["c9: MCP Servers<br>Stateful protocol servers & arsenals"]:::iface
         end
         subgraph Sub_Deleg["Delegation"]
             c5["c5: Subagents<br>Specialized subagent configurations"]:::deleg
@@ -300,9 +301,10 @@ flowchart LR
 | **c6** | **Skills** | Context | `skills/<name>/SKILL.md` | Frontmatter required; can include local `scripts/` |
 | **c7** | **Scripts** | Interface | `scripts/<name>.py` | Valid standalone Python scripts; reserved names forbidden |
 | **c8** | **Plugins** | Middleware | `plugins/<name>.ts` / hooks | Intercepts runtime events (e.g. `pre_tool_call`) |
+| **c9** | **MCP Servers** | Protocol & Tools | `mcp/servers.json` + `mcp/<name>.py` | Cross-substrate native tool schemas & stateful servers; cap & syntax checked |
 
 > [!IMPORTANT]
-> **Reserved Scripts Protection**: [`RESERVED_SCRIPTS`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/tree.py#L34) (such as `read_doc.py`, `pack.py`, `unpack.py`) belong to benchmark test infrastructure and cannot be modified or deleted by proposals.
+> **Reserved Scripts Protection**: [`RESERVED_SCRIPTS`](../backend/harness2/core/tree.py#L34) (such as `read_doc.py`, `pack.py`, `unpack.py`) belong to benchmark test infrastructure and cannot be modified or deleted by proposals.
 
 ---
 
@@ -313,15 +315,15 @@ flowchart LR
 
 | Category | File Path | Key Symbols | Responsibility |
 | :--- | :--- | :--- | :--- |
-| **Recursion** | [`harness2/core/recursion.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/recursion.py) | [`run_parallel`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/recursion.py#L343)<br>[`run_sequential`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/recursion.py#L452)<br>`_run_stage` | Master orchestrator of the Propose-Probe-Compose task-level recursion. |
-| **Selection** | [`harness2/core/selection.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/selection.py) | [`Selection`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/selection.py#L47)<br>[`assign_ids`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/selection.py#L71)<br>`selection_pool` | Unsupervised blind evaluation, position-debiasing, and lesson reflection. |
-| **Harness Tree**| [`harness2/core/tree.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/tree.py) | [`SurfaceSpec`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/tree.py#L41)<br>`validate`<br>`diff_summary` | White-list surface validation, structural diffing, and autotriggering. |
-| **Library** | [`harness2/core/library.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/library.py) | [`Library`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/library.py#L58)<br>`add`<br>`rebuild_index` | Domain knowledge store under `runs/<tag>/<mode>/<domain>/`. |
-| **Context** | [`harness2/core/context.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/context.py) | [`build`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/context.py#L55)<br>`mission` | Packs executions, diffs, and historical experiences into evidence bundles. |
-| **Scheduling** | [`harness2/core/schedule.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/schedule.py) | [`Namespace`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/schedule.py#L85)<br>`run_sweep`<br>`_resume` | Manages directory namespaces, concurrency pools, and resume locks. |
-| **Substrate** | [`harness2/substrate/base.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/substrate/base.py) | [`Substrate`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/substrate/base.py#L48)<br>`materialise` | Common interface for staging and launching agent harnesses. |
-| **Prompts** | [`harness2/core/prompts.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/prompts.py) | `propose`<br>`aggregate`<br>`compose_round` | Templated prompts for proposers, composers, and selectors. |
-| **Ledger** | [`harness2/core/ledger.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/ledger.py) | [`Ledger`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/ledger.py#L32) | Tracks financial expenditures ($ USD), session calls, and rollout events. |
+| **Recursion** | [`harness2/core/recursion.py`](../backend/harness2/core/recursion.py) | [`run_parallel`](../backend/harness2/core/recursion.py#L343)<br>[`run_sequential`](../backend/harness2/core/recursion.py#L452)<br>`_run_stage` | Master orchestrator of the Propose-Probe-Compose task-level recursion. |
+| **Selection** | [`harness2/core/selection.py`](../backend/harness2/core/selection.py) | [`Selection`](../backend/harness2/core/selection.py#L47)<br>[`assign_ids`](../backend/harness2/core/selection.py#L71)<br>`selection_pool` | Unsupervised blind evaluation, position-debiasing, and lesson reflection. |
+| **Harness Tree**| [`harness2/core/tree.py`](../backend/harness2/core/tree.py) | [`SurfaceSpec`](../backend/harness2/core/tree.py#L41)<br>`validate`<br>`diff_summary` | White-list surface validation, structural diffing, and autotriggering. |
+| **Library** | [`harness2/core/library.py`](../backend/harness2/core/library.py) | [`Library`](../backend/harness2/core/library.py#L58)<br>`add`<br>`rebuild_index` | Domain knowledge store under `runs/<tag>/<mode>/<domain>/`. |
+| **Context** | [`harness2/core/context.py`](../backend/harness2/core/context.py) | [`build`](../backend/harness2/core/context.py#L55)<br>`mission` | Packs executions, diffs, and historical experiences into evidence bundles. |
+| **Scheduling** | [`harness2/core/schedule.py`](../backend/harness2/core/schedule.py) | [`Namespace`](../backend/harness2/core/schedule.py#L85)<br>`run_sweep`<br>`_resume` | Manages directory namespaces, concurrency pools, and resume locks. |
+| **Substrate** | [`harness2/substrate/base.py`](../backend/harness2/substrate/base.py) | [`Substrate`](../backend/harness2/substrate/base.py#L48)<br>`materialise` | Common interface for staging and launching agent harnesses. |
+| **Prompts** | [`harness2/core/prompts.py`](../backend/harness2/core/prompts.py) | `propose`<br>`aggregate`<br>`compose_round` | Templated prompts for proposers, composers, and selectors. |
+| **Ledger** | [`harness2/core/ledger.py`](../backend/harness2/core/ledger.py) | [`Ledger`](../backend/harness2/core/ledger.py#L32) | Tracks financial expenditures ($ USD), session calls, and rollout events. |
 
 ### 4.2 Engineering Invariants
 

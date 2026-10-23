@@ -17,7 +17,7 @@
 
 > [!NOTE]
 > **Upstream & Core Origin Notice**:
-> SecAgentHarness² (SecAgentHarness2) is a specialized cybersecurity extension and benchmark evaluation suite originating from and built upon [Google Research's Harness²](https://github.com/google-research/harness2) ([Paper](https://arxiv.org/abs/2610.14224)). The core recursive agent harnessing engine and contrastive Propose–Probe–Compose pipeline are derived from the upstream project, extending its capabilities toward multi-domain cybersecurity benchmarks, red/blue teaming evaluations, and 8-component agent harnesses.
+> SecAgentHarness² (SecAgentHarness2) is a specialized cybersecurity extension and benchmark evaluation suite originating from and built upon [Google Research's Harness²](https://github.com/google-research/harness2) ([Paper](https://arxiv.org/abs/2610.14224)). The core recursive agent harnessing engine and contrastive Propose–Probe–Compose pipeline are derived from the upstream project, extending its capabilities toward multi-domain cybersecurity benchmarks, red/blue teaming evaluations, and 9-component agent harnesses.
 
 <p align="center">
   <a href="docs/BENCHMARKS.md#jobbench">
@@ -29,7 +29,7 @@ A **harness** is the system around a model that enables it to act as an agent:
 prompts, tools, memory, skills, orchestration, and more. **Harnessing** is the
 process of optimizing that system.
 
-**SecAgentHarness²** (repository: `SecAgentHarness2`) applies recursive agent harnessing ([Google Research's Harness²](https://github.com/google-research/harness2)) to the cybersecurity domain. It provides a plug-and-play framework for evaluating, optimizing, and fortifying security agents across multi-domain cybersecurity benchmarks and 8-component modular architectures in an open world, connecting two levels of recursion while keeping model weights fixed:
+**SecAgentHarness²** (repository: `SecAgentHarness2`) applies recursive agent harnessing ([Google Research's Harness²](https://github.com/google-research/harness2)) to the cybersecurity domain. It provides a plug-and-play framework for evaluating, optimizing, and fortifying security agents across multi-domain cybersecurity benchmarks and 9-component modular architectures in an open world, connecting two levels of recursion while keeping model weights fixed:
 
 * **Task-level recursion** refines the execution harness for the current task
   through a contrastive **Propose–Probe–Compose** step: propose edits, probe
@@ -80,22 +80,24 @@ https://github.com/user-attachments/assets/76b10548-b14b-4c8f-9aa5-a93662df4d56
 Harness² includes an interactive visual web console to inspect the Propose–Probe–Compose recursion pipeline, component-level diffs, agent execution trajectories, and continual learning experience libraries:
 
 ```bash
-uv pip install -e '.[ui]'
+uv pip install -e './backend[ui]'
+cd frontend && npm install && npm run build && cd ..
 harness2-ui
 ```
 
 The console opens automatically at `http://127.0.0.1:8520`, featuring:
+- **Flow Showcase (Overview HUD)**: High-tech immersive architecture showcase with dual-mode switching (Pedagogical Sandbox vs Live Run Telemetry), interactive 5-stage dual-recursion map, 9-component matrix inspector, three-axis foundation, and auto-tour walkthroughs.
 - **Workbench**: Launch local demos or benchmark sweeps, with live streaming logs via Server-Sent Events (SSE).
 - **Recursive Pipeline Explorer**: Interactive DAG of the Propose-Probe-Compose tree (Base -> INV/DOM -> AGG/SEQ), inspecting Proposer intentions, trajectories, deliverables, and harness component diffs.
-- **Harness & Library View**: Component browser for all 8 editable components and cross-task continual learning experience timelines.
+- **Harness & Library View**: Component browser for all 9 editable components and cross-task continual learning experience timelines.
 - **Benchmark Metrics**: Quantitative evaluation report, pass rates, and performance gain over baseline.
 
 ## Harness components
 
-Harness² exposes eight editable components around the model: **system prompt,
-guardrails, memory, tool guidance, subagents, skills, scripts, and plugins**.
-They control context construction, the tool interface, delegation, and behavior
-inside the tool loop.
+Harness² exposes nine editable components around the model: **system prompt,
+guardrails, memory, tool guidance, subagents, skills, scripts, plugins, and MCP
+servers**. They control context construction, the tool and stateful protocol
+interface, delegation, and behavior inside the tool loop.
 
 <p align="center">
   <a href="assets/components.png">
@@ -111,7 +113,7 @@ From the repository root:
 ```bash
 uv venv --python 3.12 .venv
 source .venv/bin/activate
-uv pip install -e '.[render]'
+uv pip install -e './backend[render]'
 harness2-demo --output runs/demo --k 2
 ```
 

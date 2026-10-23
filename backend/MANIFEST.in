@@ -1,0 +1,3 @@
+recursive-include harness2 *.py
+recursive-include tests *.py
+global-exclude __pycache__ *.py[cod] *.log

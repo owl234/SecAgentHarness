@@ -7,7 +7,7 @@ Harness²（*Recursive Agent Harnessing for an Open World*）是一个在**模�
 本文档包含三张遵循现代专业科技风配色的 Mermaid 拓扑图与流程图，并深度关联代码库中的核心模块与源码文件：
 1. [三轴解耦与系统架构拓扑图](#一系统分层与三轴解耦架构)
 2. [双层递归执行生命周期图 (Task-level & Harnessing-level)](#二双层递归执行生命周期)
-3. [8 大可编辑 Harness 组件运行时拓扑图](#三8-大可编辑-harness-组件体系)
+3. [9 大可编辑 Harness 组件运行时拓扑图](#三9-大可编辑-harness-组件体系)
 4. [核心源文件速查与设计契约](#四核心源码文件索引与设计契约)
 
 ---
@@ -18,7 +18,7 @@ Harness²（*Recursive Agent Harnessing for an Open World*）是一个在**模�
 Harness² 严格遵循**三轴正交分离（Three Orthogonal Axes）**设计契约：
 * **Method（优化方法轴）**：递归调度、对比证据打包、无监督盲选决策与跨任务经验库。
 * **Substrate（执行载体轴）**：Agent 运行环境（如 OpenCode、Codex），与评测集逻辑完全解耦。
-* **Benchmark（基准评测轴）**：任务规格（[`BenchSpec`](../harness2/core/spec.py)）与数据集适配器，严禁泄露评测标准给优化器。
+* **Benchmark（基准评测轴）**：任务规格（[`BenchSpec`](../backend/harness2/core/spec.py)）与数据集适配器，严禁泄露评测标准给优化器。
 
 ### 1.1 系统架构与代码映射拓扑图
 
@@ -53,7 +53,7 @@ flowchart TD
             direction LR
             Context["📦 证据包生成<br>core/context.py"]:::core
             Proposer["💡 提议改写器<br>core/proposer.py"]:::core
-            Surface["🛡️ 8大组件规范<br>core/tree.py"]:::core
+            Surface["🛡️ 9大组件规范<br>core/tree.py"]:::core
         end
         Recursion --> Context
         Context --> Proposer
@@ -109,11 +109,11 @@ flowchart TD
 
 | 层次分区 | 关键源文件 | 核心职责 |
 | :--- | :--- | :--- |
-| **入口控制** | [`harness2/cli/run_sweep.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/cli/run_sweep.py)<br>[`harness2/ui/server.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/ui/server.py) | CLI 批量扫参启动、SSE 实时事件流推送与可视化 Web 控制台服务 |
-| **调度中枢** | [`harness2/core/schedule.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/schedule.py) | 领域流序调度、文件锁原子状态写入与带指纹校验的断点续跑（Resume） |
-| **递归核心** | [`harness2/core/recursion.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/recursion.py) | 组织 Task-level 递归（$4k$ 次 Rollout 与 $3k$ 次提议阶段）及并行/串行分支 |
-| **载体隔离** | [`harness2/substrate/base.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/substrate/base.py) | 定义 `Substrate` 协议，将组件树安全物化（Materialize）到执行沙箱环境 |
-| **基准隔离** | [`harness2/core/spec.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/spec.py) | 声明任务属性与无监督提示词模板，确保评测细则与 Ground Truth 绝对物理隔离 |
+| **入口控制** | [`harness2/cli/run_sweep.py`](../backend/harness2/cli/run_sweep.py)<br>[`harness2/ui/server.py`](../backend/harness2/ui/server.py) | CLI 批量扫参启动、SSE 实时事件流推送与可视化 Web 控制台服务 |
+| **调度中枢** | [`harness2/core/schedule.py`](../backend/harness2/core/schedule.py) | 领域流序调度、文件锁原子状态写入与带指纹校验的断点续跑（Resume） |
+| **递归核心** | [`harness2/core/recursion.py`](../backend/harness2/core/recursion.py) | 组织 Task-level 递归（$4k$ 次 Rollout 与 $3k$ 次提议阶段）及并行/串行分支 |
+| **载体隔离** | [`harness2/substrate/base.py`](../backend/harness2/substrate/base.py) | 定义 `Substrate` 协议，将组件树安全物化（Materialize）到执行沙箱环境 |
+| **基准隔离** | [`harness2/core/spec.py`](../backend/harness2/core/spec.py) | 声明任务属性与无监督提示词模板，确保评测细则与 Ground Truth 绝对物理隔离 |
 
 ---
 
@@ -222,21 +222,21 @@ flowchart TD
 ### 2.2 关键执行环节机制解析
 
 1. **对比证据打包（Contrastive Evidence）**：
-   - 由 [`context.build()`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/context.py#L55) 统一组装。优化器不仅能看到基线或上一轮的运行轨迹，还能横向对比多个探针之间的代码修改和输出差异。
+   - 由 [`context.build()`](../backend/harness2/core/context.py#L55) 统一组装。优化器不仅能看到基线或上一轮的运行轨迹，还能横向对比多个探针之间的代码修改和输出差异。
    - `assert_tree_has_no_grader_verdicts()` 严密扫描组件树，防止评分标准或判题结果渗入优化环境。
 2. **并行模式 (`agg`) 与串行模式 (`seq`)**：
    - **`run_parallel`**：侧重广度探索。并发生成 $k$ 个 INV 和 $k$ 个 DOM（共 $2k$ 个候选），再由 $k$ 个独立的 Aggregator 合并出最终候选 `agg1` 到 `aggk`。
    - **`run_sequential`**：侧重深度演进。以 $c_{t-1}$ 为基准展开第 $t$ 轮优化，经提议、探针试跑后融合成 $c_t$，逐轮迭代直到 $c_k$。
 3. **无监督盲选（Unsupervised Blind Selection）**：
-   - 模型评估极易受到候选顺序（Position Bias）与标签命名的先验干扰。[`assign_ids()`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/selection.py#L71) 使用确定性哈希种子将标签随机映射为 `A`, `B`, `C` 等匿名代号。
+   - 模型评估极易受到候选顺序（Position Bias）与标签命名的先验干扰。[`assign_ids()`](../backend/harness2/core/selection.py#L71) 使用确定性哈希种子将标签随机映射为 `A`, `B`, `C` 等匿名代号。
    - 裁决完全基于交付物内容本身，不需要基准测试的标注答案。
 
 ---
 
-<a id="三8-大可编辑-harness-组件体系"></a>
-## 三、8 大可编辑 Harness 组件体系
+<a id="三9-大可编辑-harness-组件体系"></a>
+## 三、9 大可编辑 Harness 组件体系
 
-在 Harness² 中，Harness 是包围在模型周围的执行环境。框架抽象出 **8 大可编辑组件（c1 ~ c8）**，分为 4 种运行时角色：
+在 Harness² 中，Harness 是包围在模型周围的执行环境。框架抽象出 **9 大可编辑组件（c1 ~ c9）**，分为 4 种运行时角色：
 
 ```mermaid
 flowchart LR
@@ -265,9 +265,10 @@ flowchart LR
 
     subgraph G_Output["2. 工具交互与任务委派 (Execution & Delegation)"]
         direction TB
-        subgraph Sub_Tools["工具接口 (Tool Interface)"]
+        subgraph Sub_Tools["工具与协议接口 (Tool & MCP Interface)"]
             c4["c4: Tool Guidance<br>API 调用协议与约束"]:::iface
             c7["c7: Scripts<br>Python 辅助执行脚本"]:::iface
+            c9["c9: MCP Servers<br>有状态协议服务与网安武器库"]:::iface
         end
         subgraph Sub_Deleg["委派编排 (Delegation)"]
             c5["c5: Subagents<br>独立子代理设定"]:::deleg
@@ -300,9 +301,10 @@ flowchart LR
 | **c6** | **Skills** | 上下文构建 | `skills/<name>/SKILL.md` | 必须包含规范 Frontmatter；支持自带 `scripts/` |
 | **c7** | **Scripts** | 工具接口 | `scripts/<name>.py` | 必须为有效 Python 代码；预留脚本不可篡改 |
 | **c8** | **Plugins** | 中间件 | `plugins/<name>.ts` / hooks 文件 | 钩子事件（如 `pre_tool_call`）拦截控制 |
+| **c9** | **MCP Servers** | 协议与有状态工具 | `mcp/servers.json` + `mcp/<name>.py` | 跨基座原生 Tool Schema 注册与有状态服务；受数量与语法校验约束 |
 
 > [!IMPORTANT]
-> **保留脚本防篡改**：[`RESERVED_SCRIPTS`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/tree.py#L34)（如 `read_doc.py`、`pack.py`、`unpack.py`）属于基准基础设施，Proposer 提议修改时会被 [`validate`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/tree.py#L122) 严格拦截。
+> **保留脚本防篡改**：[`RESERVED_SCRIPTS`](../backend/harness2/core/tree.py#L34)（如 `read_doc.py`、`pack.py`、`unpack.py`）属于基准基础设施，Proposer 提议修改时会被 [`validate`](../backend/harness2/core/tree.py#L122) 严格拦截。
 
 ---
 
@@ -313,15 +315,15 @@ flowchart LR
 
 | 模块类别 | 文件绝对路径 | 核心类 / 函数 / 契约 | 架构地位 |
 | :--- | :--- | :--- | :--- |
-| **递归编排** | [`harness2/core/recursion.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/recursion.py) | [`run_parallel`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/recursion.py#L343)<br>[`run_sequential`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/recursion.py#L452)<br>`_run_stage` | Task-level 递归核心调度器，组织多路 Propose、Probe 与 Compose |
-| **盲选反思** | [`harness2/core/selection.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/selection.py) | [`Selection`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/selection.py#L47)<br>[`assign_ids`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/selection.py#L71)<br>`selection_pool` | 稳定哈希匿名置换、无监督对比评审与经验元组提取 |
-| **组件树契约**| [`harness2/core/tree.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/tree.py) | [`SurfaceSpec`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/tree.py#L41)<br>`validate`<br>`diff_summary` | 定义 8 大组件白名单边界、差异计算与增量合并原则 |
-| **领域经验库**| [`harness2/core/library.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/library.py) | [`Library`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/library.py#L58)<br>`add`<br>`rebuild_index` | 负责 `runs/<tag>/<mode>/<domain>/` 跨任务知识沉淀与索引维护 |
-| **证据组装** | [`harness2/core/context.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/context.py) | [`build`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/context.py#L55)<br>`mission` | 汇集运行轨迹、交付物、组件 Diff 与反思历史并打包成提议上下文 |
-| **调度与续跑**| [`harness2/core/schedule.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/schedule.py) | [`Namespace`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/schedule.py#L85)<br>`run_sweep`<br>`_resume` | 管理规范化命名空间，提供原子锁写入与强指纹校验断点续跑 |
-| **载体适配** | [`harness2/substrate/base.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/substrate/base.py) | [`Substrate`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/substrate/base.py#L48)<br>[`Install`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/substrate/base.py#L27) | 执行框架抽象契约，负责组件树到原生环境的 Staging 物化 |
-| **提示词库** | [`harness2/core/prompts.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/prompts.py) | `propose`<br>`aggregate`<br>`compose_round` | 存储提议器、聚合器与评审器的结构化提示词模板 |
-| **审计记账** | [`harness2/core/ledger.py`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/ledger.py) | [`Ledger`](file:///Users/sienchen/Documents/github_project/Harness2/harness2/core/ledger.py#L32) | 严格记录每次提议的 USD 成本消耗、API 调用次数与探针状态 |
+| **递归编排** | [`harness2/core/recursion.py`](../backend/harness2/core/recursion.py) | [`run_parallel`](../backend/harness2/core/recursion.py#L343)<br>[`run_sequential`](../backend/harness2/core/recursion.py#L452)<br>`_run_stage` | Task-level 递归核心调度器，组织多路 Propose、Probe 与 Compose |
+| **盲选反思** | [`harness2/core/selection.py`](../backend/harness2/core/selection.py) | [`Selection`](../backend/harness2/core/selection.py#L47)<br>[`assign_ids`](../backend/harness2/core/selection.py#L71)<br>`selection_pool` | 稳定哈希匿名置换、无监督对比评审与经验元组提取 |
+| **组件树契约**| [`harness2/core/tree.py`](../backend/harness2/core/tree.py) | [`SurfaceSpec`](../backend/harness2/core/tree.py#L41)<br>`validate`<br>`diff_summary` | 定义 8 大组件白名单边界、差异计算与增量合并原则 |
+| **领域经验库**| [`harness2/core/library.py`](../backend/harness2/core/library.py) | [`Library`](../backend/harness2/core/library.py#L58)<br>`add`<br>`rebuild_index` | 负责 `runs/<tag>/<mode>/<domain>/` 跨任务知识沉淀与索引维护 |
+| **证据组装** | [`harness2/core/context.py`](../backend/harness2/core/context.py) | [`build`](../backend/harness2/core/context.py#L55)<br>`mission` | 汇集运行轨迹、交付物、组件 Diff 与反思历史并打包成提议上下文 |
+| **调度与续跑**| [`harness2/core/schedule.py`](../backend/harness2/core/schedule.py) | [`Namespace`](../backend/harness2/core/schedule.py#L85)<br>`run_sweep`<br>`_resume` | 管理规范化命名空间，提供原子锁写入与强指纹校验断点续跑 |
+| **载体适配** | [`harness2/substrate/base.py`](../backend/harness2/substrate/base.py) | [`Substrate`](../backend/harness2/substrate/base.py#L48)<br>[`Install`](../backend/harness2/substrate/base.py#L27) | 执行框架抽象契约，负责组件树到原生环境的 Staging 物化 |
+| **提示词库** | [`harness2/core/prompts.py`](../backend/harness2/core/prompts.py) | `propose`<br>`aggregate`<br>`compose_round` | 存储提议器、聚合器与评审器的结构化提示词模板 |
+| **审计记账** | [`harness2/core/ledger.py`](../backend/harness2/core/ledger.py) | [`Ledger`](../backend/harness2/core/ledger.py#L32) | 严格记录每次提议的 USD 成本消耗、API 调用次数与探针状态 |
 
 ### 4.2 核心工程设计契约
 

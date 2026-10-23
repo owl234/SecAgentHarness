@@ -16,7 +16,6 @@ from __future__ import annotations
 import argparse
 import pathlib
 import re
-import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PAIRS = [
@@ -71,14 +70,14 @@ def main(argv: list[str] | None = None) -> int:
     try:
         import re as _re
 
-        zh_src = (ROOT / "web/src/i18n/zh.ts").read_text(encoding="utf-8")
-        en_src = (ROOT / "web/src/i18n/en.ts").read_text(encoding="utf-8")
+        zh_src = (ROOT / "frontend/src/i18n/zh.ts").read_text(encoding="utf-8")
+        en_src = (ROOT / "frontend/src/i18n/en.ts").read_text(encoding="utf-8")
         zh_keys = set(_re.findall(r"'([\w.]+)'\s*:", zh_src))
         en_keys = set(_re.findall(r"'([\w.]+)'\s*:", en_src))
         if zh_keys - en_keys:
-            errs.append(f"web/src/i18n/en.ts missing keys: {sorted(zh_keys - en_keys)}")
+            errs.append(f"frontend/src/i18n/en.ts missing keys: {sorted(zh_keys - en_keys)}")
         if en_keys - zh_keys:
-            errs.append(f"web/src/i18n/zh.ts missing keys: {sorted(en_keys - zh_keys)}")
+            errs.append(f"frontend/src/i18n/zh.ts missing keys: {sorted(en_keys - zh_keys)}")
     except OSError as exc:
         errs.append(f"i18n dicts unreadable: {exc}")
     for e in errs:
