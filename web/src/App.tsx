@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { NavTabType, RunItem, SystemStatus } from './types';
 import { fetchRuns, fetchStatus, fetchLogs } from './api';
 import { Navbar } from './components/Navbar';
@@ -11,17 +11,29 @@ import { BenchmarkView } from './components/BenchmarkView';
 import { LiveConsole } from './components/LiveConsole';
 import { TerminologyGuideModal } from './components/TerminologyGuideModal';
 import { ExecutorConfigDrawer } from './components/ExecutorConfigDrawer';
+import { useUrlState } from './hooks/useUrlState';
+
+const MAX_LOG_LINES = 2000;
 
 export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<NavTabType>('workbench');
+  const {
+    currentTab,
+    setCurrentTab,
+    selectedRunId,
+    setSelectedRunId,
+    selectedTaskId,
+    setSelectedTaskId,
+    navigateRunAndTab,
+  } = useUrlState();
+
   const [runs, setRuns] = useState<RunItem[]>([]);
-  const [selectedRunId, setSelectedRunId] = useState<string>('');
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
   const [showConsole, setShowConsole] = useState(false);
   const [showTerminologyModal, setShowTerminologyModal] = useState(false);
   const [showExecutorDrawer, setShowExecutorDrawer] = useState(false);
+  const [executorRefreshVersion, setExecutorRefreshVersion] = useState(0);
 
   // Theme state: 'dark' | 'light'
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -43,7 +55,7 @@ export const App: React.FC = () => {
   };
 
   // 1. Initial Data Fetch
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       const [runsData, statusData, logsData] = await Promise.all([
         fetchRuns(),
@@ -52,23 +64,38 @@ export const App: React.FC = () => {
       ]);
       setRuns(runsData);
       setSystemStatus(statusData);
-      setLogs(logsData);
+      setLogs(logsData.slice(-MAX_LOG_LINES));
       if (runsData.length > 0 && !selectedRunId) {
-        setSelectedRunId(runsData[0].id);
+        setSelectedRunId(runsData[0].id, true);
       }
     } catch (err) {
       console.error('初始加载失败 (Initial load failed):', err);
     }
-  };
+  }, [selectedRunId, setSelectedRunId]);
 
   useEffect(() => {
     loadInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ensure valid selectedRunId when runs list updates
+  useEffect(() => {
+    if (runs.length === 0) return;
+    if (!selectedRunId || !runs.some((r) => r.id === selectedRunId)) {
+      setSelectedRunId(runs[0].id, true);
+    }
+  }, [runs, selectedRunId, setSelectedRunId]);
 
   // 2. Setup Server-Sent Events (SSE) for real-time live streaming
   useEffect(() => {
     let es: EventSource | null = null;
-    let reconnectTimeout: any = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const refreshRunsList = () => {
+      fetchRuns()
+        .then((updated) => setRuns(updated))
+        .catch(() => {});
+    };
 
     const connectSSE = () => {
       es = new EventSource('/api/events');
@@ -83,25 +110,29 @@ export const App: React.FC = () => {
         reconnectTimeout = setTimeout(connectSSE, 3000);
       };
 
-      es.addEventListener('init', (e: any) => {
+      es.addEventListener('init', (e: MessageEvent) => {
         try {
           const payload = JSON.parse(e.data);
-          if (payload.logs) {
-            setLogs(payload.logs);
+          if (Array.isArray(payload.logs)) {
+            setLogs(payload.logs.slice(-MAX_LOG_LINES));
           }
         } catch {}
       });
 
-      es.addEventListener('log', (e: any) => {
+      es.addEventListener('log', (e: MessageEvent) => {
         try {
           const payload = JSON.parse(e.data);
           if (payload.line) {
-            setLogs((prev) => [...prev, payload.line]);
+            setLogs((prev) =>
+              prev.length >= MAX_LOG_LINES
+                ? [...prev.slice(-(MAX_LOG_LINES - 1)), payload.line]
+                : [...prev, payload.line]
+            );
           }
         } catch {}
       });
 
-      es.addEventListener('start', (e: any) => {
+      es.addEventListener('start', (e: MessageEvent) => {
         try {
           const job = JSON.parse(e.data);
           setSystemStatus((prev) =>
@@ -110,7 +141,7 @@ export const App: React.FC = () => {
         } catch {}
       });
 
-      es.addEventListener('finish', (e: any) => {
+      es.addEventListener('finish', (e: MessageEvent) => {
         try {
           const job = JSON.parse(e.data);
           setSystemStatus((prev) =>
@@ -125,6 +156,7 @@ export const App: React.FC = () => {
                 }
               : prev
           );
+          refreshRunsList();
         } catch {}
       });
 
@@ -132,10 +164,11 @@ export const App: React.FC = () => {
         setSystemStatus((prev) =>
           prev ? { ...prev, status: { ...prev.status, status: 'terminated' } } : prev
         );
+        refreshRunsList();
       });
 
       es.addEventListener('refresh', () => {
-        fetchRuns().then((updated) => setRuns(updated));
+        refreshRunsList();
       });
     };
 
@@ -143,18 +176,19 @@ export const App: React.FC = () => {
 
     return () => {
       es?.close();
-      clearTimeout(reconnectTimeout);
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
     };
   }, []);
 
-  const handleSelectRun = (
-    runId: string,
-    targetTab?: NavTabType
-  ) => {
-    setSelectedRunId(runId);
-    if (targetTab) {
-      setCurrentTab(targetTab);
-    }
+  const handleSelectRun = (runId: string, targetTab?: NavTabType) => {
+    navigateRunAndTab(runId, targetTab);
+  };
+
+  const handleExecutorChanged = () => {
+    setExecutorRefreshVersion((v) => v + 1);
+    loadInitialData();
   };
 
   const isRunning = systemStatus?.status.status === 'running';
@@ -182,12 +216,17 @@ export const App: React.FC = () => {
           {currentTab === 'workbench' && (
             <WorkbenchView
               runs={runs}
+              selectedRunId={selectedRunId}
+              selectedTaskId={selectedTaskId}
+              onSelectTaskId={setSelectedTaskId}
               systemStatus={systemStatus}
+              logs={logs}
               onSelectRun={handleSelectRun}
               onOpenConsole={() => setShowConsole(true)}
               onNavigateToStudio={() => setCurrentTab('studio')}
               onOpenExecutorConfig={() => setShowExecutorDrawer(true)}
               onOpenTerminology={() => setShowTerminologyModal(true)}
+              executorRefreshVersion={executorRefreshVersion}
             />
           )}
 
@@ -195,8 +234,7 @@ export const App: React.FC = () => {
             <ComponentStudio
               runs={runs}
               onNavigateToRun={(runId) => {
-                setSelectedRunId(runId);
-                setCurrentTab('pipeline');
+                navigateRunAndTab(runId, 'pipeline');
               }}
             />
           )}
@@ -205,7 +243,9 @@ export const App: React.FC = () => {
             <PipelineView
               runs={runs}
               selectedRunId={selectedRunId}
-              onSelectRunId={setSelectedRunId}
+              onSelectRunId={(id) => setSelectedRunId(id)}
+              selectedTaskId={selectedTaskId}
+              onSelectTaskId={setSelectedTaskId}
             />
           )}
 
@@ -213,7 +253,9 @@ export const App: React.FC = () => {
             <LibraryView
               runs={runs}
               selectedRunId={selectedRunId}
-              onSelectRunId={setSelectedRunId}
+              onSelectRunId={(id) => setSelectedRunId(id)}
+              selectedTaskId={selectedTaskId}
+              onSelectTaskId={setSelectedTaskId}
               onNavigateToStudio={() => setCurrentTab('studio')}
             />
           )}
@@ -222,7 +264,7 @@ export const App: React.FC = () => {
             <BenchmarkView
               runs={runs}
               selectedRunId={selectedRunId}
-              onSelectRunId={setSelectedRunId}
+              onSelectRunId={(id) => setSelectedRunId(id)}
               onOpenConsole={() => setShowConsole(true)}
             />
           )}
@@ -248,7 +290,7 @@ export const App: React.FC = () => {
       <ExecutorConfigDrawer
         isOpen={showExecutorDrawer}
         onClose={() => setShowExecutorDrawer(false)}
-        onExecutorChanged={loadInitialData}
+        onExecutorChanged={handleExecutorChanged}
       />
     </div>
   );

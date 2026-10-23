@@ -21,7 +21,7 @@ export const en: Record<ZhKey, string> = {
   'nav.theme_dark': 'Switch to dark mode',
   'nav.lang': '中文',
   'nav.lang_title': '切换到中文界面 (Switch to Chinese)',
-  'console.title': 'Live Execution Output （实时运行控制台）',
+  'console.title': 'Live Execution Output',
   'console.running': 'RUNNING',
   'console.stop': 'Stop',
   'console.stop_title': 'Stop current execution',
@@ -60,6 +60,11 @@ export const en: Record<ZhKey, string> = {
   'common.view_dag': 'View full DAG topology in Pipeline DAG',
   'common.view_dag_short': 'View Pipeline DAG',
   'common.open_console': 'Open console for live logs',
+  'common.cancel': 'Cancel',
+  'common.confirm': 'Confirm',
+  'common.close': 'Close',
+  'common.save': 'Save',
+  'common.delete': 'Delete',
 };
 
 export type Lang = 'zh' | 'en';

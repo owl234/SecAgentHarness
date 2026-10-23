@@ -21,6 +21,30 @@ export interface TaskStageSummary {
   attempts: number;
   notes: string;
   fell_back: boolean;
+  kept_base?: boolean;
+  cached?: boolean;
+  error?: string;
+}
+
+export interface TaskSelectionExperience {
+  cue?: string;
+  lesson?: string;
+  evidence?: string;
+  confidence?: string;
+  edits?: string;
+}
+
+export interface TaskSelection {
+  task_id?: string;
+  mode?: string;
+  k?: number;
+  chosen_id?: string;
+  chosen_label?: string;
+  chosen_run_id?: string;
+  chosen_is_base?: boolean;
+  why?: string;
+  has_experience?: boolean;
+  experience?: TaskSelectionExperience;
 }
 
 export interface TaskItem {
@@ -34,15 +58,7 @@ export interface TaskItem {
   stages_count: number;
   stages: TaskStageSummary[];
   total_usd: number;
-  selections: Record<
-    string,
-    {
-      chosen_label?: string;
-      chosen_is_base?: boolean;
-      why?: string;
-      has_experience?: boolean;
-    }
-  >;
+  selections: Record<string, TaskSelection>;
   updated_at: string;
 }
 
@@ -75,16 +91,16 @@ export interface TaskDetail {
   domain: string;
   status: string;
   k: number;
-  summary: any;
+  summary: Record<string, unknown>;
   available_harnesses: string[];
-  stages: Record<string, any>;
+  stages: Record<string, TaskStageSummary>;
   rollouts: Record<string, Record<string, string>>;
-  selections: Record<string, any>;
+  selections: Record<string, TaskSelection>;
   pipeline_graph: {
     nodes: DAGNode[];
     edges: DAGEdge[];
   };
-  reflection: Record<string, any>;
+  reflection: Record<string, unknown>;
 }
 
 export interface DiffFile {
@@ -168,14 +184,24 @@ export interface BenchmarkStats {
   all_pass_count?: number;
 }
 
+export interface BenchmarkJudgedRow {
+  task_id: string;
+  mode?: string;
+  label?: string;
+  n_passed: number;
+  n_criteria: number;
+  all_pass?: boolean;
+  chosen_is_base?: boolean;
+}
+
 export interface BenchmarkReport {
   run_id: string;
   has_judged: boolean;
   has_base_judged: boolean;
   adapted_stats: BenchmarkStats;
   base_stats: BenchmarkStats;
-  judged_rows: any[];
-  base_rows: any[];
+  judged_rows: BenchmarkJudgedRow[];
+  base_rows: BenchmarkJudgedRow[];
 }
 
 export type NavTabType = 'workbench' | 'studio' | 'pipeline' | 'library' | 'benchmark';
@@ -208,6 +234,18 @@ export interface ComponentTemplate {
   tags: string[];
   content: string;
   extra_files?: Record<string, string>;
+}
+
+export interface HarnessSnapshot {
+  systemprompt?: string;
+  guardrails?: string;
+  memory?: string;
+  tool_guidance?: string;
+  subagents?: Record<string, string | Record<string, unknown>>;
+  skills?: Record<string, string | Record<string, string>>;
+  plugins?: Record<string, string>;
+  scripts?: Record<string, string>;
+  [key: string]: unknown;
 }
 
 export interface UnifiedApiConfig {
@@ -288,10 +326,19 @@ export interface ExecutorStatusResponse {
   executors: ExecutorItem[];
 }
 
+export interface ExecutionJobInfo {
+  job_id?: string;
+  type?: string;
+  command?: string[];
+  exit_code?: number | null;
+  started_at?: string;
+  finished_at?: string;
+}
+
 export interface SystemStatus {
   status: {
     status: 'idle' | 'running' | 'completed' | 'failed' | 'terminated';
-    job: any;
+    job: ExecutionJobInfo | null;
     recent_logs_count: number;
   };
   workspace_root: string;

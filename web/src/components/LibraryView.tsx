@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { RunItem, LibraryEntry } from '../types';
+import React, { useEffect, useRef, useState } from 'react';
+import { RunItem, LibraryEntry, TaskItem, HarnessSnapshot } from '../types';
 import { fetchLibrary, fetchTasks, fetchTaskHarness } from '../api';
 import {
   BookOpen,
@@ -14,63 +14,113 @@ import {
   Bot,
   Zap,
   Terminal,
-  ArrowRight,
   Layers,
 } from 'lucide-react';
+import { useLang } from '../i18n/LangContext';
 
 interface LibraryViewProps {
   runs: RunItem[];
   selectedRunId: string;
   onSelectRunId: (id: string) => void;
+  selectedTaskId?: string;
+  onSelectTaskId?: (taskId: string, replace?: boolean) => void;
   onNavigateToStudio?: () => void;
 }
+
+type InspectorTab =
+  | 'systemprompt'
+  | 'guardrails'
+  | 'memory'
+  | 'tools'
+  | 'subagents'
+  | 'skills'
+  | 'plugins'
+  | 'scripts';
 
 export const LibraryView: React.FC<LibraryViewProps> = ({
   runs,
   selectedRunId,
   onSelectRunId,
+  selectedTaskId,
+  onSelectTaskId,
   onNavigateToStudio,
 }) => {
+  const { tx } = useLang();
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // 8-Component Inspector States
-  const [activeComponentTab, setActiveComponentTab] = useState<
-    'systemprompt' | 'guardrails' | 'memory' | 'tools' | 'subagents' | 'skills' | 'plugins' | 'scripts'
-  >('scripts');
+  const [activeComponentTab, setActiveComponentTab] = useState<InspectorTab>('scripts');
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [localTask, setLocalTask] = useState<string>('');
+  const [harnessComponents, setHarnessComponents] = useState<HarnessSnapshot | null>(null);
+  const [harnessLoading, setHarnessLoading] = useState(false);
 
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [selectedTask, setSelectedTask] = useState<string>('');
-  const [harnessComponents, setHarnessComponents] = useState<any>(null);
+  const activeTask = selectedTaskId || localTask;
+  const setActiveTask = (taskId: string) => {
+    setLocalTask(taskId);
+    if (onSelectTaskId) {
+      onSelectTaskId(taskId, true);
+    }
+  };
 
-  // Fetch library experiences
+  const runReqId = useRef(0);
+  const harnessReqId = useRef(0);
+
+  // Fetch library experiences & tasks
   useEffect(() => {
     if (!selectedRunId) return;
+    const reqId = ++runReqId.current;
+    setSelectedDomain('all');
+
     fetchLibrary(selectedRunId)
-      .then((entries) => setLibraryEntries(entries))
-      .catch((e) => console.error('获取经验库失败 (Failed to load library):', e));
+      .then((entries) => {
+        if (reqId === runReqId.current) {
+          setLibraryEntries(entries);
+        }
+      })
+      .catch((e) => console.error('Failed to load library:', e));
 
     fetchTasks(selectedRunId)
       .then((tList) => {
+        if (reqId !== runReqId.current) return;
         setTasks(tList);
         if (tList.length > 0) {
-          setSelectedTask(tList[0].task_id);
+          const exists = tList.some((t) => t.task_id === activeTask);
+          if (!activeTask || !exists) {
+            setActiveTask(tList[0].task_id);
+          }
+        } else {
+          setActiveTask('');
+          setHarnessComponents(null);
         }
       })
-      .catch((e) => console.error('获取任务列表失败 (Failed to load tasks):', e));
-  }, [selectedRunId]);
+      .catch((e) => console.error('Failed to load tasks:', e));
+  }, [selectedRunId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch harness components
   useEffect(() => {
-    if (!selectedRunId || !selectedTask) return;
-    fetchTaskHarness(selectedRunId, selectedTask, 'agg1')
-      .catch(() => fetchTaskHarness(selectedRunId, selectedTask, 'base'))
-      .then((data) => setHarnessComponents(data))
-      .catch((e) => console.error('获取套件失败 (Failed to load harness components):', e));
-  }, [selectedRunId, selectedTask]);
+    if (!selectedRunId || !activeTask) {
+      setHarnessComponents(null);
+      return;
+    }
+    const reqId = ++harnessReqId.current;
+    setHarnessLoading(true);
+    fetchTaskHarness(selectedRunId, activeTask, 'agg1')
+      .catch(() => fetchTaskHarness(selectedRunId, activeTask, 'base'))
+      .then((data) => {
+        if (reqId === harnessReqId.current) {
+          setHarnessComponents(data);
+        }
+      })
+      .catch((e) => console.error('Failed to load harness components:', e))
+      .finally(() => {
+        if (reqId === harnessReqId.current) {
+          setHarnessLoading(false);
+        }
+      });
+  }, [selectedRunId, activeTask]);
 
-  // Filtered domains
   const domains = Array.from(new Set(libraryEntries.map((e) => e.domain)));
   const filteredEntries = libraryEntries.filter((e) => {
     const matchDomain = selectedDomain === 'all' || e.domain === selectedDomain;
@@ -82,6 +132,17 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     return matchDomain && matchSearch;
   });
 
+  const componentTabs: { id: InspectorTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'systemprompt', label: tx('c1 提示词', 'c1 Prompt'), icon: FileText },
+    { id: 'guardrails', label: tx('c2 护栏', 'c2 Guardrails'), icon: Shield },
+    { id: 'memory', label: tx('c3 记忆', 'c3 Memory'), icon: Brain },
+    { id: 'tools', label: tx('c4 工具指引', 'c4 Tool Guidance'), icon: Wrench },
+    { id: 'subagents', label: tx('c5 子智能体', 'c5 Subagents'), icon: Bot },
+    { id: 'skills', label: tx('c6 技能库', 'c6 Skills'), icon: Puzzle },
+    { id: 'plugins', label: tx('c7 钩子', 'c7 Hooks'), icon: Zap },
+    { id: 'scripts', label: tx('c8 独立脚本', 'c8 Scripts'), icon: Terminal },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -89,26 +150,37 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-blue-500" />
-            <span>跨任务持续经验库与套件全景 (Continual Learning & Component Library)</span>
+            <span>
+              {tx(
+                '跨任务持续经验库与套件全景 (Continual Learning & Component Library)',
+                'Continual Learning Experience Library & 8-Component Inspector'
+              )}
+            </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            套件级递归 (Harnessing-level recursion)：跨任务沉淀的经验池与可复用优化知识
+            {tx(
+              '套件级递归 (Harnessing-level recursion)：跨任务沉淀的经验池与可复用优化知识',
+              'Harnessing-level recursion: cross-task distilled lessons, trigger cues, and runtime surface inspection'
+            )}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {onNavigateToStudio && (
             <button
+              type="button"
               onClick={onNavigateToStudio}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold border border-blue-500/20 transition-all cursor-pointer"
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>进入组件工作室</span>
+              <span>{tx('进入组件工作室', 'Open Component Studio')}</span>
             </button>
           )}
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">选择 Run:</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              {tx('选择 Run:', 'Run:')}
+            </span>
             <select
               value={selectedRunId}
               onChange={(e) => onSelectRunId(e.target.value)}
@@ -130,20 +202,27 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-500" />
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              跨任务经验累积池 ({filteredEntries.length} 条经验)
+              {tx(
+                `跨任务经验累积池 (${filteredEntries.length} 条经验)`,
+                `Cross-Task Distilled Experience Pool (${filteredEntries.length})`
+              )}
             </h3>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Domain Filter */}
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-slate-500 dark:text-slate-400">领域:</span>
+              <span className="text-slate-500 dark:text-slate-400">
+                {tx('领域:', 'Domain:')}
+              </span>
               <select
                 value={selectedDomain}
                 onChange={(e) => setSelectedDomain(e.target.value)}
                 className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200"
               >
-                <option value="all">全部领域 ({libraryEntries.length})</option>
+                <option value="all">
+                  {tx(`全部领域 (${libraryEntries.length})`, `All Domains (${libraryEntries.length})`)}
+                </option>
                 {domains.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -157,10 +236,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
               <input
                 type="text"
-                placeholder="搜索经验、情景或任务..."
+                placeholder={tx('搜索经验、情景或任务...', 'Search cues, lessons, or tasks...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-blue-500 w-48"
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-blue-500 w-52"
               />
             </div>
           </div>
@@ -168,13 +247,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
         {filteredEntries.length === 0 ? (
           <div className="text-center py-8 text-xs text-slate-500">
-            暂未检索到经验库沉淀条目（运行带采纳经验的任务后将在此汇聚）
+            {tx(
+              '暂未检索到经验库沉淀条目（运行带采纳经验的任务后将在此汇聚）',
+              'No experience entries found for this filter. Run tasks with adopted edits to populate the library.'
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredEntries.map((entry, idx) => (
               <div
-                key={idx}
+                key={`${entry.task_id}-${idx}`}
                 className="bg-slate-50/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-slate-700/80 p-5 rounded-2xl space-y-3 transition-all shadow-sm group"
               >
                 <div className="flex items-center justify-between">
@@ -189,26 +271,28 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 <div className="space-y-2 text-xs">
                   <div>
                     <span className="text-amber-600 dark:text-amber-400 font-semibold block text-[11px] mb-0.5">
-                      触发情景 (Cue):
+                      {tx('触发情景 (Cue):', 'Trigger Cue:')}
                     </span>
                     <p className="text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 leading-relaxed">
-                      {entry.cue || '未命名情景'}
+                      {entry.cue || tx('未命名情景', 'Unnamed cue')}
                     </p>
                   </div>
 
                   <div>
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold block text-[11px] mb-0.5">
-                      习得原则 (Lesson):
+                      {tx('习得原则 (Lesson):', 'Distilled Lesson:')}
                     </span>
                     <p className="text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 leading-relaxed">
-                      {entry.lesson || '未命名原则'}
+                      {entry.lesson || tx('未命名原则', 'Unnamed lesson')}
                     </p>
                   </div>
 
                   {entry.confidence && (
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex items-center justify-between">
-                      <span>置信度:</span>
-                      <span className="font-mono text-slate-700 dark:text-slate-300">{entry.confidence}</span>
+                      <span>{tx('置信度:', 'Confidence:')}</span>
+                      <span className="font-mono text-slate-700 dark:text-slate-300">
+                        {entry.confidence}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -220,22 +304,29 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
       {/* Section 2: 8-Component Inspector */}
       <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Code2 className="w-4 h-4 text-indigo-500" />
-              <span>八大组件全景审阅器 (8-Component Inspector)</span>
+              <span>
+                {tx('八大组件全景审阅器 (8-Component Inspector)', '8-Component Runtime Harness Inspector')}
+              </span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              提示词、护栏、记忆、工具指引、子智能体、技能、插件与脚本运行时全量映射
+              {tx(
+                '提示词、护栏、记忆、工具指引、子智能体、技能、插件与脚本运行时全量映射',
+                'Full inspection of prompts, guardrails, memory, tools, subagents, skills, hooks, and scripts'
+              )}
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-500 dark:text-slate-400">查看任务:</span>
+            <span className="text-slate-500 dark:text-slate-400">
+              {tx('查看任务:', 'Inspect Task:')}
+            </span>
             <select
-              value={selectedTask}
-              onChange={(e) => setSelectedTask(e.target.value)}
+              value={activeTask}
+              onChange={(e) => setActiveTask(e.target.value)}
               className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-200 font-medium"
             >
               {tasks.map((t) => (
@@ -249,136 +340,64 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
         {/* 8-Component Tabs */}
         <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/50 rounded-xl p-1 overflow-x-auto gap-1">
-          <button
-            onClick={() => setActiveComponentTab('systemprompt')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeComponentTab === 'systemprompt'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>c1 提示词</span>
-          </button>
-
-          <button
-            onClick={() => setActiveComponentTab('guardrails')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeComponentTab === 'guardrails'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Shield className="w-3.5 h-3.5" />
-            <span>c2 护栏</span>
-          </button>
-
-          <button
-            onClick={() => setActiveComponentTab('memory')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeComponentTab === 'memory'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>c3 记忆</span>
-          </button>
-
-          <button
-            onClick={() => setActiveComponentTab('tools')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeComponentTab === 'tools'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Wrench className="w-3.5 h-3.5" />
-            <span>c4 工具指引</span>
-          </button>
-
-          <button
-            onClick={() => setActiveComponentTab('subagents')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeComponentTab === 'subagents'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Bot className="w-3.5 h-3.5" />
-            <span>c5 子智能体</span>
-          </button>
-
-          <button
-            onClick={() => setActiveComponentTab('skills')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeComponentTab === 'skills'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Puzzle className="w-3.5 h-3.5" />
-            <span>c6 技能库</span>
-          </button>
-
-          <button
-            onClick={() => setActiveComponentTab('plugins')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeComponentTab === 'plugins'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>c7 钩子</span>
-          </button>
-
-          <button
-            onClick={() => setActiveComponentTab('scripts')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeComponentTab === 'scripts'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Terminal className="w-3.5 h-3.5" />
-            <span>c8 独立脚本</span>
-          </button>
+          {componentTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeComponentTab === tab.id;
+            return (
+              <button
+                type="button"
+                key={tab.id}
+                onClick={() => setActiveComponentTab(tab.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Component Content Display */}
         <div className="bg-slate-950 text-slate-200 rounded-2xl p-4 font-mono text-xs max-h-96 overflow-y-auto border border-slate-800 leading-relaxed whitespace-pre-wrap">
-          {harnessComponents ? (
+          {harnessLoading ? (
+            tx('正在加载组件数据...', 'Loading harness surface files...')
+          ) : harnessComponents ? (
             activeComponentTab === 'systemprompt' ? (
-              harnessComponents.systemprompt || '（空系统提示词）'
+              harnessComponents.systemprompt || tx('（空系统提示词）', '(Empty system prompt)')
             ) : activeComponentTab === 'guardrails' ? (
-              harnessComponents.guardrails || '（空安全护栏）'
+              harnessComponents.guardrails || tx('（空安全护栏）', '(Empty guardrails)')
             ) : activeComponentTab === 'memory' ? (
-              harnessComponents.memory || '（空长期记忆）'
+              harnessComponents.memory || tx('（空长期记忆）', '(Empty long-term memory)')
             ) : activeComponentTab === 'tools' ? (
-              harnessComponents.tool_guidance || '（空工具指引）'
+              harnessComponents.tool_guidance || tx('（空工具指引）', '(Empty tool guidance)')
             ) : activeComponentTab === 'subagents' ? (
               Object.keys(harnessComponents.subagents || {}).length > 0 ? (
-                Object.entries(harnessComponents.subagents).map(([sname, content]: [string, any]) => (
+                Object.entries(harnessComponents.subagents || {}).map(([sname, content]) => (
                   <div key={sname} className="mb-4">
                     <div className="text-indigo-400 font-bold mb-1 border-b border-slate-800 pb-1">
                       # sub_agents/{sname}/AGENT.md
                     </div>
-                    <div>{typeof content === 'string' ? content : JSON.stringify(content, null, 2)}</div>
+                    <div>
+                      {typeof content === 'string' ? content : JSON.stringify(content, null, 2)}
+                    </div>
                   </div>
                 ))
               ) : (
-                '（无子智能体）'
+                tx('（无子智能体）', '(No subagents defined)')
               )
             ) : activeComponentTab === 'skills' ? (
               Object.keys(harnessComponents.skills || {}).length > 0 ? (
-                Object.entries(harnessComponents.skills).map(([sname, sfiles]: [string, any]) => (
+                Object.entries(harnessComponents.skills || {}).map(([sname, sfiles]) => (
                   <div key={sname} className="mb-4">
                     <div className="text-cyan-400 font-bold mb-1 border-b border-slate-800 pb-1">
                       # skills/{sname}
                     </div>
                     {typeof sfiles === 'object' && sfiles !== null ? (
-                      Object.entries(sfiles).map(([fn, fc]: [string, any]) => (
+                      Object.entries(sfiles).map(([fn, fc]) => (
                         <div key={fn} className="mt-1">
                           <span className="text-slate-400">--- {fn} ---</span>
                           <div>{fc}</div>
@@ -390,11 +409,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   </div>
                 ))
               ) : (
-                '（无独立技能目录）'
+                tx('（无独立技能目录）', '(No standalone skills defined)')
               )
             ) : activeComponentTab === 'plugins' ? (
               Object.keys(harnessComponents.plugins || {}).length > 0 ? (
-                Object.entries(harnessComponents.plugins).map(([pname, content]: [string, any]) => (
+                Object.entries(harnessComponents.plugins || {}).map(([pname, content]) => (
                   <div key={pname} className="mb-4">
                     <div className="text-rose-400 font-bold mb-1 border-b border-slate-800 pb-1">
                       # plugins/{pname}
@@ -403,11 +422,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   </div>
                 ))
               ) : (
-                '（无事件钩子/插件）'
+                tx('（无事件钩子/插件）', '(No event hooks or plugins)')
               )
             ) : activeComponentTab === 'scripts' ? (
               Object.keys(harnessComponents.scripts || {}).length > 0 ? (
-                Object.entries(harnessComponents.scripts).map(([fname, content]: [string, any]) => (
+                Object.entries(harnessComponents.scripts || {}).map(([fname, content]) => (
                   <div key={fname} className="mb-4">
                     <div className="text-emerald-400 font-bold mb-1 border-b border-slate-800 pb-1">
                       # scripts/{fname}
@@ -416,13 +435,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   </div>
                 ))
               ) : (
-                '（无额外脚本）'
+                tx('（无额外脚本）', '(No helper scripts)')
               )
             ) : (
-              '（无内容）'
+              tx('（无内容）', '(No content)')
             )
           ) : (
-            '正在加载组件数据...'
+            tx('暂无可展示的套件组件', 'No harness component snapshot available')
           )}
         </div>
       </div>

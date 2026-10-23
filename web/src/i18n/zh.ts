@@ -65,6 +65,11 @@ export const zh = {
   'common.view_dag': '在演进流水线中查看完整 DAG 流程拓扑',
   'common.view_dag_short': '查看流水线 DAG',
   'common.open_console': '打开控制台查看实时日志',
+  'common.cancel': '取消',
+  'common.confirm': '确认',
+  'common.close': '关闭',
+  'common.save': '保存',
+  'common.delete': '删除',
 } as const;
 
 export type ZhKey = keyof typeof zh;

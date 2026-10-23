@@ -18,9 +18,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   setCurrentTab,
 }) => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
-  const navItems: { id: NavTabType; label: string; enLabel: string; icon: any; badge?: string }[] = [
+  const navItems: {
+    id: NavTabType;
+    label: string;
+    enLabel: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: string;
+  }[] = [
     {
       id: 'workbench',
       label: t('nav.workbench'),
@@ -75,13 +81,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon className="w-4 h-4 shrink-0" />
                 <span className="flex-1 min-w-0 flex flex-col leading-tight">
                   <span className="truncate">{item.label}</span>
-                  <span
-                    className={`text-[11px] font-normal truncate ${
-                      isActive ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'
-                    }`}
-                  >
-                    {item.enLabel}
-                  </span>
+                  {lang === 'zh' && (
+                    <span
+                      className={`text-[11px] font-normal truncate ${
+                        isActive ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'
+                      }`}
+                    >
+                      {item.enLabel}
+                    </span>
+                  )}
                 </span>
                 {item.badge && (
                   <span
