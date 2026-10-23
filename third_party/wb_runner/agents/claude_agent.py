@@ -68,18 +68,21 @@ class ClaudeAgent(BaseInstalledAgent):
 
     async def install(self, environment: BaseEnvironment) -> None:
         """Link the bind-mounted binary onto PATH and refuse anything but the pinned build."""
-        bin_path = f"{self._bin_dir}/claude"
+        bin_primary = f"{self._bin_dir}/bin/clawgod"
+        bin_fallback = f"{self._bin_dir}/claude"
         want = self._claude_version or ""
         await self.exec_as_root(
             environment,
             command=(
-                f'if [ ! -x "{bin_path}" ]; then '
-                f'echo "ERROR: claude binary not found at {bin_path}." >&2; '
+                f'if [ -x "{bin_primary}" ]; then bin_path="{bin_primary}"; '
+                f'elif [ -x "{bin_fallback}" ]; then bin_path="{bin_fallback}"; '
+                f'else '
+                f'echo "ERROR: claude binary not found at {bin_primary} or {bin_fallback}." >&2; '
                 f'echo "  The job must bind-mount the staged dist (read-only):" >&2; '
                 f'echo "  environment_override.mounts: [{{type: bind, '
-                f'source: dependencies/claude/dist, target: {self._bin_dir}}}]" >&2; '
+                f'source: dependencies/claude, target: {self._bin_dir}}}]" >&2; '
                 f"exit 1; fi && "
-                f'ln -sf "{bin_path}" /usr/local/bin/claude && '
+                f'ln -sf "$bin_path" /usr/local/bin/claude && '
                 f'v="$(/usr/local/bin/claude --version 2>&1)" && '
                 f'echo "claude version: $v" && '
                 + (
@@ -122,19 +125,48 @@ class ClaudeAgent(BaseInstalledAgent):
             "--verbose",
             "--dangerously-skip-permissions",
             "--include-hook-events",
+            "--forward-subagent-text",
         ]
         if self._claude_model:
             flags += ["--model", shlex.quote(self._claude_model)]
         if self._effort:
             flags += ["--effort", shlex.quote(self._effort)]
+        agents_flag = self._agents_flag()
+        if agents_flag:
+            flags += ["--agents", shlex.quote(agents_flag)]
         run_cmd = (
             'export PATH="/usr/local/bin:$PATH"; '
             f"{home_fix}"
+            "cd /workspace && "
             f"claude {' '.join(flags)} "
-            f"--add-dir /workspace -C /workspace "
+            f"--add-dir /workspace "
             f"</dev/null 2>{stderr_path} | tee {output_path}"
         )
         await self.exec_as_agent(environment, command=run_cmd)
+
+    def _agents_flag(self) -> str:
+        """Return `--agents` JSON string if sub_agents/*/AGENT.md exist in _harness_ws."""
+        import re as _re
+
+        ws = getattr(self, "_harness_ws", None)
+        if ws is None or not Path(ws).is_dir():
+            return ""
+        agents: dict[str, dict[str, str]] = {}
+        for af in sorted(Path(ws).glob("sub_agents/*/AGENT.md")):
+            if not af.is_file():
+                continue
+            try:
+                body = af.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            m = _re.search(r"^description:\s*(.+)$", body[:600], _re.M)
+            desc = m.group(1).strip() if m else ""
+            prompt_body = _re.sub(r"^---\n.*?\n---\n", "", body, count=1, flags=_re.S).strip()
+            agents[af.parent.name] = {
+                "description": desc or f"Delegated {af.parent.name} agent",
+                "prompt": prompt_body or body.strip(),
+            }
+        return json.dumps(agents, ensure_ascii=False) if agents else ""
 
     def populate_context_post_run(self, context: AgentContext) -> None:
         events = self._read_events()

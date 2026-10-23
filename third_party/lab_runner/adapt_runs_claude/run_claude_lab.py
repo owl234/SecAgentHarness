@@ -74,8 +74,18 @@ def _require_scratch(p: Path, what: str) -> Path:
     return p
 
 
-def run_dir_for(run_id: str) -> Path:
-    return RESULTS_ROOT / run_id.replace("/", "__")
+def run_dir_for(run_id: str, results_root: Path | str = RESULTS_ROOT) -> Path:
+    """<results_root>/<run_id>, preserving '/' hierarchy with path escapes refused."""
+    rid = str(run_id).strip()
+    if not rid or rid.startswith("/") or ".." in rid.split("/"):
+        raise SystemExit(f"bad --run-id {run_id!r}: must be a relative, escape-free id")
+    root = Path(results_root).resolve()
+    if str(root).startswith("/tmp/"):
+        raise SystemExit(f"refusing results root under /tmp: {root}")
+    d = (root / rid).resolve()
+    if root not in d.parents:
+        raise SystemExit(f"run id escapes the results root: {run_id!r}")
+    return d
 
 
 def scratch_paths(label: str) -> tuple[Path, Path]:
@@ -151,7 +161,7 @@ def main(args) -> int:
         raise SystemExit("--task and --run-id are required")
 
     label = args.run_id.replace("/", "__")
-    run_dir = run_dir_for(args.run_id)
+    run_dir = run_dir_for(args.run_id, args.results_root)
     run_dir.mkdir(parents=True, exist_ok=True)
     tmp_root, ws = scratch_paths(label)
 
@@ -168,6 +178,11 @@ def main(args) -> int:
         (ws / "output").mkdir(parents=True)
         if docs_src.is_dir():
             shutil.copytree(docs_src, ws / "documents")
+            for p in (ws / "documents").rglob("*"):
+                if p.is_file():
+                    p.chmod(0o444)
+        else:
+            (ws / "documents").mkdir()
 
         harness_dir = Path(args.harness_dir) if args.harness_dir else None
         installed = []
@@ -183,9 +198,13 @@ def main(args) -> int:
                     shutil.copy2(src, dst)
                 installed.append(entry)
 
-        if READ_DOC.is_file():
-            (ws / "scripts").mkdir(exist_ok=True)
-            shutil.copy2(READ_DOC, ws / "scripts" / "read_doc.py")
+        (ws / "scripts").mkdir(parents=True, exist_ok=True)
+        if not READ_DOC.is_file():
+            raise SystemExit(
+                f"runtime document reader missing: {READ_DOC} -- without it every "
+                f"binary document 'read' silently returns noise"
+            )
+        shutil.copy2(READ_DOC, ws / "scripts" / "read_doc.py")
 
         try:
             ver = subprocess.run(
@@ -203,12 +222,20 @@ def main(args) -> int:
             "task": args.task,
             "run_id": args.run_id,
             "timeout": args.timeout,
+            "doc_parser": args.doc_parser,
             "harness_dir": str(harness_dir) if harness_dir else None,
             "harness_files": installed,
             "workspace": str(ws),
             "started_at": started,
         }
         (run_dir / "config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
+
+        env = os.environ.copy()
+        env.pop("XDG_DATA_HOME", None)
+        env.update({
+            "LAB_DOC_PARSER": args.doc_parser,
+            "LAB_BENCH_ROOT": str(REPO),
+        })
 
         prompt = build_prompt(args.task, ws)
         cmd = [
@@ -229,16 +256,27 @@ def main(args) -> int:
             "--forward-subagent-text",
         ]
         session_path = run_dir / "claude_session.jsonl"
+        wall_limit = int(max(60, args.timeout))
         with open(session_path, "w", encoding="utf-8") as out, \
              open(run_dir / "claude_stderr.log", "w", encoding="utf-8") as err:
-            rc = subprocess.run(
+            proc = subprocess.Popen(
                 cmd,
                 cwd=str(ws),
-                env=os.environ,
+                env=env,
                 stdin=subprocess.DEVNULL,
                 stdout=out,
                 stderr=err,
-            ).returncode
+                start_new_session=True,
+            )
+            try:
+                rc = proc.wait(timeout=wall_limit)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError):
+                    proc.kill()
+                proc.wait()
+                rc = 124
         wall = time.time() - t0
 
         graded = run_dir / "output"
@@ -288,4 +326,10 @@ if __name__ == "__main__":
     p.add_argument("--reasoning-effort", default="high")
     p.add_argument("--timeout", type=int, default=1800)
     p.add_argument("--harness-dir", default="")
+    p.add_argument(
+        "--doc-parser",
+        choices=["sandbox", "host"],
+        default=os.environ.get("LAB_DOC_PARSER", "sandbox"),
+        help="Where scripts/read_doc.py parses binary documents (default: %(default)s)",
+    )
     sys.exit(main(p.parse_args()))

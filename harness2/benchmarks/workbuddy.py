@@ -534,7 +534,33 @@ def _job_yaml(
         if ws is not None:
             hp["WB_HARNESS_WS"] = str(ws.resolve())
         hp_lines = "\n".join(f"  {key}: {json.dumps(val)}" for key, val in sorted(hp.items()))
-        extra = f"harness_params_override:\n{hp_lines}\n"
+        hp_block = f"harness_params_override:\n{hp_lines}\n"
+        cl_env: dict[str, str] = {}
+        ep = api.claude()
+        if ep is not None:
+            api.claude_env(ep, cl_env)
+        else:
+            for key in ("ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"):
+                if os.environ.get(key):
+                    cl_env[key] = os.environ[key]
+        env_block = ""
+        if cl_env:
+            env_lines = "\n".join(
+                f"  {key}: {json.dumps(val)}" for key, val in sorted(cl_env.items())
+            )
+            env_block = f"env_override:\n{env_lines}\n"
+        extra = (
+            "extra_allowed_hosts:\n"
+            "  - host.docker.internal\n"
+            "environment_override:\n"
+            "  mounts:\n"
+            "    - type: bind\n"
+            f"      source: {config.CLAUDE_DIST}\n"
+            "      target: /opt/claude\n"
+            "      read_only: true\n"
+            f"{env_block}"
+            f"{hp_block}"
+        )
     else:
         harness = _harness_cx()
         hp = {"CODEX_MODEL": config.SOLVER_MODEL_CX}
@@ -691,7 +717,7 @@ def spec_for(subset: str, substrate: str) -> BenchSpec:
         channels={"proposer": channel, "selector": channel},
         domain_word="category",
         leak_globs=s.leak_globs,
-        allow_subagents=(substrate == "oc"),
+        allow_subagents=(substrate in ("oc", "claude")),
         obs_trunc=50_000,
         proposer_deliverables=("names" if subset == "code" else "contents"),
         state_deliverable=True,
@@ -951,6 +977,7 @@ class WbAdapter:
                         },
                         d,
                         stubs=True,
+                        allow_subagents=self.spec.allow_subagents,
                     )
                 elif self.substrate.name == "claude":
                     HT.write_tree(
@@ -963,6 +990,7 @@ class WbAdapter:
                         },
                         d,
                         stubs=True,
+                        allow_subagents=self.spec.allow_subagents,
                     )
                 else:
                     HT.write_tree(
@@ -975,6 +1003,7 @@ class WbAdapter:
                         },
                         d,
                         stubs=True,
+                        allow_subagents=self.spec.allow_subagents,
                     )
                 _BASE_DONE.add(d)
         return d

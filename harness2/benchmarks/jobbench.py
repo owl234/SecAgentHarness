@@ -519,7 +519,7 @@ def make_spec(substrate: str) -> BenchSpec:
         channels=_channels(),
         domain_word="profession",
         leak_globs=("RUBRICS.json", "eval_result/**", "expected/**", "reference/**"),
-        allow_subagents=(substrate == "oc"),
+        allow_subagents=(substrate in ("oc", "claude")),
         obs_trunc=config.JB_OBS_TRUNC,
         proposer_deliverables="contents",
     )

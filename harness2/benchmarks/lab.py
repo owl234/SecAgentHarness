@@ -915,11 +915,22 @@ class LabAdapter:
                             "tool_descriptions/tool_guidance.md": "",
                         },
                         d,
+                        allow_subagents=self.spec.allow_subagents,
                     )
                 elif self.substrate.name == "claude":
-                    HT.write_tree(CLAUDE_SURFACE, {"CLAUDE.md": CODEX_BASE_BODY}, d)
+                    HT.write_tree(
+                        CLAUDE_SURFACE,
+                        {"CLAUDE.md": CODEX_BASE_BODY},
+                        d,
+                        allow_subagents=self.spec.allow_subagents,
+                    )
                 else:
-                    HT.write_tree(CODEX_SURFACE, {"AGENTS.md": CODEX_BASE_BODY}, d)
+                    HT.write_tree(
+                        CODEX_SURFACE,
+                        {"AGENTS.md": CODEX_BASE_BODY},
+                        d,
+                        allow_subagents=self.spec.allow_subagents,
+                    )
                 _BASE_DONE.add(d)
         return d
 

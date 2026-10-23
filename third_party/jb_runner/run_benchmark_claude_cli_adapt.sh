@@ -240,19 +240,25 @@ run_task() {
         return 1
     fi
 
-    local instructions_content
-    instructions_content="$(cat "$instructions_file")"
+    # Build the prompt message (aligned with oc and cx runners)
+    local prompt_msg="=== TASK FOLDER ===
+${temp_task_folder}
 
-    local prompt_msg="You are an autonomous AI expert working on a complex professional task.
+=== INSTRUCTIONS ===
+1. Read the TASK_INSTRUCTIONS.txt file in the task folder above
+2. Based on the Reference Files section in TASK_INSTRUCTIONS.txt, read the corresponding files from the same task folder using appropriate tools.
+3. Complete the task as specified in TASK_INSTRUCTIONS.txt
+4. Only save the final deliverables to the output directory specified below. Do not save any intermediate or temporary files.
 
-TASK SPECIFICATION:
-${instructions_content}
+=== OUTPUT DIRECTORY ===
+${temp_output_dir}
 
-CRITICAL ENVIRONMENT & WORKING INSTRUCTIONS:
-- Reference input files are in: ${temp_task_folder}
-- Deliverables MUST be saved directly to: ${temp_output_dir}
-- Confine work exclusively to: ${temp_workspace}
-- Read and adhere strictly to any instructions or guidelines provided in CLAUDE.md."
+IMPORTANT:
+- All reference files are in the task folder: ${temp_task_folder}
+- Only save the final deliverables to the output directory ${temp_output_dir}. Do not save any intermediate or temporary files.
+- You MUST only access files within ${temp_workspace} or search online for new reference files if you find needed. Do NOT access any files or directories in this system outside of this path.
+- If you encounter ambiguous or conflicting information, analyze the conflict, explain your reasoning, and justify the approach you choose.
+- If a file cannot be read directly (e.g., .xlsx, .docx, .db, .pptx), use appropriate tools, MCP servers, or code to extract and process its contents."
 
     local actual_model="$model"
     local reasoning_effort="${REASONING_EFFORT:-high}"
@@ -443,6 +449,12 @@ main() {
     echo "Temp Workspace: $TEMP_WORKSPACE_BASE"
     echo "Timeout Per Task: ${TIMEOUT_PER_TASK}s"
     echo "=========================================="
+
+    echo "Checking Claude CLI availability..."
+    "${HARNESS2_CLAUDE_BIN:-clawgod}" --version 2>&1 || {
+        echo "[ERROR] Claude CLI (${HARNESS2_CLAUDE_BIN:-clawgod}) not available."
+        exit 1
+    }
 
     cd "$SCRIPT_DIR"
     local task_dirs=($(find_task_dirs))

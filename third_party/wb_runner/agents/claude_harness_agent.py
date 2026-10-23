@@ -54,7 +54,7 @@ class ClaudeHarnessAgent(ClaudeAgent):
         return payload.getvalue(), n
 
     async def _materialize_harness(self, environment: BaseEnvironment) -> None:
-        """Install the harness at /workspace root."""
+        """Install the harness at /workspace root and commit it pre-agent."""
         ws = self._harness_ws
         if ws is None or not ws.is_dir():
             return
@@ -64,9 +64,16 @@ class ClaudeHarnessAgent(ClaudeAgent):
         blob = base64.b64encode(blob_bytes).decode()
         cmd = (
             "cd /workspace && "
-            f"echo {blob} | base64 -d | tar -xzf - -C /workspace"
+            f"echo {blob} | base64 -d | tar -xzf - -C /workspace && "
+            # Neutralize the install in the diff capture; skip when this is not a git repo.
+            "if git rev-parse --git-dir >/dev/null 2>&1; then "
+            "git add -A && "
+            "{ git diff --cached --quiet || "
+            "git -c user.email=harness@bench -c user.name=harness "
+            'commit -q -m "harness install (pre-agent)"; }; '
+            "fi"
         )
         await self.exec_as_agent(environment, command=cmd)
         log = getattr(self, "logger", None)
         if log is not None:
-            log.info("materialized %d harness file(s) from %s", n, ws)
+            log.info("materialized + committed %d harness file(s) from %s", n, ws)

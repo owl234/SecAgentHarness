@@ -153,7 +153,9 @@ def build(
     n_h = 0
     if harness_dir and Path(harness_dir).is_dir():
         assert_no_leak_paths(harness_dir, adapter.spec.leak_globs)
-        n_h = _copy_tree(Path(harness_dir), dest / "harness")
+        n_h = _copy_tree(
+            Path(harness_dir), dest / "harness", allow_subagents=adapter.spec.allow_subagents
+        )
 
     got_p = _write_pool(dest, pool, adapter, trunc, names_only)
 
@@ -301,7 +303,7 @@ def _write_pool(
         d.mkdir(parents=True, exist_ok=True)
         if cand_dir and Path(cand_dir).is_dir():
             assert_no_leak_paths(cand_dir, adapter.spec.leak_globs)
-            _copy_tree(Path(cand_dir), d / "harness")
+            _copy_tree(Path(cand_dir), d / "harness", allow_subagents=adapter.spec.allow_subagents)
             surface = adapter.substrate.surface()
             reference = harness_tree.read_tree(surface, dest / "harness")
             candidate = harness_tree.read_tree(surface, cand_dir)
@@ -383,11 +385,14 @@ def _images(adapter, run_dir: Path) -> list[Path]:
     return [Path(p) for p in (fn(run_dir) or [])]
 
 
-def _copy_tree(src: Path, dst: Path) -> int:
+def _copy_tree(src: Path, dst: Path, *, allow_subagents: bool = True) -> int:
     """Copy a component tree, dropping byte-compiled files; return the file count."""
     n = 0
     for p in sorted(src.rglob("*")):
         if not p.is_file() or "__pycache__" in p.parts or p.suffix == ".pyc":
+            continue
+        rel = p.relative_to(src).as_posix()
+        if not allow_subagents and rel == "sub_agents/README.md":
             continue
         t = dst / p.relative_to(src)
         t.parent.mkdir(parents=True, exist_ok=True)

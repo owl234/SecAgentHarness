@@ -225,7 +225,9 @@ def _run_stage(
 
         kept, err = _accept_tree(surface, adapter, new, fallback, label)
         if err:
-            harness_tree.write_tree(surface, new, tree.root / "harness")
+            harness_tree.write_tree(
+                surface, new, tree.root / "harness", allow_subagents=adapter.spec.allow_subagents
+            )
             continue
         notes = re.search(r"<notes>(.*?)</notes>", reply.text, re.S)
         return Stage(
@@ -272,7 +274,10 @@ def _roll(
     hdir = None
     if tree is not None:
         hdir = harness_tree.write_tree(
-            adapter.substrate.surface(), tree, work_dir / "harnesses" / label
+            adapter.substrate.surface(),
+            tree,
+            work_dir / "harnesses" / label,
+            allow_subagents=adapter.spec.allow_subagents,
         )
     run_id = run_id_of(label)
     try:
@@ -363,7 +368,12 @@ def run_parallel(
     result.rollouts.update({r.label: r for r in base})
     ctx_dir = work_dir / "context"
     benchmark_prompts = resolve_prompts(adapter, task_id)
-    base_dir = harness_tree.write_tree(surface, base_tree, work_dir / "harnesses" / "base")
+    base_dir = harness_tree.write_tree(
+        surface,
+        base_tree,
+        work_dir / "harnesses" / "base",
+        allow_subagents=adapter.spec.allow_subagents,
+    )
 
     specs = [(f"{d.lower()}{i}", d, i) for i in range(1, k + 1) for d in ("INV", "DOM")]
     with ThreadPoolExecutor(max_workers=min(len(specs), propose_workers)) as pool_x:
@@ -478,7 +488,10 @@ def run_sequential(
     for t in range(1, k + 1):
         current_label = f"c{t - 1}" if t > 1 else "base"
         current_dir = harness_tree.write_tree(
-            surface, current_harness, work_dir / "harnesses" / current_label
+            surface,
+            current_harness,
+            work_dir / "harnesses" / current_label,
+            allow_subagents=adapter.spec.allow_subagents,
         )
         specs = [(f"inv{t}", "INV"), (f"dom{t}", "DOM")]
         with ThreadPoolExecutor(max_workers=min(2, propose_workers)) as pool_x:

@@ -239,3 +239,132 @@ def test_benchmark_adapters_claude_support():
     lab = make_adapter("lab", None, "claude")
     assert lab.substrate.name == "claude"
     assert lab.spec.install_mode == "claude_root"
+
+
+def test_lab_claude_run_dir_preserves_nested_hierarchy(tmp_path):
+    import importlib.util
+    from harness2 import config
+
+    runner_py = config.THIRD_PARTY / "lab_runner" / "adapt_runs_claude" / "run_claude_lab.py"
+    spec = importlib.util.spec_from_file_location("_test_run_claude_lab", runner_py)
+    mod = importlib.util.module_from_spec(spec)
+    # Stub external.tts_lab before executing module
+    import sys
+    import types
+    fake_ext = types.ModuleType("external")
+    fake_tts = types.ModuleType("external.tts_lab")
+    fake_tts.config = types.SimpleNamespace()
+    sys.modules.setdefault("external", fake_ext)
+    sys.modules.setdefault("external.tts_lab", fake_tts)
+    spec.loader.exec_module(mod)
+
+    run_id = "lab-claude-agg1/antitrust-competition__task1/b1"
+    resolved = mod.run_dir_for(run_id, results_root=tmp_path)
+    assert resolved == (tmp_path / run_id).resolve()
+
+    with pytest.raises(SystemExit):
+        mod.run_dir_for("../escape", results_root=tmp_path)
+
+
+def test_workbuddy_claude_job_yaml_mounts_and_env(tmp_path, monkeypatch):
+    from harness2.benchmarks.workbuddy import SUBSETS, _job_yaml
+
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://example.anthropic.proxy/v1")
+    monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "test-token")
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    yml = _job_yaml(
+        SUBSETS["code"],
+        "claude",
+        "wb-code-claude-agg1",
+        ["task-1"],
+        ws,
+        1,
+        tmp_path / "jobs",
+    )
+    assert "target: /opt/claude" in yml
+    assert "host.docker.internal" in yml
+    assert "WB_HARNESS_WS" in yml
+    assert "ANTHROPIC_BASE_URL" in yml
+
+
+def test_claude_prompt_surface_and_subagent_rules(tmp_path):
+    from harness2.core import context, prompts, tree as HT
+    from harness2.core.spec import BenchPrompts
+    from harness2.substrate.claude import CLAUDE_SURFACE
+
+    bp = BenchPrompts(
+        work="Produce a legal analysis memo.",
+        deliverable_word="deliverable",
+        domain_word="practice area",
+    )
+    for pack in ("adapt", "tts"):
+        bp_pack = BenchPrompts(
+            work=bp.work,
+            deliverable_word=bp.deliverable_word,
+            domain_word=bp.domain_word,
+            prompt_pack=pack,
+        )
+        inv_prompt = prompts.propose(bp_pack, "INV", CLAUDE_SURFACE, k=2, index=1)
+        dom_prompt = prompts.propose(bp_pack, "DOM", CLAUDE_SURFACE, k=2, index=1)
+        agg_prompt = prompts.aggregate(bp_pack, CLAUDE_SURFACE, k=2, index=1)
+        seq_prompt = prompts.compose_round(bp_pack, CLAUDE_SURFACE, t=1, k=2)
+        for text in (inv_prompt, dom_prompt, agg_prompt, seq_prompt):
+            assert "CLAUDE.md" in text
+            assert ".claude/skills/" in text
+            assert ".claude/settings.json" in text
+
+    # JobBench and WorkBuddy enable subagents on oc & claude, disable on cx; LAB disables on all.
+    assert make_adapter("jb", None, "claude").spec.allow_subagents is True
+    assert make_adapter("jb", None, "oc").spec.allow_subagents is True
+    assert make_adapter("jb", None, "cx").spec.allow_subagents is False
+    assert make_adapter("wb", "office", "claude").spec.allow_subagents is True
+    assert make_adapter("wb", "office", "cx").spec.allow_subagents is False
+    assert make_adapter("lab", None, "claude").spec.allow_subagents is False
+
+    # When allow_subagents=False, write_tree and _copy_tree omit sub_agents/README.md stub.
+    h_no_sub = HT.write_tree(
+        CLAUDE_SURFACE,
+        {"CLAUDE.md": "# Base"},
+        tmp_path / "h_no_sub",
+        stubs=True,
+        allow_subagents=False,
+    )
+    assert not (h_no_sub / "sub_agents" / "README.md").exists()
+    assert (h_no_sub / "scripts" / "README.md").exists()
+
+    h_with_sub = HT.write_tree(
+        CLAUDE_SURFACE,
+        {"CLAUDE.md": "# Base"},
+        tmp_path / "h_with_sub",
+        stubs=True,
+        allow_subagents=True,
+    )
+    assert (h_with_sub / "sub_agents" / "README.md").exists()
+
+    copied = tmp_path / "copied_no_sub"
+    context._copy_tree(h_with_sub, copied, allow_subagents=False)
+    assert not (copied / "sub_agents" / "README.md").exists()
+
+
+def test_jobbench_claude_runner_prompt_parity():
+    from harness2 import config
+
+    cx_runner = (
+        config.THIRD_PARTY / "jb_runner" / "run_benchmark_codex_cli_adapt.sh"
+    ).read_text(encoding="utf-8")
+    claude_runner = (
+        config.THIRD_PARTY / "jb_runner" / "run_benchmark_claude_cli_adapt.sh"
+    ).read_text(encoding="utf-8")
+    for required_fragment in (
+        "=== TASK FOLDER ===",
+        "=== INSTRUCTIONS ===",
+        "1. Read the TASK_INSTRUCTIONS.txt file in the task folder above",
+        "4. Only save the final deliverables to the output directory specified below. Do not save any intermediate or temporary files.",
+        "If a file cannot be read directly (e.g., .xlsx, .docx, .db, .pptx), use appropriate tools, MCP servers, or code to extract and process its contents.",
+    ):
+        assert required_fragment in cx_runner
+        assert required_fragment in claude_runner
+
+
+
