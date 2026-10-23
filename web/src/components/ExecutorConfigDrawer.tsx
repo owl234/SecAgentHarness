@@ -340,23 +340,23 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 w-full max-w-2xl h-full flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 w-full max-w-4xl h-full flex flex-col shadow-2xl overflow-hidden">
         {/* Drawer Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-tr from-blue-500/20 to-orange-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+        <div className="shrink-0 p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-950/50">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-xl bg-gradient-to-tr from-blue-500/20 to-orange-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 shrink-0">
               <Cpu className="w-6 h-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">
                   统一 API 与执行基座配置中心
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
                   自动同步 .env
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
                 一处配置 HARNESS2_API_* 同时驱动 Claude (clawgod)、OpenCode 与 Codex，支持按基座独立覆盖
               </p>
             </div>
@@ -364,14 +364,14 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Selector Pills: Unified API first + 4 Executor/Role tabs */}
-        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-2 overflow-x-auto">
+        <div className="shrink-0 px-5 sm:px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center gap-2">
           <button
             onClick={() => setSelectedTab('unified')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
@@ -380,10 +380,10 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
                 : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
             }`}
           >
-            <Globe className={`w-3.5 h-3.5 ${selectedTab === 'unified' ? 'text-blue-200' : 'text-blue-500'}`} />
+            <Globe className={`w-3.5 h-3.5 shrink-0 ${selectedTab === 'unified' ? 'text-blue-200' : 'text-blue-500'}`} />
             <span>统一 API (推荐)</span>
             <span
-              className={`w-2 h-2 rounded-full ${
+              className={`w-2 h-2 rounded-full shrink-0 ${
                 isUnifiedReady ? 'bg-emerald-400' : 'bg-amber-400'
               }`}
               title={isUnifiedReady ? '已配置统一 API' : '待配置'}
@@ -405,22 +405,22 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
                 }`}
               >
                 {e.id === 'claude' && (
-                  <Flame className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-300' : 'text-orange-500'}`} />
+                  <Flame className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-amber-300' : 'text-orange-500'}`} />
                 )}
                 {e.id === 'oc' && (
-                  <Bot className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-200' : 'text-blue-500'}`} />
+                  <Bot className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-200' : 'text-blue-500'}`} />
                 )}
                 {e.id === 'cx' && (
-                  <Terminal className={`w-3.5 h-3.5 ${isSelected ? 'text-green-200' : 'text-green-500'}`} />
+                  <Terminal className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-green-200' : 'text-green-500'}`} />
                 )}
                 {e.id === 'vertex' && (
-                  <Zap className={`w-3.5 h-3.5 ${isSelected ? 'text-purple-200' : 'text-purple-500'}`} />
+                  <Zap className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-purple-200' : 'text-purple-500'}`} />
                 )}
 
                 <span>{e.name}</span>
 
                 <span
-                  className={`w-2 h-2 rounded-full ${
+                  className={`w-2 h-2 rounded-full shrink-0 ${
                     isReady ? 'bg-emerald-400' : 'bg-amber-400'
                   }`}
                   title={isReady ? '就绪' : '待配置'}
@@ -431,7 +431,7 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
         </div>
 
         {/* Drawer Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-5">
           {/* Probe Result Banner */}
           {probeResult && (
             <div
@@ -441,22 +441,24 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
                   : 'bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-300'
               }`}
             >
-              <div className="flex items-start gap-2.5">
+              <div className="flex items-start gap-2.5 min-w-0 flex-1">
                 {probeResult.ok ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                 ) : (
                   <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                 )}
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="font-bold">
                     {probeResult.ok ? '端点连通性探测通过' : '端点连通性探测异常'}
                   </div>
-                  <div className="mt-0.5 font-mono text-[11px] opacity-90">{probeResult.message}</div>
+                  <div className="mt-0.5 font-mono text-[11px] opacity-90 break-all leading-relaxed">
+                    {probeResult.message}
+                  </div>
                 </div>
               </div>
               <button
                 onClick={() => setProbeResult(null)}
-                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -595,11 +597,11 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
                     .map((e) => (
                       <div
                         key={e.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800"
                       >
-                        <div className="flex items-center gap-2 font-sans font-semibold text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center gap-2 font-sans font-semibold text-slate-700 dark:text-slate-300 shrink-0">
                           <span
-                            className={`w-2 h-2 rounded-full ${
+                            className={`w-2 h-2 rounded-full shrink-0 ${
                               e.status === 'ready' ? 'bg-emerald-500' : 'bg-amber-500'
                             }`}
                           />
@@ -610,7 +612,7 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
                             </span>
                           )}
                         </div>
-                        <span className="text-slate-500 dark:text-slate-400 truncate max-w-md">
+                        <span className="text-slate-500 dark:text-slate-400 break-all sm:text-right leading-relaxed">
                           {e.resolved_endpoint || '(未配置端点)'}
                         </span>
                       </div>
@@ -795,13 +797,13 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
                   </div>
 
                   {/* clawgod CLI Path Check */}
-                  <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-                    <div className="min-w-0 pr-2">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 text-xs">
+                    <div className="min-w-0 flex-1">
                       <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <Terminal className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>项目隔离运行时 (dependencies/claude/bin/clawgod)</span>
                       </div>
-                      <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
+                      <div className="text-[11px] text-slate-400 font-mono mt-0.5 break-all leading-relaxed">
                         {activeExecutor.cli_available
                           ? activeExecutor.cli_path
                           : '未安装 · 请运行 harness2 setup <bench> --substrate claude'}
@@ -995,13 +997,13 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
                   </div>
 
                   {/* Codex config.toml Sync Status */}
-                  <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-                    <div className="min-w-0 pr-2">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 text-xs">
+                    <div className="min-w-0 flex-1">
                       <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <FileCode2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>CODEX_HOME/config.toml 状态校验</span>
                       </div>
-                      <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
+                      <div className="text-[11px] text-slate-400 font-mono mt-0.5 break-all leading-relaxed">
                         {activeExecutor.config_toml_status === 'ok'
                           ? 'dependencies/codex/home/config.toml 与当前环境变量完全一致'
                           : activeExecutor.config_toml_error || '保存配置时将自动重新生成 config.toml'}
@@ -1229,10 +1231,10 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
                   {activeExecutor.capabilities.map((cap, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 text-slate-700 dark:text-slate-300"
+                      className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 text-slate-700 dark:text-slate-300"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                      <span className="truncate" title={cap}>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed break-words">
                         {cap}
                       </span>
                     </div>
@@ -1244,7 +1246,7 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex flex-wrap items-center justify-between gap-3">
+        <div className="shrink-0 p-4 sm:p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <button
               type="button"
