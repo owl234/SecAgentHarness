@@ -191,3 +191,25 @@ def test_opencode_env_keeps_a_callers_config(monkeypatch):
     monkeypatch.setenv("HARNESS2_API_KEY", "k")
     env = api.opencode_env(api.opencode(), {"OPENCODE_CONFIG_CONTENT": '{"mine":1}'})
     assert env["OPENCODE_CONFIG_CONTENT"] == '{"mine":1}'
+
+
+def test_proposer_env_wires_shared_endpoint(monkeypatch):
+    from harness2.core.proposer import Proposer
+    from harness2.core.spec import ChannelSpec
+
+    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("HARNESS2_API_KEY", "shared-key")
+    monkeypatch.setenv("HARNESS2_SOLVER_MODEL", "harness2/solver-m")
+
+    oc_prop = Proposer(ChannelSpec("opencode", "harness2/improver-m"))
+    oc_env = oc_prop.env()
+    block = json.loads(oc_env["OPENCODE_CONFIG_CONTENT"])
+    assert block["provider"]["harness2"]["options"]["baseURL"] == "https://shared.example.com/v1"
+    assert "improver-m" in block["provider"]["harness2"]["models"]
+
+    cl_prop = Proposer(ChannelSpec("claude_cli", "improver-m"))
+    cl_env = cl_prop.env()
+    assert cl_env["ANTHROPIC_BASE_URL"] == "https://shared.example.com/v1"
+    assert cl_env["ANTHROPIC_AUTH_TOKEN"] == "shared-key"
+    assert cl_env["ANTHROPIC_MODEL"] == "improver-m"
+    assert "CLAUDE_CODE_USE_VERTEX" not in cl_env

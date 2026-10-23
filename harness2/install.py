@@ -195,6 +195,180 @@ def workbuddy_models(*, dry_run=False):
             path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+CODEX_LAUNCHER_SCRIPT = """#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+import sys
+import threading
+import urllib.error
+import urllib.request
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+REAL_BIN = Path(__file__).resolve().parent / "bin" / "codex"
+
+
+def _normalize_tools(tools: object) -> list[dict]:
+    if not isinstance(tools, list):
+        return []
+    out: list[dict] = []
+
+    def _add_fn(item: dict) -> None:
+        fn_block = item.get("function") if isinstance(item.get("function"), dict) else {}
+        name = item.get("name") or fn_block.get("name") or ""
+        if not name:
+            return
+        desc = item.get("description") or fn_block.get("description") or ""
+        params = (
+            item.get("parameters")
+            or fn_block.get("parameters")
+            or {"type": "object", "properties": {}}
+        )
+        fn_obj = {"name": name, "description": desc, "parameters": params}
+        merged = dict(item)
+        merged.update(fn_obj)
+        merged["type"] = "function"
+        merged["function"] = fn_obj
+        out.append(merged)
+
+    for tool in tools:
+        if not isinstance(tool, dict):
+            continue
+        ttype = tool.get("type")
+        if ttype == "function":
+            _add_fn(tool)
+        elif ttype == "namespace":
+            for inner in tool.get("tools") or []:
+                if isinstance(inner, dict) and inner.get("type") == "function":
+                    _add_fn(inner)
+        else:
+            out.append(tool)
+    return out
+
+
+def _read_provider_config() -> tuple[str, str]:
+    codex_home = Path(os.environ.get("CODEX_HOME") or (Path.home() / ".codex"))
+    cfg = codex_home / "config.toml"
+    if not cfg.is_file():
+        return "", ""
+    raw = cfg.read_text(encoding="utf-8", errors="replace")
+    try:
+        import tomllib
+
+        data = tomllib.loads(raw)
+        provider = str(data.get("model_provider") or "")
+        block = (data.get("model_providers") or {}).get(provider) or {}
+        return provider, str(block.get("base_url") or "")
+    except Exception:
+        m_prov = re.search(r'^model_provider\\s*=\\s*"([^"]+)"', raw, re.M)
+        m_url = re.search(r'^base_url\\s*=\\s*"([^"]+)"', raw, re.M)
+        return (m_prov.group(1) if m_prov else ""), (m_url.group(1) if m_url else "")
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    if (
+        not args
+        or args[0] != "exec"
+        or any(f in args for f in ("-V", "--version", "-h", "--help"))
+        or os.environ.get("HARNESS2_NO_CODEX_SHIM")
+    ):
+        os.execv(str(REAL_BIN), [str(REAL_BIN), *args])
+
+    provider, upstream_base = _read_provider_config()
+    if not provider or not upstream_base:
+        os.execv(str(REAL_BIN), [str(REAL_BIN), *args])
+
+    target_url = upstream_base.rstrip("/") + "/responses"
+
+    class ProxyHandler(BaseHTTPRequestHandler):
+        def log_message(self, *a: object) -> None:
+            pass
+
+        def do_POST(self) -> None:
+            length = int(self.headers.get("Content-Length") or 0)
+            raw_body = self.rfile.read(length)
+            try:
+                payload = json.loads(raw_body)
+                if isinstance(payload, dict) and "tools" in payload:
+                    payload["tools"] = _normalize_tools(payload["tools"])
+                    raw_body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            except Exception:
+                pass
+
+            fwd_headers = {}
+            for k in ("Authorization", "Content-Type", "Accept", "User-Agent"):
+                v = self.headers.get(k)
+                if v:
+                    fwd_headers[k] = v
+            fwd_headers.setdefault("Content-Type", "application/json")
+            fwd_headers.setdefault("User-Agent", "codex-cli")
+
+            req = urllib.request.Request(
+                target_url, data=raw_body, headers=fwd_headers, method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=600) as resp:
+                    self.send_response(resp.status)
+                    ct = resp.headers.get("Content-Type")
+                    if ct:
+                        self.send_header("Content-Type", ct)
+                    self.end_headers()
+                    while True:
+                        chunk = resp.read(4096)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+                        self.wfile.flush()
+            except urllib.error.HTTPError as err:
+                err_body = err.read()
+                self.send_response(err.code)
+                ct = err.headers.get("Content-Type") if err.headers else None
+                if ct:
+                    self.send_header("Content-Type", ct)
+                self.end_headers()
+                if err_body:
+                    self.wfile.write(err_body)
+            except Exception as exc:
+                msg = json.dumps({"error": {"message": str(exc)}}).encode("utf-8")
+                self.send_response(502)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(msg)
+
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), ProxyHandler)
+    port = srv.server_port
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+
+    override = f'model_providers.{provider}.base_url="http://127.0.0.1:{port}/v1"'
+    cmd = [str(REAL_BIN), "exec", "-c", override, *args[1:]]
+    try:
+        return subprocess.call(cmd)
+    finally:
+        srv.shutdown()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+"""
+
+
+def write_codex_launcher(dest: Path | None = None) -> None:
+    """Install the transparent tools-normalizing launcher at `<CODEX_DIST>/codex`."""
+    dist = Path(dest or config.CODEX_DIST)
+    if not (dist / "bin" / "codex").is_file():
+        return
+    binary = dist / "codex"
+    if binary.is_symlink() or binary.is_file():
+        binary.unlink()
+    binary.write_text(CODEX_LAUNCHER_SCRIPT, encoding="utf-8")
+    binary.chmod(0o755)
+
+
 def codex(*, dry_run=False):
     root = config.DEPENDENCIES / "codex"
     run(
@@ -210,11 +384,8 @@ def codex(*, dry_run=False):
         dest = Path(config.CODEX_DIST)
         platform = candidates[0].parent.parent
         shutil.copytree(platform, dest, dirs_exist_ok=True)
+        write_codex_launcher(dest)
         _share_with_containers(dest)
-        binary = dest / "codex"
-        if binary.is_symlink():
-            binary.unlink()
-        binary.symlink_to("bin/codex")
     configure_codex(dry_run=dry_run)
 
 
@@ -255,6 +426,7 @@ def configure_codex(*, dry_run=False):
     if not dry_run:
         config.CODEX_HOME_DIR.mkdir(parents=True, exist_ok=True)
         (config.CODEX_HOME_DIR / "config.toml").write_text(body, encoding="utf-8")
+        write_codex_launcher()
 
 
 def codex_config_error() -> str | None:

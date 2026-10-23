@@ -30,10 +30,10 @@ import subprocess
 import tempfile
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
-from .. import config
+from .. import api, config
 from .spec import ChannelSpec
 
 SYSTEM_ARG_MAX = 120_000
@@ -105,14 +105,19 @@ class Proposer:
     def env(self) -> dict[str, str]:
         e = {k: v for k, v in os.environ.items() if k not in _DROP_ENV}
         if self.spec.kind == "claude_cli":
-            e.update(
-                {
-                    "CLAUDE_CODE_USE_VERTEX": "1",
-                    "ANTHROPIC_VERTEX_PROJECT_ID": self.project,
-                    "CLOUD_ML_REGION": self.region,
-                    "ANTHROPIC_MODEL": self.spec.model,
-                }
-            )
+            endpoint = api.claude()
+            if endpoint is not None:
+                api.claude_env(endpoint, e)
+                e["ANTHROPIC_MODEL"] = self.spec.model
+            else:
+                e.update(
+                    {
+                        "CLAUDE_CODE_USE_VERTEX": "1",
+                        "ANTHROPIC_VERTEX_PROJECT_ID": self.project,
+                        "CLOUD_ML_REGION": self.region,
+                        "ANTHROPIC_MODEL": self.spec.model,
+                    }
+                )
         else:
             e.update(
                 {
@@ -121,6 +126,9 @@ class Proposer:
                     "VERTEXAI_LOCATION": self.region,
                 }
             )
+            endpoint = api.opencode()
+            if endpoint is not None:
+                api.opencode_env(replace(endpoint, model=self.spec.model), e)
         return e
 
     def call(
