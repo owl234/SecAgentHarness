@@ -33,7 +33,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .. import config
+from .. import api, config
 from ..core import runmark as RM
 from ..core import tree as HT
 from ..core.spec import BenchPrompts, BenchSpec, resolve_channel_model
@@ -810,6 +810,9 @@ class JobBenchAdapter:
             "MAX_CONCURRENT": "1",
             "OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX": str(OUTPUT_TOKEN_MAX),
         }
+        endpoint = api.opencode()
+        if endpoint is not None:
+            api.opencode_env(endpoint, env)
         self._run_runner(OC_RUNNER, env, wall=2 * t + 600, label=label)
         return [self._require_artifacts(task_id, label)]
 
@@ -1006,7 +1009,12 @@ class JobBenchAdapter:
                 f"upstream JobBench judge missing at {judge_py}; run scripts/setup_benchmark.py jb"
             )
         if self.substrate.name == "cx":
-            config.require("HARNESS2_CODEX_API_KEY", needed_by="JB codex cells")
+            endpoint = api.codex()
+            if endpoint is None or not endpoint.api_key:
+                raise config.ConfigError(
+                    "HARNESS2_CODEX_API_KEY (or HARNESS2_API_KEY) is required for JB codex "
+                    "cells; see .env.example"
+                )
             # The rollout reads the endpoint from CODEX_HOME/config.toml, not from the
             # environment the substrate preflight just probed; refuse to report ready
             # for an endpoint the run would never contact.

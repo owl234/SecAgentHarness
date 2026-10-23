@@ -21,7 +21,8 @@ dependencies = []
 
 [project.optional-dependencies]
 render = ["openpyxl>=3.1,<4", "python-pptx>=1,<2"]
-bridge = ["litellm[proxy]==1.95.0", "fastapi==0.139.2", "google-auth==2.56.3"]
+bridge = ["litellm[proxy]==1.95.0", "fastapi==0.139.2", "google-auth==2.56.3", "httpx>=0.27.0"]
+responses-bridge = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "httpx>=0.27.0"]
 ui = ["fastapi>=0.115.0", "uvicorn>=0.30.0"]
 
 [project.scripts]
@@ -33,6 +34,7 @@ harness2-setup = "harness2.cli.setup:main"
 harness2-check = "harness2.cli.check:main"
 harness2-demo = "harness2.cli.demo:main"
 harness2-bridge = "harness2.cli.bridge:main"
+harness2-responses-bridge = "harness2.cli.responses_bridge:main"
 harness2-ui = "harness2.cli.ui:main"
 
 [tool.setuptools.packages.find]
@@ -45,3 +47,6 @@ extend-exclude = ["third_party", "dependencies"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

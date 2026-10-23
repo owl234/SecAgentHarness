@@ -35,7 +35,7 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
-from .. import config
+from .. import api, config
 from ..core import runmark as RM
 from ..core import tree as HT
 from ..core.selection import order_graded_first
@@ -495,6 +495,19 @@ def sweep_orphans(max_age_s: int = 86400) -> int:
     return n
 
 
+def _codex_key() -> str:
+    """The bearer key Codex sends: the per-substrate key, else the shared one."""
+    endpoint = api.codex()
+    return endpoint.api_key if endpoint is not None else config.VERTEX_PROXY_KEY
+
+
+def _codex_container_url() -> str:
+    """The endpoint as the container sees it, falling back to the host-visible one."""
+    endpoint = api.codex()
+    url = endpoint.base_url if endpoint is not None else ""
+    return config.CODEX_CONTAINER_URL or url
+
+
 def _job_yaml(
     subset: Subset,
     substrate: str,
@@ -541,9 +554,9 @@ def _job_yaml(
             "      target: /opt/codex\n"
             "      read_only: true\n"
             "env_override:\n"
-            f"  VERTEX_PROXY_KEY: {json.dumps(config.VERTEX_PROXY_KEY)}\n"
+            f"  VERTEX_PROXY_KEY: {json.dumps(_codex_key())}\n"
             f"  VERTEXAI_LOCATION: {config.VERTEX_REGION}\n"
-            f"  CODEX_BRIDGE_URL: {json.dumps(config.CODEX_CONTAINER_URL)}\n"
+            f"  CODEX_BRIDGE_URL: {json.dumps(_codex_container_url())}\n"
             f"{hp_block}"
         )
     judge = (

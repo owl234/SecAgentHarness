@@ -38,6 +38,9 @@ Shell 环境变量的优先级高于 `.env` 文件。
 
 | 配置项 | 含义说明 |
 |---|---|
+| `HARNESS2_API_BASE_URL` | 可选统一 API 端点基础 URL（`…/v1`），自适应驱动三大执行器 |
+| `HARNESS2_API_KEY` | 可选统一 API 密钥 |
+| `HARNESS2_API_MODEL` | 可选统一模型 ID（OpenCode 会自动补齐 `harness2/` 前缀） |
 | `HARNESS2_SOLVER_MODEL` | 执行器模型（采用 OpenCode 的 `provider/model` 格式） |
 | `HARNESS2_IMPROVER_MODEL` | 改进器模型（同上格式；默认使用执行器模型） |
 | `HARNESS2_JUDGE_MODEL` | 基础评测模型 ID（适配器会自动添加 Vertex 前缀） |
@@ -109,7 +112,15 @@ harness2 run --bench lab --substrate cx --k 1 --mode parallel \
 
 WorkBuddy 会在 Docker 容器内部执行 Codex，因此 Bridge 必须监听 `--host 0.0.0.0`；它还会打印 `HARNESS2_CODEX_CONTAINER_URL`。注意：这会将 Bridge 绑定到所有网络接口，请确保限制仅受信任的客户端访问。
 
-如需使用其他 Responses API 端点，可直接设置 `HARNESS2_CODEX_BASE_URL`、`HARNESS2_CODEX_API_KEY` 以及 `HARNESS2_CODEX_MODEL`。安装程序会将该端点与模型记录在 `dependencies/codex/home/config.toml` 中；修改任何一项后需重新执行 setup。在此之前，`harness2 check` 会提示配置已过期。
+如需使用其他 Responses API 端点，可直接设置 `HARNESS2_CODEX_BASE_URL`、`HARNESS2_CODEX_API_KEY` 以及 `HARNESS2_CODEX_MODEL`。若上游为通用 OpenAI Chat Completions 端点（未提供原生 `/v1/responses`），可启动内置 Responses 转换桥：
+
+```bash
+uv pip install -e '.[responses-bridge]'
+harness2 responses-bridge --upstream https://your-endpoint.example.com/v1 --api-key "$HARNESS2_API_KEY"
+# WorkBuddy 容器场景需指定 --host 0.0.0.0 ...
+```
+
+桥接服务会打印生成的 `HARNESS2_CODEX_*` 配置。安装程序会将该端点与模型记录在 `dependencies/codex/home/config.toml` 中；修改任何一项后需重新执行 setup。在此之前，`harness2 check` 会提示配置已过期。
 
 Codex 运行时其内部沙箱处于禁用状态。评测前请仔细阅读[执行器网络限制](EXPERIMENTS_zh.md#网络访问控制)。
 

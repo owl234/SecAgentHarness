@@ -25,7 +25,7 @@ import tempfile
 import tomllib
 from pathlib import Path
 
-from . import config
+from . import api, config
 
 PATCHES = {
     "opencode": "opencode-compat.diff",
@@ -239,12 +239,17 @@ CODEX_PROVIDER = "harness2"
 
 
 def configure_codex(*, dry_run=False):
-    config.require("HARNESS2_CODEX_BASE_URL", needed_by="Codex setup")
+    endpoint = api.codex()
+    if endpoint is None or not endpoint.base_url:
+        raise config.ConfigError(
+            "HARNESS2_CODEX_BASE_URL (or HARNESS2_API_BASE_URL) is required for Codex setup; "
+            "see .env.example"
+        )
     body = (
         f"model = {json.dumps(config.SOLVER_MODEL_CX)}\n"
         f"model_provider = {json.dumps(CODEX_PROVIDER)}\n"
         f'[model_providers.{CODEX_PROVIDER}]\nname = "Configured Responses endpoint"\n'
-        f"base_url = {json.dumps(config.CODEX_BASE_URL)}\n"
+        f"base_url = {json.dumps(endpoint.base_url)}\n"
         'wire_api = "responses"\nenv_key = "VERTEX_PROXY_KEY"\n'
     )
     if not dry_run:
@@ -274,10 +279,12 @@ def codex_config_error() -> str | None:
         return f"{path} is not valid TOML ({exc}); {CODEX_CONFIG_REMEDY}"
     provider = data.get("model_provider")
     block = (data.get("model_providers") or {}).get(provider) or {}
+    endpoint = api.codex()
+    want_url = endpoint.base_url if endpoint is not None else config.CODEX_BASE_URL
     stale = [
         f"{key} is {found!r}, configuration says {want!r}"
         for key, want, found in (
-            ("base_url", config.CODEX_BASE_URL, block.get("base_url")),
+            ("base_url", want_url, block.get("base_url")),
             ("model", config.SOLVER_MODEL_CX, data.get("model")),
         )
         if found != want

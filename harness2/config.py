@@ -96,7 +96,26 @@ if VERTEX_PROJECT:
 os.environ.setdefault("GOOGLE_CLOUD_LOCATION", VERTEX_REGION)
 
 
-SOLVER_MODEL_OC = env("HARNESS2_SOLVER_MODEL", "")
+# One endpoint and key can drive all three substrates; see harness2/api.py for the
+# per-substrate protocol mapping. The per-substrate variables still win.
+API_BASE_URL = env("HARNESS2_API_BASE_URL", "")
+API_KEY = env("HARNESS2_API_KEY", "")
+API_MODEL = env("HARNESS2_API_MODEL", "")
+
+
+def _solver_model_oc() -> str:
+    """The executor model in OpenCode's `provider/model` form.
+
+    A shared endpoint owns its own provider id (`harness2/`), so a bare
+    HARNESS2_API_MODEL is qualified here rather than at every call site.
+    """
+    explicit = env("HARNESS2_SOLVER_MODEL", "")
+    if explicit or not API_MODEL:
+        return explicit
+    return f"harness2/{API_MODEL}" if API_BASE_URL else API_MODEL
+
+
+SOLVER_MODEL_OC = _solver_model_oc()
 SOLVER_MODEL_CX = env("HARNESS2_CODEX_MODEL", SOLVER_MODEL_OC.split("/", 1)[-1])
 SOLVER_MODEL_CLAUDE = env("HARNESS2_CLAUDE_MODEL", "claude-3-7-sonnet-20250219")
 IMPROVER_MODEL = env("HARNESS2_IMPROVER_MODEL", SOLVER_MODEL_OC)
@@ -158,9 +177,9 @@ JB_OBS_TRUNC = 50000
 
 CODEX_VERSION = "0.144.6"
 CODEX_DIST = str(DEPENDENCIES / "codex" / "dist")
-CODEX_BASE_URL = env("HARNESS2_CODEX_BASE_URL", "")
+CODEX_BASE_URL = env("HARNESS2_CODEX_BASE_URL", API_BASE_URL)
 CODEX_CONTAINER_URL = env("HARNESS2_CODEX_CONTAINER_URL", CODEX_BASE_URL)
-VERTEX_PROXY_KEY = env("HARNESS2_CODEX_API_KEY", "")
+VERTEX_PROXY_KEY = env("HARNESS2_CODEX_API_KEY", API_KEY)
 CODEX_HOME_DIR = DEPENDENCIES / "codex" / "home"
 
 CLAUDE_DIST = DEPENDENCIES / "claude"
@@ -185,7 +204,12 @@ PROPOSER_CONCURRENCY = 2
 
 
 def validate_models(*, judge: bool = False) -> None:
-    require("HARNESS2_SOLVER_MODEL", needed_by="executor rollouts")
+    if not SOLVER_MODEL_OC:
+        raise ConfigError(
+            "HARNESS2_SOLVER_MODEL is required for executor rollouts; set it in .env or "
+            "the shell, or set HARNESS2_API_MODEL alongside HARNESS2_API_BASE_URL "
+            "(see .env.example)"
+        )
     if "/" not in SOLVER_MODEL_OC or "/" not in IMPROVER_MODEL:
         raise ConfigError("Executor and improver models must use OpenCode's provider/model syntax")
     if any(m.startswith("google-vertex") for m in (SOLVER_MODEL_OC, IMPROVER_MODEL)):

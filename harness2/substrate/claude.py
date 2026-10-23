@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 from typing import Mapping
 
-from .. import config
+from .. import api, config
 from ..core import runmark as RM
 from ..core import tree as HT
 from ..core.tree import SurfaceSpec
@@ -195,18 +195,24 @@ class ClaudeSubstrate:
         return argv
 
     def exec_env(self, base_env: Mapping[str, str], *, workspace: Path | None = None) -> dict[str, str]:
-        """Build the execution environment for Claude Code / clawgod."""
+        """Build the execution environment for Claude Code / clawgod.
+
+        The shared HARNESS2_API_* pair (or the per-substrate ANTHROPIC_* / HARNESS2_CLAUDE_*)
+        is mapped onto the variables clawgod reads. Values already in `base_env` win.
+        """
         env = dict(base_env)
-        # Inherit Anthropic credentials from harness2 config if present; the clawgod
-        # wrapper honours ANTHROPIC_BASE_URL / ANTHROPIC_AUTH_TOKEN for non-Anthropic
-        # endpoints (cli.cjs), so those pass through when the caller sets them.
-        if "ANTHROPIC_API_KEY" not in env and hasattr(config, "ANTHROPIC_API_KEY"):
-            val = getattr(config, "ANTHROPIC_API_KEY", "")
-            if val:
-                env["ANTHROPIC_API_KEY"] = val
-        for key in ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN"):
-            if key not in env and os.environ.get(key):
-                env[key] = os.environ[key]
+        endpoint = api.claude()
+        if endpoint is not None:
+            api.claude_env(endpoint, env)
+        else:
+            # No shared endpoint: pass through whatever the caller exported.
+            if "ANTHROPIC_API_KEY" not in env and hasattr(config, "ANTHROPIC_API_KEY"):
+                val = getattr(config, "ANTHROPIC_API_KEY", "")
+                if val:
+                    env["ANTHROPIC_API_KEY"] = val
+            for key in ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN"):
+                if key not in env and os.environ.get(key):
+                    env[key] = os.environ[key]
         return env
 
     def execute(

@@ -42,6 +42,9 @@ to `global`. Your account must have access to each configured model.
 
 | Setting | Meaning |
 |---|---|
+| `HARNESS2_API_BASE_URL` | Optional unified API base URL (`…/v1`) driving all three substrates |
+| `HARNESS2_API_KEY` | Optional unified API key |
+| `HARNESS2_API_MODEL` | Unified model ID (OpenCode auto-prefixes `harness2/`) |
 | `HARNESS2_SOLVER_MODEL` | Executor model in OpenCode's `provider/model` format |
 | `HARNESS2_IMPROVER_MODEL` | Improver model in the same format; defaults to the executor |
 | `HARNESS2_JUDGE_MODEL` | Bare judge model ID; the adapter supplies the Vertex prefix |
@@ -135,7 +138,17 @@ WorkBuddy executes Codex inside Docker containers, so the bridge must listen on
 bridge to all network interfaces; restrict access to the intended clients.
 
 To use another Responses API endpoint, set `HARNESS2_CODEX_BASE_URL`,
-`HARNESS2_CODEX_API_KEY`, and `HARNESS2_CODEX_MODEL` directly. Setup records the
+`HARNESS2_CODEX_API_KEY`, and `HARNESS2_CODEX_MODEL` directly. If your upstream
+endpoint provides OpenAI-compatible Chat Completions instead of Responses, run the
+built-in translation bridge:
+
+```bash
+uv pip install -e '.[responses-bridge]'
+harness2 responses-bridge --upstream https://your-endpoint.example.com/v1 --api-key "$HARNESS2_API_KEY"
+# for WorkBuddy containers: harness2 responses-bridge --host 0.0.0.0 ...
+```
+
+The bridge prints the `HARNESS2_CODEX_*` settings to add to `.env`. Setup records the
 endpoint and model in `dependencies/codex/home/config.toml`; rerun setup after
 changing either. `harness2 check` reports stale configuration until then.
 

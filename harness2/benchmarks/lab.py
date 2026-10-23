@@ -31,7 +31,7 @@ from dataclasses import replace
 from functools import cache
 from pathlib import Path
 
-from .. import config
+from .. import api, config
 from ..core import runmark as RM
 from ..core import tree as HT
 from ..core.spec import BenchPrompts, BenchSpec, resolve_channel_model
@@ -396,6 +396,15 @@ def _lab_env() -> dict[str, str]:
     }
 
 
+def _oc_env() -> dict[str, str]:
+    """`_lab_env` plus the provider block OpenCode resolves `harness2/<model>` from."""
+    env = _lab_env()
+    endpoint = api.opencode()
+    if endpoint is not None:
+        api.opencode_env(endpoint, env)
+    return env
+
+
 def _json_or_none(p: Path) -> dict | None:
     """Parse `p` as JSON; None when it is missing or torn."""
     try:
@@ -684,7 +693,7 @@ class LabAdapter:
                 run_detached(
                     cmd,
                     cwd=config.lab_repo(),
-                    env=_lab_env(),
+                    env=_oc_env(),
                     stdin=subprocess.DEVNULL,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
@@ -776,7 +785,10 @@ class LabAdapter:
                 "ADAPT_LABCLAUDE_SCRATCH": os.environ.get("ADAPT_LABCLAUDE_SCRATCH")
                 or str(config.RUNS / "lab" / "scratch"),
             }
-            if hasattr(config, "ANTHROPIC_API_KEY") and config.ANTHROPIC_API_KEY:
+            endpoint = api.claude()
+            if endpoint is not None:
+                api.claude_env(endpoint, env)
+            elif hasattr(config, "ANTHROPIC_API_KEY") and config.ANTHROPIC_API_KEY:
                 env["ANTHROPIC_API_KEY"] = config.ANTHROPIC_API_KEY
 
             try:

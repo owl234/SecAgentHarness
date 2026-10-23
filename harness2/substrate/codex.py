@@ -30,7 +30,7 @@ import tempfile
 from pathlib import Path
 from typing import Mapping
 
-from .. import config
+from .. import api, config
 from ..core import runmark as RM
 from ..core import tree as HT
 from ..core.tree import SurfaceSpec
@@ -177,11 +177,16 @@ class CodexSubstrate:
         """The reference `codex exec` environment; the real launchers build their own.
 
         The custom provider comes from CODEX_HOME, not a global OpenAI URL override.
+        A shared HARNESS2_API_KEY lands in VERTEX_PROXY_KEY, the name config.toml's
+        `env_key` names.
         """
         env = dict(base_env)
         env.pop("OPENAI_BASE_URL", None)
         env["CODEX_HOME"] = str(codex_home)
         env["PATH"] = str(Path(config.CODEX_DIST) / "codex-path") + os.pathsep + env.get("PATH", "")
+        endpoint = api.codex()
+        if endpoint is not None and endpoint.api_key:
+            env.setdefault("VERTEX_PROXY_KEY", endpoint.api_key)
         return env
 
     def execute(
@@ -208,9 +213,18 @@ class CodexSubstrate:
         """Check the CLI and Responses endpoint, including container configuration."""
         from urllib.parse import urlparse
 
-        config.require("HARNESS2_CODEX_BASE_URL", needed_by="Codex Responses endpoint")
-        config.require("HARNESS2_CODEX_API_KEY", needed_by="Codex endpoint authentication")
-        url = urlparse(config.CODEX_BASE_URL)
+        endpoint = api.codex()
+        if endpoint is None or not endpoint.base_url:
+            raise config.ConfigError(
+                "HARNESS2_CODEX_BASE_URL is required for the Codex Responses endpoint; "
+                "set it or HARNESS2_API_BASE_URL in .env (see .env.example)"
+            )
+        if not endpoint.api_key:
+            raise config.ConfigError(
+                "HARNESS2_CODEX_API_KEY is required for Codex endpoint authentication; "
+                "set it or HARNESS2_API_KEY in .env (see .env.example)"
+            )
+        url = urlparse(endpoint.base_url)
         if url.scheme not in ("http", "https") or not url.hostname:
             raise config.ConfigError("HARNESS2_CODEX_BASE_URL must be an HTTP(S) URL")
         binary = Path(config.CODEX_DIST) / "codex"

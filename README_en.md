@@ -124,12 +124,11 @@ Poppler; WorkBuddy-Bench needs Docker. Then configure your models:
 
 ```bash
 cp .env.example .env
-# Edit .env with your Vertex AI project and model IDs.
+# Edit .env with your unified API endpoint (HARNESS2_API_*) or Vertex AI project and model IDs.
 gcloud auth application-default login
 ```
 
-See the [setup guide](docs/SETUP.md) for model settings, authentication
-alternatives, and the [Codex executor](docs/SETUP.md#codex-executor).
+See the [setup guide](docs/SETUP.md) for unified API access (one endpoint driving all three substrates), model settings, authentication alternatives, and the [Codex executor](docs/SETUP.md#codex-executor).
 
 ## Run a benchmark
 

@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import argparse
 
-from harness2.cli._common import make_adapter
-from harness2.cli import _common as C
+from harness2 import api
 from harness2 import i18n as I18N
+from harness2.cli import _common as C
+from harness2.cli._common import make_adapter
 from harness2.preflight import check
 
 
@@ -46,7 +47,13 @@ def main(argv=None):
     print(
         I18N.t("check.ready", lang, spec=adapter.spec.name, sub=args.substrate, n=len(adapter.tasks()))
     )
+    print(f"  endpoint: {api.describe(_endpoint(args.substrate))}")
     return 0
+
+
+def _endpoint(substrate: str):
+    """The endpoint this substrate will actually contact, for the ready line."""
+    return {"cx": api.codex, "claude": api.claude}.get(substrate, api.opencode)()
 
 
 if __name__ == "__main__":

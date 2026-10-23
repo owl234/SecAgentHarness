@@ -110,11 +110,11 @@ harness2-demo --output runs/demo --k 2
 
 ```bash
 cp .env.example .env
-# 编辑 .env 文件，填入您的 Vertex AI 项目 ID 与模型 ID
+# 编辑 .env 文件，填入统一 API 端点 (HARNESS2_API_*) 或 Vertex AI 项目与模型 ID
 gcloud auth application-default login
 ```
 
-有关模型配置选项、替代身份验证方案以及 [Codex 执行器](docs/SETUP_zh.md#codex-执行器)，请参阅[安装配置指南](docs/SETUP_zh.md)。
+有关统一 API 接入（单一端点驱动三大基座）、模型配置选项、替代身份验证方案以及 [Codex 执行器](docs/SETUP_zh.md#codex-执行器)，请参阅[安装配置指南](docs/SETUP_zh.md)。
 
 <a id="run-a-benchmark"></a>
 ## 运行基准测试

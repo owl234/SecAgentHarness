@@ -45,7 +45,19 @@ import sys
 
 from .. import i18n as I18N
 
-_COMMANDS = ("setup", "check", "run", "sweep", "judge", "report", "demo", "pipeline", "ui", "bridge")
+_COMMANDS = (
+    "setup",
+    "check",
+    "run",
+    "sweep",
+    "judge",
+    "report",
+    "demo",
+    "pipeline",
+    "ui",
+    "bridge",
+    "responses-bridge",
+)
 
 
 def _build_parser(lang: str | None = None) -> argparse.ArgumentParser:
@@ -57,7 +69,7 @@ def _build_parser(lang: str | None = None) -> argparse.ArgumentParser:
     p.add_argument("--lang", default=None, choices=("en", "zh"), help=I18N.t("cell.lang", lang))
     sub = p.add_subparsers(dest="command", metavar="COMMAND")
     for name in _COMMANDS:
-        key = f"cli.cmd_{name}"
+        key = f"cli.cmd_{name.replace('-', '_')}"
         help_text = I18N.t(key, lang)
         if help_text == key:
             help_text = name
@@ -160,6 +172,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     cmd, rest = rest_args[0], rest_args[1:]
+    cmd = cmd.replace("_", "-")
     if lang is not None and "--lang" not in rest:
         # Forward the global language to the subcommand, which owns --lang.
         rest = ["--lang", lang, *rest]
@@ -199,6 +212,10 @@ def main(argv: list[str] | None = None) -> int:
         from . import ui as ui_mod
 
         return ui_mod.main(rest)
+    if cmd in ("responses-bridge", "responses_bridge"):
+        from . import responses_bridge as responses_bridge_mod
+
+        return responses_bridge_mod.main(rest)
     from . import bridge as bridge_mod
 
     return bridge_mod.main(rest)

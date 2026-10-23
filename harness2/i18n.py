@@ -291,6 +291,43 @@ _STR: dict[str, tuple[str, str]] = {
         "Add these to .env, then run harness2-setup <bench> --substrate cx:",
         "请将以下内容加入 .env，然后运行 harness2-setup <bench> --substrate cx：",
     ),
+    # ---------- responses_bridge ----------
+    "responses_bridge.desc": (
+        "Serve the Responses API Codex needs on top of a Chat Completions endpoint.",
+        "在 Chat Completions 端点之上为 Codex 提供所需的 Responses API 桥接服务。",
+    ),
+    "responses_bridge.upstream": (
+        "Chat Completions base URL (…/v1)",
+        "Chat Completions 上游基础 URL（…/v1）",
+    ),
+    "responses_bridge.api_key": (
+        "Key sent to the upstream",
+        "向上游发送的 API Key",
+    ),
+    "responses_bridge.host": (
+        "Bind address (use 0.0.0.0 for WorkBuddy containers)",
+        "绑定地址（WorkBuddy 容器请用 0.0.0.0）",
+    ),
+    "responses_bridge.port": (
+        "Port (0 picks a free one or reuses the saved port)",
+        "端口（0 表示自动分配空闲端口或复用已保存端口）",
+    ),
+    "responses_bridge.timeout": (
+        "Upstream timeout in seconds",
+        "上游超时时间（秒）",
+    ),
+    "responses_bridge.no_upstream": (
+        "Set --upstream or HARNESS2_API_BASE_URL",
+        "请设置 --upstream 或 HARNESS2_API_BASE_URL",
+    ),
+    "responses_bridge.no_key": (
+        "Set --api-key or HARNESS2_API_KEY",
+        "请设置 --api-key 或 HARNESS2_API_KEY",
+    ),
+    "responses_bridge.hint": (
+        "Add these to .env (Codex reads them through CODEX_HOME):",
+        "请将以下内容加入 .env（Codex 通过 CODEX_HOME 读取）：",
+    ),
     # ---------- ui ----------
     "ui.desc": (
         "Launch the Harness² Visual Web Console and Workbench",
@@ -358,6 +395,10 @@ _STR: dict[str, tuple[str, str]] = {
     ),
     "cli.cmd_ui": ("launch the visual web console", "启动可视化 Web 控制台"),
     "cli.cmd_bridge": ("serve the Codex Responses-API bridge", "启动 Codex 中转服务"),
+    "cli.cmd_responses_bridge": (
+        "serve the Responses-API bridge on top of Chat Completions",
+        "在 Chat 端点之上为 Codex 启动 Responses-API 桥接服务",
+    ),
     "cli.unknown": (
         "unknown command {v!r}; expected one of: {opts} (try `harness2 --help`)",
         "未知子命令 {v!r}；应为：{opts}（试试 `harness2 --help`）",
