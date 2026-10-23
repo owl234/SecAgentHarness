@@ -633,6 +633,9 @@ def get_harness_diff(
 
 def get_preflight_status(workspace_root: Path) -> dict[str, Any]:
     """Inspect environment prerequisites for user guidance and preflight checks."""
+    sync_config_from_env()
+    from .. import api, config
+
     docker_bin = shutil.which("docker")
     docker_available = False
     docker_msg = "未安装 Docker 命令行工具"
@@ -647,14 +650,34 @@ def get_preflight_status(workspace_root: Path) -> dict[str, Any]:
         except Exception:
             docker_msg = "Docker 检查超时或失败"
 
-    project = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("HARNESS2_VERTEX_PROJECT")
-    solver_model = os.environ.get("HARNESS2_SOLVER_MODEL")
-    judge_model = os.environ.get("HARNESS2_JUDGE_MODEL")
-    api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    project = config.VERTEX_PROJECT
+    solver_model = config.SOLVER_MODEL_OC or config.SOLVER_MODEL_CLAUDE or config.SOLVER_MODEL_CX
+    judge_model = config.JUDGE_MODEL
+    ep_claude = api.claude()
+    ep_oc = api.opencode()
+    ep_cx = api.codex()
+    has_unified = bool(config.API_BASE_URL and config.API_KEY)
+    has_any_endpoint = bool(
+        has_unified
+        or (ep_claude and ep_claude.api_key)
+        or (ep_oc and ep_oc.api_key)
+        or (ep_cx and ep_cx.api_key)
+        or os.environ.get("ANTHROPIC_API_KEY")
+        or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+        or os.environ.get("OPENAI_API_KEY")
+    )
 
-    has_credentials = bool(project or solver_model or api_key)
-    if has_credentials:
-        cred_msg = f"已就绪 (Project: {project or '已设置'}, Model: {solver_model or '已设置'})"
+    has_credentials = bool(project or has_any_endpoint)
+    if has_unified:
+        cred_msg = (
+            f"统一 API 已就绪 ({config.API_BASE_URL} · "
+            f"Model: {config.API_MODEL or solver_model or '按基座指定'})"
+        )
+    elif has_credentials:
+        cred_msg = (
+            f"已就绪 (Endpoint/Project: {project or (ep_claude.base_url if ep_claude else '已配置')}, "
+            f"Model: {solver_model or '已设置'})"
+        )
     else:
         cred_msg = "未配置大模型凭据（免 API 的本地 Demo 模式完全可用，可即时体验）"
 
@@ -691,19 +714,19 @@ def get_preflight_status(workspace_root: Path) -> dict[str, Any]:
                 "available": jb_ready and has_credentials,
                 "label": "JobBench (jb)",
                 "status": "ready" if (jb_ready and has_credentials) else ("need_credentials" if jb_ready else "not_installed"),
-                "message": "已就绪" if (jb_ready and has_credentials) else ("需配置 .env 模型凭据" if jb_ready else "需运行 harness2-setup jb"),
+                "message": "已就绪" if (jb_ready and has_credentials) else ("需配置统一 API 或 .env 模型凭据" if jb_ready else "需运行 harness2-setup jb"),
             },
             "lab": {
                 "available": lab_ready and has_credentials and pandoc_ok,
                 "label": "LAB (lab)",
-                "status": "ready" if (lab_ready and has_credentials and pandoc_ok) else "not_installed",
-                "message": "已就绪" if (lab_ready and has_credentials and pandoc_ok) else "需运行 harness2-setup lab (依赖 Pandoc/Poppler)",
+                "status": "ready" if (lab_ready and has_credentials and pandoc_ok) else ("need_credentials" if (lab_ready and pandoc_ok) else "not_installed"),
+                "message": "已就绪" if (lab_ready and has_credentials and pandoc_ok) else ("需配置统一 API 或 .env 模型凭据" if (lab_ready and pandoc_ok) else "需运行 harness2-setup lab (依赖 Pandoc/Poppler)"),
             },
             "wb": {
                 "available": wb_ready and docker_available and has_credentials,
                 "label": "WorkBuddy-Bench (wb)",
-                "status": "ready" if (wb_ready and docker_available and has_credentials) else "not_installed",
-                "message": "已就绪" if (wb_ready and docker_available and has_credentials) else "需运行 harness2-setup wb 并启动 Docker",
+                "status": "ready" if (wb_ready and docker_available and has_credentials) else ("need_credentials" if (wb_ready and docker_available) else "not_installed"),
+                "message": "已就绪" if (wb_ready and docker_available and has_credentials) else ("需配置模型凭据" if (wb_ready and docker_available) else "需运行 harness2-setup wb 并启动 Docker"),
             },
         },
         "tools": {
@@ -1156,135 +1179,672 @@ def apply_component_to_run(
     }
 
 
-def get_executors_status(workspace_root: Path) -> dict[str, Any]:
-    """Inspect and return detailed status of all supported executors (Claude, OpenCode, Codex, Vertex)."""
-    # 1. Claude CLI / API inspection
+def _mask_secret(val: str) -> str:
+    """Return a masked preview of a secret key without exposing raw credentials."""
+    s = (val or "").strip()
+    if not s:
+        return ""
+    if len(s) <= 8:
+        return "****"
+    return f"{s[:4]}...{s[-4:]}"
+
+
+def sync_config_from_env() -> None:
+    """Refresh module-level derived settings on `harness2.config` from `os.environ`."""
+    from .. import config
+
+    config.VERTEX_PROJECT = config.env(
+        "GOOGLE_CLOUD_PROJECT", config.env("HARNESS2_VERTEX_PROJECT", "")
+    )
+    config.VERTEX_REGION = config.env("GOOGLE_CLOUD_LOCATION", "global")
+    config.API_BASE_URL = config.env("HARNESS2_API_BASE_URL", "")
+    config.API_KEY = config.env("HARNESS2_API_KEY", "")
+    config.API_MODEL = config.env("HARNESS2_API_MODEL", "")
+    config.SOLVER_MODEL_OC = config._solver_model_oc()
+    config.SOLVER_MODEL_CX = config.env(
+        "HARNESS2_CODEX_MODEL", config.SOLVER_MODEL_OC.split("/", 1)[-1]
+    )
+    config.SOLVER_MODEL_CLAUDE = config.env(
+        "HARNESS2_CLAUDE_MODEL", config.API_MODEL or "claude-3-7-sonnet-20250219"
+    )
+    config.IMPROVER_MODEL = config.env("HARNESS2_IMPROVER_MODEL", config.SOLVER_MODEL_OC)
+    config.JUDGE_MODEL = config.env("HARNESS2_JUDGE_MODEL", "")
+    config.PROPOSER_MODEL_BY_CHANNEL = {
+        "opencode": config.IMPROVER_MODEL,
+        "claude_cli": config.IMPROVER_MODEL,
+    }
+    vertex_host = (
+        "aiplatform.googleapis.com"
+        if config.VERTEX_REGION == "global"
+        else f"{config.VERTEX_REGION}-aiplatform.googleapis.com"
+    )
+    config.VERTEX_OPENAI_URL = (
+        f"https://{vertex_host}/v1/projects/{config.VERTEX_PROJECT}"
+        f"/locations/{config.VERTEX_REGION}/endpoints/openapi"
+    )
+    config.JB_JUDGE_API_BASE = config.env(
+        "HARNESS2_JUDGE_BASE_URL",
+        config.VERTEX_OPENAI_URL if config.VERTEX_PROJECT else "",
+    )
+    config.JB_JUDGE_API_KEY = config.env("HARNESS2_JUDGE_API_KEY", "")
+    config.LAB_JUDGE_MODEL = (
+        "vertex/" + config.JUDGE_MODEL
+        if config.JUDGE_MODEL.startswith(("claude", "gemini"))
+        else config.JUDGE_MODEL
+    )
+    config.JB_JUDGE_MODEL = (
+        "google/" + config.JUDGE_MODEL
+        if config.JUDGE_MODEL.startswith("gemini") and not config.env("HARNESS2_JUDGE_BASE_URL")
+        else config.JUDGE_MODEL
+    )
+    config.CODEX_BASE_URL = config.env("HARNESS2_CODEX_BASE_URL", config.API_BASE_URL)
+    config.CODEX_CONTAINER_URL = config.env("HARNESS2_CODEX_CONTAINER_URL", config.CODEX_BASE_URL)
+    config.VERTEX_PROXY_KEY = config.env("HARNESS2_CODEX_API_KEY", config.API_KEY)
+
+
+def persist_env_updates(
+    workspace_root: Path,
+    updates: dict[str, str | None],
+    *,
+    write_dotenv: bool = True,
+) -> dict[str, Any]:
+    """Update `os.environ`, persist changes to `.env` (preserving comments), and sync derived files."""
+    from .. import api, config, install
+
+    applied: dict[str, str] = {}
+    for key, val in updates.items():
+        if val is None:
+            continue
+        cleaned = str(val).strip()
+        if cleaned:
+            os.environ[key] = cleaned
+        else:
+            os.environ.pop(key, None)
+        applied[key] = cleaned
+
+    dotenv_path = workspace_root / ".env"
+    example_path = workspace_root / ".env.example"
+    if write_dotenv and applied:
+        if dotenv_path.is_file():
+            raw_text = dotenv_path.read_text(encoding="utf-8")
+        elif example_path.is_file():
+            raw_text = example_path.read_text(encoding="utf-8")
+        else:
+            raw_text = "# Harness2 environment configuration\n"
+
+        lines = raw_text.splitlines()
+        remaining = dict(applied)
+
+        # Pass 1: Update active KEY=... lines in place
+        for idx, line in enumerate(lines):
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                continue
+            body = stripped[len("export ") :].lstrip() if stripped.startswith("export ") else stripped
+            k, _, _ = body.partition("=")
+            k = k.strip()
+            if k in remaining:
+                new_val = remaining.pop(k)
+                lines[idx] = f"{k}={new_val}"
+
+        # Pass 2: Replace commented template lines `# KEY=...` in place
+        for idx, line in enumerate(lines):
+            stripped = line.strip()
+            if not stripped.startswith("#"):
+                continue
+            m = re.match(r"^#\s*([A-Z0-9_]+)\s*=.*$", stripped)
+            if m and m.group(1) in remaining:
+                k = m.group(1)
+                new_val = remaining.pop(k)
+                if new_val:
+                    lines[idx] = f"{k}={new_val}"
+                else:
+                    lines[idx] = f"# {k}="
+
+        # Pass 3: Append any remaining non-empty keys
+        appended = [f"{k}={v}" for k, v in remaining.items() if v]
+        if appended:
+            if lines and lines[-1].strip():
+                lines.append("")
+            lines.extend(appended)
+
+        dotenv_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    sync_config_from_env()
+
+    synced_files: list[str] = []
+    if write_dotenv and applied and dotenv_path.is_file():
+        synced_files.append(".env")
+
+    # Sync derived files when operating on the repository workspace:
+    # 1. Codex home/config.toml when Codex endpoint is present
+    ep_cx = api.codex()
+    if ep_cx is not None and ep_cx.base_url and workspace_root.resolve() == config.ROOT.resolve():
+        try:
+            install.configure_codex(dry_run=False)
+            synced_files.append(str((config.CODEX_HOME_DIR / "config.toml").relative_to(workspace_root)))
+        except Exception:
+            pass
+
+    # 2. Claude clawgod provider.json when protocol is openai-chat (or reset when anthropic)
+    claude_dir = workspace_root / "dependencies" / "claude"
+    ep_cl = api.claude()
+    if claude_dir.is_dir():
+        prov_file = claude_dir / "provider.json"
+        try:
+            if ep_cl is not None and ep_cl.protocol == "openai-chat":
+                prov_file.write_text(api.claude_provider_json(ep_cl), encoding="utf-8")
+                prov_file.chmod(0o600)
+                synced_files.append(str(prov_file.relative_to(workspace_root)))
+            elif prov_file.is_file():
+                cur = _safe_read_json(prov_file) or {}
+                if cur.get("protocol") == "openai-chat":
+                    prov_file.write_text("{}\n", encoding="utf-8")
+                    synced_files.append(str(prov_file.relative_to(workspace_root)))
+        except Exception:
+            pass
+
+    return {"applied_keys": list(applied.keys()), "synced_files": synced_files}
+
+
+def get_bridge_status(workspace_root: Path, managed_info: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Check whether the local Responses Bridge is running and return its connection details."""
+    import urllib.request
+
+    bridge_json = workspace_root / "dependencies" / "codex" / "responses-bridge.json"
+    saved = _safe_read_json(bridge_json) or {}
+    port = (managed_info or {}).get("port") or saved.get("port")
+    host = (managed_info or {}).get("host") or "127.0.0.1"
+    key = saved.get("key") or ""
+    upstream = (managed_info or {}).get("upstream") or os.environ.get("HARNESS2_API_BASE_URL", "")
+    running = False
+
+    if port:
+        probe_host = "127.0.0.1" if host in ("0.0.0.0", "127.0.0.1", "localhost") else host
+        health_url = f"http://{probe_host}:{port}/healthz"
+        try:
+            req = urllib.request.Request(health_url, method="GET")
+            with urllib.request.urlopen(req, timeout=0.6) as resp:
+                if resp.status == 200:
+                    running = True
+                    data = json.loads(resp.read().decode("utf-8", errors="replace"))
+                    if data.get("upstream"):
+                        upstream = str(data["upstream"]).removesuffix("/chat/completions")
+        except Exception:
+            running = bool(managed_info and managed_info.get("running"))
+
+    local_url = f"http://127.0.0.1:{port}/v1" if port else ""
+    container_url = f"http://host.docker.internal:{port}/v1" if port else ""
+    return {
+        "running": running,
+        "port": port,
+        "host": host,
+        "upstream": upstream,
+        "local_url": local_url,
+        "container_url": container_url,
+        "key_configured": bool(key),
+        "managed": bool(managed_info and managed_info.get("running")),
+    }
+
+
+def probe_executor_endpoint(
+    workspace_root: Path,
+    target: str,
+    *,
+    base_url: str | None = None,
+    api_key: str | None = None,
+    protocol: str | None = None,
+    model: str | None = None,
+) -> dict[str, Any]:
+    """Test live connectivity to an API endpoint for Unified API or a specific substrate."""
+    import time
+    import urllib.error
+    import urllib.request
+    from .. import api, config
+
+    sync_config_from_env()
+
+    ep: api.Endpoint | None = None
+    if target == "claude":
+        ep = api.claude()
+        default_proto = "anthropic"
+        default_model = config.SOLVER_MODEL_CLAUDE
+    elif target == "oc":
+        ep = api.opencode()
+        default_proto = "openai-chat"
+        default_model = config.SOLVER_MODEL_OC
+    elif target == "cx":
+        ep = api.codex()
+        default_proto = "openai-responses"
+        default_model = config.SOLVER_MODEL_CX
+    elif target == "vertex":
+        default_proto = "openai-chat"
+        default_model = config.JUDGE_MODEL or "gemini-2.5-pro"
+        ep = api.Endpoint(
+            base_url=config.JB_JUDGE_API_BASE,
+            api_key=config.JB_JUDGE_API_KEY,
+            protocol="openai-chat",
+            model=default_model,
+        ) if config.JB_JUDGE_API_BASE else None
+    else:
+        # unified
+        default_proto = os.environ.get("HARNESS2_API_PROTOCOL") or "openai-chat"
+        default_model = config.API_MODEL
+        ep = (
+            api.Endpoint(
+                base_url=config.API_BASE_URL,
+                api_key=config.API_KEY,
+                protocol=default_proto,
+                model=default_model,
+            )
+            if config.API_BASE_URL
+            else None
+        )
+
+    eff_url = (base_url if base_url is not None else (ep.base_url if ep else "")).strip()
+    eff_key = (api_key if api_key is not None and api_key.strip() else (ep.api_key if ep else "")).strip()
+    if not eff_key and target == "claude":
+        eff_key = (
+            os.environ.get("HARNESS2_CLAUDE_API_KEY")
+            or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+            or os.environ.get("ANTHROPIC_API_KEY", "")
+        ).strip()
+    eff_proto = (protocol if protocol else (ep.protocol if ep else default_proto)).strip() or default_proto
+    eff_model = (model if model else (ep.model if ep else default_model)).strip() or default_model
+
+    if not eff_url and target == "claude" and eff_key:
+        eff_url = "https://api.anthropic.com"
+
+    if not eff_url:
+        return {
+            "ok": False,
+            "target": target,
+            "endpoint": "",
+            "protocol": eff_proto,
+            "status_code": None,
+            "latency_ms": 0,
+            "message": "未配置 API Base URL，请先填写端点地址 (No Base URL configured)",
+        }
+
+    t0 = time.perf_counter()
+    clean_base = eff_url.rstrip("/")
+
+    def _do_req(url: str, method: str = "GET", body: dict | None = None, headers: dict[str, str] | None = None) -> tuple[int, str]:
+        hdrs = {"User-Agent": "Harness2-Preflight/0.1", "Accept": "application/json"}
+        if headers:
+            hdrs.update(headers)
+        data = None
+        if body is not None:
+            data = json.dumps(body).encode("utf-8")
+            hdrs["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, data=data, headers=hdrs, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=8.0) as resp:
+                return resp.status, resp.read(500).decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            err_body = ""
+            try:
+                err_body = e.read(500).decode("utf-8", errors="replace")
+            except Exception:
+                pass
+            return e.code, err_body
+
+    auth_headers: dict[str, str] = {}
+    if eff_key:
+        auth_headers["Authorization"] = f"Bearer {eff_key}"
+        auth_headers["x-api-key"] = eff_key
+    if eff_proto == "anthropic":
+        auth_headers["anthropic-version"] = "2023-06-01"
+
+    try:
+        models_url = clean_base + ("/models" if clean_base.endswith("/v1") else "/v1/models")
+        code, snippet = _do_req(models_url, "GET", headers=auth_headers)
+        # If /models is not implemented on a proxy (404/405), fall back to protocol-specific endpoint probe
+        if code in (404, 405):
+            bare_model = eff_model.split("/", 1)[-1] if eff_model else "gpt-4o"
+            if eff_proto == "anthropic":
+                msg_url = clean_base + ("/messages" if clean_base.endswith("/v1") else "/v1/messages")
+                code, snippet = _do_req(
+                    msg_url,
+                    "POST",
+                    body={
+                        "model": bare_model or "claude-3-7-sonnet-20250219",
+                        "max_tokens": 1,
+                        "messages": [{"role": "user", "content": "ping"}],
+                    },
+                    headers=auth_headers,
+                )
+            elif eff_proto == "openai-responses":
+                resp_url = clean_base + ("/responses" if clean_base.endswith("/v1") else "/v1/responses")
+                code, snippet = _do_req(
+                    resp_url,
+                    "POST",
+                    body={"model": bare_model, "input": "ping", "max_output_tokens": 16},
+                    headers=auth_headers,
+                )
+            else:
+                chat_url = clean_base + ("/chat/completions" if clean_base.endswith("/v1") else "/v1/chat/completions")
+                code, snippet = _do_req(
+                    chat_url,
+                    "POST",
+                    body={
+                        "model": bare_model,
+                        "max_tokens": 1,
+                        "messages": [{"role": "user", "content": "ping"}],
+                    },
+                    headers=auth_headers,
+                )
+
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        ok = 200 <= code < 300
+        if ok:
+            msg = f"端点连通正常 (HTTP {code}, {latency_ms}ms) · 协议 {eff_proto}"
+        elif code in (401, 403):
+            msg = f"网络可达但鉴权被拒 (HTTP {code}, {latency_ms}ms)：请检查 API Key / Auth Token"
+        else:
+            short = snippet.strip().replace("\n", " ")[:120]
+            msg = f"端点返回异常状态 HTTP {code} ({latency_ms}ms){': ' + short if short else ''}"
+        return {
+            "ok": ok,
+            "target": target,
+            "endpoint": eff_url,
+            "protocol": eff_proto,
+            "status_code": code,
+            "latency_ms": latency_ms,
+            "message": msg,
+        }
+    except Exception as exc:
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        return {
+            "ok": False,
+            "target": target,
+            "endpoint": eff_url,
+            "protocol": eff_proto,
+            "status_code": None,
+            "latency_ms": latency_ms,
+            "message": f"无法连接到端点 {eff_url}: {type(exc).__name__}: {exc}",
+        }
+
+
+def get_executors_status(
+    workspace_root: Path, managed_bridge: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Inspect and return detailed ground-truth status of Unified API and all supported executors."""
+    sync_config_from_env()
+    from .. import api, config, install
     from ..substrate.claude import find_claude_binary
+
+    # 0. Unified API & Bridge inspection
+    unified_base_url = os.environ.get("HARNESS2_API_BASE_URL", "")
+    unified_key = os.environ.get("HARNESS2_API_KEY", "")
+    unified_model = os.environ.get("HARNESS2_API_MODEL", "")
+    unified_protocol = os.environ.get("HARNESS2_API_PROTOCOL", "")
+    bridge_info = get_bridge_status(workspace_root, managed_bridge)
+
+    # 1. Claude Code (clawgod) inspection
     claude_binary_path = find_claude_binary()
-    claude_bin = str(claude_binary_path) if claude_binary_path.is_file() and os.access(claude_binary_path, os.X_OK) else None
-    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    claude_model = os.environ.get("HARNESS2_CLAUDE_MODEL", "claude-3-7-sonnet-20250219")
-    claude_thinking = int(os.environ.get("HARNESS2_CLAUDE_THINKING_BUDGET", "4096"))
-
-    claude_status = "ready" if (claude_bin or anthropic_key) else "needs_config"
-    claude_msg = (
-        f"Claude (clawgod) 运行时已就绪 (CLI: {claude_bin or '未安装'}, API Key: {'已配置' if anthropic_key else '未配置'})"
-        if (claude_bin or anthropic_key)
-        else "未配置 ANTHROPIC_API_KEY 或未检测到 claude/clawgod CLI"
+    claude_cli_ok = claude_binary_path.is_file() and os.access(claude_binary_path, os.X_OK)
+    claude_bin = str(claude_binary_path) if claude_cli_ok else ""
+    ep_claude = api.claude()
+    claude_raw_key = (
+        os.environ.get("HARNESS2_CLAUDE_API_KEY")
+        or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+        or os.environ.get("ANTHROPIC_API_KEY", "")
     )
+    claude_has_key = bool((ep_claude and ep_claude.api_key) or claude_raw_key)
+    claude_model = config.SOLVER_MODEL_CLAUDE
+    claude_model_override = os.environ.get("HARNESS2_CLAUDE_MODEL", "")
+    claude_effort = os.environ.get("HARNESS2_CLAUDE_EFFORT", "high") or "high"
+    claude_base_override = os.environ.get("HARNESS2_CLAUDE_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL", "")
+    claude_proto_override = os.environ.get("HARNESS2_CLAUDE_PROTOCOL", "")
+    claude_effective_proto = ep_claude.protocol if ep_claude else (claude_proto_override or "anthropic")
+    claude_using_unified = bool(unified_base_url and not os.environ.get("HARNESS2_CLAUDE_BASE_URL"))
 
-    # 2. OpenCode Substrate inspection
+    if claude_cli_ok and claude_has_key:
+        claude_status = "ready"
+        claude_msg = (
+            f"clawgod {config.CLAUDE_VERSION} 已就绪 · 协议 {claude_effective_proto} · "
+            f"{'复用统一 API' if claude_using_unified else (ep_claude.base_url if ep_claude else 'Anthropic 官方端点')}"
+        )
+    elif not claude_cli_ok:
+        claude_status = "missing_deps"
+        claude_msg = (
+            f"未检测到项目级 clawgod 运行时 ({config.CLAUDE_BIN.relative_to(workspace_root)})；"
+            "请运行 harness2 setup <bench> --substrate claude 安装"
+        )
+    else:
+        claude_status = "needs_config"
+        claude_msg = "clawgod CLI 已就绪，待配置统一 API (HARNESS2_API_*) 或 ANTHROPIC_API_KEY"
+
+    # 2. OpenCode (oc) Substrate inspection
     opencode_dir = workspace_root / "dependencies" / "opencode"
-    bun_bin = shutil.which("bun") or str(
-        workspace_root / "dependencies" / "tools" / "node_modules" / ".bin" / "bun"
-    )
-    bun_ok = bool(shutil.which(bun_bin) or Path(bun_bin).is_file())
-    oc_status = "ready" if (opencode_dir.is_dir() and bun_ok) else "missing_deps"
-    oc_model = os.environ.get("HARNESS2_SOLVER_MODEL", "google-vertex/gemini-2.5-pro")
+    oc_entry = opencode_dir / "packages" / "opencode" / "src" / "index.ts"
+    bun_bin_path = config.BUN if config.BUN.is_file() else Path(shutil.which("bun") or "")
+    bun_ok = bool(bun_bin_path and bun_bin_path.is_file())
+    oc_cli_ok = oc_entry.is_file() and bun_ok
+    ep_oc = api.opencode()
+    vertex_project = config.VERTEX_PROJECT
+    vertex_region = config.VERTEX_REGION
+    oc_has_key = bool((ep_oc and ep_oc.api_key) or vertex_project or os.environ.get("OPENAI_API_KEY"))
+    oc_model = config.SOLVER_MODEL_OC
+    oc_model_override = os.environ.get("HARNESS2_SOLVER_MODEL", "")
+    oc_base_override = os.environ.get("HARNESS2_OPENCODE_BASE_URL", "")
+    oc_proto_override = os.environ.get("HARNESS2_OPENCODE_PROTOCOL", "")
+    oc_effective_proto = ep_oc.protocol if ep_oc else (oc_proto_override or "openai-chat")
+    oc_using_unified = bool(unified_base_url and not oc_base_override)
 
-    # 3. Codex Substrate inspection
-    codex_dir = workspace_root / "dependencies" / "codex"
-    cx_status = "ready" if codex_dir.is_dir() else "optional"
-    cx_model = os.environ.get("HARNESS2_CODEX_MODEL", "gpt-4o")
+    if oc_cli_ok and oc_has_key and oc_model:
+        oc_status = "ready"
+        oc_msg = (
+            f"OpenCode 源码与 Bun 已就绪 · 模型 {oc_model} · "
+            f"{'复用统一 API (provider: harness2)' if oc_using_unified else (ep_oc.base_url if ep_oc else f'Vertex AI ({vertex_project})')}"
+        )
+    elif not oc_cli_ok:
+        oc_status = "missing_deps"
+        oc_msg = "未完成 dependencies/opencode 与 Bun 初始化（请运行 harness2 setup <bench>）"
+    else:
+        oc_status = "needs_config"
+        oc_msg = "OpenCode 运行时已就绪，需配置统一 API 或 HARNESS2_SOLVER_MODEL"
 
-    # 4. Google Cloud Vertex AI inspection
-    vertex_project = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("HARNESS2_VERTEX_PROJECT", "")
-    vertex_region = os.environ.get("GOOGLE_CLOUD_LOCATION", "global")
-    vertex_status = "ready" if vertex_project else "needs_project"
+    # 3. Codex (cx) Substrate inspection
+    codex_bin_path = Path(config.CODEX_DIST) / "codex"
+    cx_cli_ok = codex_bin_path.is_file() and os.access(codex_bin_path, os.X_OK)
+    ep_cx = api.codex()
+    cx_has_key = bool(ep_cx and ep_cx.api_key)
+    cx_model = config.SOLVER_MODEL_CX
+    cx_model_override = os.environ.get("HARNESS2_CODEX_MODEL", "")
+    cx_base_override = os.environ.get("HARNESS2_CODEX_BASE_URL", "")
+    cx_container_url = os.environ.get("HARNESS2_CODEX_CONTAINER_URL", "")
+    cx_using_unified = bool(unified_base_url and not cx_base_override)
+    toml_err = install.codex_config_error() if (cx_cli_ok or (ep_cx and ep_cx.base_url)) else "not configured"
+
+    if cx_cli_ok and cx_has_key and toml_err is None:
+        cx_status = "ready"
+        cx_msg = (
+            f"Codex {config.CODEX_VERSION} 与 config.toml 已同步 · "
+            f"Responses 端点: {ep_cx.base_url if ep_cx else ''}"
+            + (" (转换桥运行中)" if bridge_info["running"] else "")
+        )
+    elif not cx_cli_ok:
+        cx_status = "missing_deps"
+        cx_msg = (
+            f"未安装 Codex 分发包 ({codex_bin_path.relative_to(workspace_root)})；"
+            "请运行 harness2 setup <bench> --substrate cx"
+        )
+    else:
+        cx_status = "needs_config"
+        cx_msg = (
+            f"需配置 Responses API 端点或启动内置转换桥 ({toml_err})"
+            if toml_err
+            else "待配置 HARNESS2_CODEX_BASE_URL / API_KEY"
+        )
+
+    # 4. Improver, Judge & Vertex AI inspection
+    improver_override = os.environ.get("HARNESS2_IMPROVER_MODEL", "")
+    judge_model = config.JUDGE_MODEL
+    judge_base_override = os.environ.get("HARNESS2_JUDGE_BASE_URL", "")
+    judge_key_raw = os.environ.get("HARNESS2_JUDGE_API_KEY", "")
+    vertex_ready = bool(vertex_project or (judge_model and judge_base_override) or unified_base_url)
+    vertex_status = "ready" if vertex_ready else "needs_config"
+    if vertex_project:
+        vertex_msg = f"GCP Project: {vertex_project} ({vertex_region}) · 改进器: {config.IMPROVER_MODEL or '未指定'} · 裁判: {judge_model or '未指定'}"
+    elif judge_base_override or unified_base_url:
+        vertex_msg = f"使用自定义/统一 API 驱动改进器与裁判 · 改进器: {config.IMPROVER_MODEL or '未指定'} · 裁判: {judge_model or '未指定'}"
+    else:
+        vertex_msg = "未设置 GOOGLE_CLOUD_PROJECT 或独立裁判端点 (HARNESS2_JUDGE_*)"
 
     return {
-        "active_executor": os.environ.get("HARNESS2_DEFAULT_EXECUTOR", "claude" if anthropic_key or claude_bin else "oc"),
+        "active_executor": os.environ.get(
+            "HARNESS2_DEFAULT_EXECUTOR",
+            "claude" if (claude_cli_ok and claude_has_key) else "oc",
+        ),
+        "unified_config": {
+            "base_url": unified_base_url,
+            "api_key_configured": bool(unified_key.strip()),
+            "api_key_masked": _mask_secret(unified_key),
+            "model": unified_model,
+            "protocol": unified_protocol,
+            "improver_model": improver_override,
+            "effective_improver_model": config.IMPROVER_MODEL,
+            "judge_model": judge_model,
+            "judge_base_url": judge_base_override,
+            "judge_api_key_configured": bool(judge_key_raw.strip()),
+            "judge_api_key_masked": _mask_secret(judge_key_raw),
+            "vertex_project": vertex_project,
+            "vertex_location": vertex_region,
+        },
+        "bridge": bridge_info,
         "executors": [
             {
                 "id": "claude",
-                "name": "Claude Code / Anthropic",
-                "title": "Claude 一等公民执行器 (Claude Solver & Improver)",
-                "category": "hybrid",
+                "name": "Claude Code (clawgod)",
+                "title": f"Claude Code Substrate (clawgod {config.CLAUDE_VERSION})",
+                "category": "substrate",
                 "status": claude_status,
                 "status_message": claude_msg,
-                "cli_available": bool(claude_bin),
-                "cli_path": claude_bin or "",
-                "api_key_configured": bool(anthropic_key),
+                "cli_available": claude_cli_ok,
+                "cli_path": claude_bin,
+                "api_key_configured": claude_has_key,
+                "api_key_masked": _mask_secret(claude_raw_key or (ep_claude.api_key if ep_claude else "")),
                 "current_model": claude_model,
-                "thinking_budget": claude_thinking,
+                "model_override": claude_model_override,
+                "effort": claude_effort,
+                "base_url": claude_base_override,
+                "effective_base_url": ep_claude.base_url if ep_claude else "https://api.anthropic.com",
+                "protocol": claude_effective_proto,
+                "protocol_override": claude_proto_override,
+                "using_unified": claude_using_unified,
+                "resolved_endpoint": api.describe(ep_claude),
                 "supported_models": [
+                    "claude-sonnet-4-6",
+                    "claude-opus-4-6",
                     "claude-3-7-sonnet-20250219",
                     "claude-3-5-sonnet-20241022",
                     "claude-3-5-haiku-20241022",
-                    "claude-3-opus-20240229",
-                    "vertex/claude-3-7-sonnet",
                 ],
                 "capabilities": [
-                    "深度扩展思考 (Extended Thinking Tokens)",
-                    "Claude Code CLI 原生批处理执行",
-                    "多轮上下文递归演进",
-                    "结构化 Harness 补丁生成",
-                    "开箱即用支持多基准评测 (JobBench, WorkBuddy, Lab)",
+                    "原生 CLAUDE.md + .claude/skills + settings.json 钩子表面",
+                    "支持 --effort (low / medium / high) 推理强度控制",
+                    "支持原生 Anthropic Messages 与 clawgod openai-chat 双协议",
+                    "自动将 sub_agents/*/AGENT.md 桥接为 --agents 委托代理",
                 ],
             },
             {
                 "id": "oc",
                 "name": "OpenCode (oc)",
-                "title": "OpenCode 原生 Substrate 执行器",
+                "title": "OpenCode 原生 Substrate 执行器 (v1.14.18)",
                 "category": "substrate",
                 "status": oc_status,
-                "status_message": "依赖 Bun 运行时与 opencode 源码仓库" if oc_status == "ready" else "未完成 dependencies/opencode 初始化",
-                "cli_available": bun_ok,
-                "cli_path": bun_bin if bun_ok else "",
-                "api_key_configured": bool(os.environ.get("OPENAI_API_KEY") or vertex_project),
+                "status_message": oc_msg,
+                "cli_available": oc_cli_ok,
+                "cli_path": str(bun_bin_path) if bun_ok else "",
+                "api_key_configured": oc_has_key,
+                "api_key_masked": _mask_secret(os.environ.get("HARNESS2_OPENCODE_API_KEY") or (ep_oc.api_key if ep_oc else "")),
                 "current_model": oc_model,
+                "model_override": oc_model_override,
+                "base_url": oc_base_override,
+                "effective_base_url": ep_oc.base_url if ep_oc else (f"google-vertex ({vertex_project})" if vertex_project else ""),
+                "protocol": oc_effective_proto,
+                "protocol_override": oc_proto_override,
+                "using_unified": oc_using_unified,
+                "resolved_endpoint": api.describe(ep_oc),
                 "supported_models": [
                     "google-vertex/gemini-2.5-pro",
                     "google-vertex/gemini-2.5-flash",
+                    "harness2/claude-sonnet-4-6",
+                    "harness2/gpt-4o",
                     "openai/gpt-4o",
-                    "anthropic/claude-3-7-sonnet",
                 ],
                 "capabilities": [
-                    "三层 Staging Install 机制",
-                    "轻量级工具链桥接",
-                    "多轮次迭代对比",
+                    "三种安装模式 (workspace_agents_md / home_dir_jinja / workspace_config)",
+                    "自动注入 OPENCODE_CONFIG_CONTENT 统一 API Provider 块",
+                    "原生支持 TypeScript 插件 (plugin/*.ts) 与子智能体",
                 ],
             },
             {
                 "id": "cx",
                 "name": "Codex (cx)",
-                "title": "Codex 容器 Substrate 执行器",
+                "title": f"Codex CLI Substrate 执行器 ({config.CODEX_VERSION})",
                 "category": "substrate",
                 "status": cx_status,
-                "status_message": "Codex 本地分发包已加载" if cx_status == "ready" else "未加载 Codex 分发包（可选）",
-                "cli_available": False,
-                "cli_path": "",
-                "api_key_configured": bool(os.environ.get("HARNESS2_CODEX_API_KEY")),
+                "status_message": cx_msg,
+                "cli_available": cx_cli_ok,
+                "cli_path": str(codex_bin_path) if cx_cli_ok else "",
+                "api_key_configured": cx_has_key,
+                "api_key_masked": _mask_secret(os.environ.get("HARNESS2_CODEX_API_KEY") or (ep_cx.api_key if ep_cx else "")),
                 "current_model": cx_model,
+                "model_override": cx_model_override,
+                "base_url": cx_base_override,
+                "container_url": cx_container_url,
+                "effective_base_url": ep_cx.base_url if ep_cx else "",
+                "protocol": "openai-responses",
+                "using_unified": cx_using_unified,
+                "resolved_endpoint": api.describe(ep_cx),
+                "config_toml_status": "ok" if toml_err is None else "stale",
+                "config_toml_error": toml_err or "",
                 "supported_models": [
+                    "gpt-5.4",
                     "gpt-4o",
-                    "o1",
                     "o3-mini",
+                    "o1",
+                    "claude-sonnet-4-6",
                 ],
                 "capabilities": [
-                    "容器内运行沙箱",
-                    "Codex CLI 协议适配",
+                    "AGENTS.md + .agents/skills + .codex/hooks.json 表面",
+                    "内置 Tools Schema 归一化 Launcher 与 Responses 转换桥",
+                    "支持宿主机与 WorkBuddy Docker 容器双路由 (CONTAINER_URL)",
                 ],
             },
             {
                 "id": "vertex",
-                "name": "Google Cloud Vertex AI",
-                "title": "Vertex AI 评测与裁判引擎",
+                "name": "改进器与裁判 (Improver & Judge)",
+                "title": "Proposer 改进器、双盲裁判与 Vertex AI 配置",
                 "category": "cloud",
                 "status": vertex_status,
-                "status_message": f"项目: {vertex_project or '未配置'} ({vertex_region})" if vertex_status == "ready" else "未设置 GOOGLE_CLOUD_PROJECT",
+                "status_message": vertex_msg,
                 "cli_available": bool(shutil.which("gcloud")),
                 "cli_path": shutil.which("gcloud") or "",
-                "api_key_configured": bool(vertex_project),
-                "current_model": os.environ.get("HARNESS2_JUDGE_MODEL", "gemini-2.5-pro"),
+                "api_key_configured": vertex_ready,
+                "api_key_masked": _mask_secret(judge_key_raw),
+                "current_model": judge_model or config.IMPROVER_MODEL or "gemini-2.5-pro",
+                "improver_model": improver_override,
+                "effective_improver_model": config.IMPROVER_MODEL,
+                "judge_model": judge_model,
+                "judge_base_url": judge_base_override,
+                "effective_judge_base_url": config.JB_JUDGE_API_BASE,
+                "vertex_project": vertex_project,
+                "vertex_location": vertex_region,
                 "supported_models": [
                     "gemini-2.5-pro",
                     "gemini-2.5-flash",
-                    "claude-3-7-sonnet",
+                    "claude-sonnet-4-6",
+                    "claude-3-7-sonnet-20250219",
+                    "gpt-4o",
                 ],
                 "capabilities": [
-                    "基准测试自动化双盲裁判",
-                    "ADC 统一凭证认证",
+                    "Proposer / Selector 演进通道模型独立配置 (HARNESS2_IMPROVER_MODEL)",
+                    "支持外部 OpenAI 兼容裁判端点 (HARNESS2_JUDGE_BASE_URL / API_KEY)",
+                    "支持 Google Cloud Vertex AI ADC 统一认证",
                 ],
             },
         ],

@@ -3,6 +3,7 @@ import {
   BenchmarkReport,
   ComponentTemplate,
   DiffResult,
+  EndpointProbeResult,
   ExecutorStatusResponse,
   HarnessComponent,
   LibraryEntry,
@@ -119,10 +120,6 @@ export async function launchDemo(payload: {
   output?: string;
   k?: number;
   mode?: string;
-  executor?: string;
-  claude_model?: string;
-  claude_thinking_budget?: number;
-  claude_api_key?: string;
 }): Promise<any> {
   const res = await fetch(`${BASE}/execute/demo`, {
     method: 'POST',
@@ -138,6 +135,7 @@ export async function launchDemo(payload: {
 
 export async function launchSweep(payload: {
   bench: string;
+  subset?: string;
   substrate: string;
   k: number;
   modes: string;
@@ -146,6 +144,8 @@ export async function launchSweep(payload: {
   max_tasks?: number | null;
   seed?: number | null;
   dry_run?: boolean;
+  model?: string;
+  effort?: string;
   claude_model?: string;
   claude_thinking_budget?: number;
   claude_api_key?: string;
@@ -237,9 +237,19 @@ export async function fetchExecutors(): Promise<ExecutorStatusResponse> {
 
 export async function saveExecutorConfig(payload: {
   executor_id: string;
-  model?: string;
+  base_url?: string;
   api_key?: string;
-  thinking_budget?: number;
+  model?: string;
+  protocol?: string;
+  effort?: string;
+  container_url?: string;
+  improver_model?: string;
+  judge_model?: string;
+  judge_base_url?: string;
+  judge_api_key?: string;
+  vertex_project?: string;
+  vertex_location?: string;
+  persist_dotenv?: boolean;
 }): Promise<ExecutorStatusResponse> {
   const res = await fetch(`${BASE}/executors/config`, {
     method: 'POST',
@@ -252,4 +262,56 @@ export async function saveExecutorConfig(payload: {
   }
   const data = await res.json();
   return data.executors;
+}
+
+export async function testExecutorEndpoint(payload: {
+  target: string;
+  base_url?: string;
+  api_key?: string;
+  protocol?: string;
+  model?: string;
+}): Promise<EndpointProbeResult> {
+  const res = await fetch(`${BASE}/executors/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed' }));
+    throw new Error(err.detail || 'Endpoint test failed');
+  }
+  return res.json();
+}
+
+export async function startResponsesBridge(payload: {
+  upstream?: string;
+  api_key?: string;
+  host?: string;
+  port?: number;
+  auto_bind_codex?: boolean;
+}): Promise<{ status: string; bridge: any; executors: ExecutorStatusResponse }> {
+  const res = await fetch(`${BASE}/executors/bridge/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed' }));
+    throw new Error(err.detail || 'Failed to start Responses Bridge');
+  }
+  return res.json();
+}
+
+export async function stopResponsesBridge(): Promise<{
+  status: string;
+  executors: ExecutorStatusResponse;
+}> {
+  const res = await fetch(`${BASE}/executors/bridge/stop`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed' }));
+    throw new Error(err.detail || 'Failed to stop Responses Bridge');
+  }
+  return res.json();
 }

@@ -29,12 +29,14 @@ import {
   TaskItem,
   TaskDetail,
   DiffResult,
+  ExecutorStatusResponse,
 } from '../types';
 import {
   launchDemo,
   launchSweep,
   stopExecution,
   fetchPreflight,
+  fetchExecutors,
   fetchTasks,
   fetchTaskDetail,
   fetchDiff,
@@ -67,19 +69,18 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
   const [showAdvancedDemo, setShowAdvancedDemo] = useState(false);
   const [showAdvancedSweep, setShowAdvancedSweep] = useState(false);
 
-  // Preflight Health Status
+  // Preflight & Executor Status
   const [preflight, setPreflight] = useState<PreflightStatus | null>(null);
+  const [executorStatus, setExecutorStatus] = useState<ExecutorStatusResponse | null>(null);
 
-  // Demo Form State
+  // Demo Form State (Deterministic local pipeline verification)
   const [demoOutput, setDemoOutput] = useState('runs/demo');
   const [demoK, setDemoK] = useState(2);
   const [demoMode, setDemoMode] = useState('both');
-  const [demoExecutor, setDemoExecutor] = useState<'claude' | 'oc' | 'cx'>('claude');
-  const [demoClaudeModel, setDemoClaudeModel] = useState('claude-3-7-sonnet-20250219');
-  const [demoClaudeThinking, setDemoClaudeThinking] = useState(4096);
 
   // Sweep Form State
   const [sweepBench, setSweepBench] = useState('jb');
+  const [sweepSubset, setSweepSubset] = useState<'office' | 'web' | 'code'>('office');
   const [sweepSubstrate, setSweepSubstrate] = useState('claude');
   const [sweepK, setSweepK] = useState(1);
   const [sweepModes, setSweepModes] = useState('both');
@@ -87,8 +88,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
   const [sweepSplit, setSweepSplit] = useState('all');
   const [sweepMaxTasks, setSweepMaxTasks] = useState<number | undefined>(undefined);
   const [sweepDryRun, setSweepDryRun] = useState(false);
-  const [sweepClaudeModel, setSweepClaudeModel] = useState('claude-3-7-sonnet-20250219');
-  const [sweepClaudeThinking, setSweepClaudeThinking] = useState(4096);
+  const [sweepModel, setSweepModel] = useState('');
+  const [sweepClaudeEffort, setSweepClaudeEffort] = useState<'low' | 'medium' | 'high' | ''>('');
 
   // Result & Diff Inspector states (synced with selected run)
   const [selectedRunId, setSelectedRunId] = useState<string>('');
@@ -104,11 +105,23 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
 
   const isRunning = systemStatus?.status.status === 'running';
 
-  // 1. Fetch preflight on mount
+  // 1. Fetch preflight & executor status on mount
   useEffect(() => {
     fetchPreflight()
       .then((data) => setPreflight(data))
       .catch((err) => console.error('获取预检状态失败 (Failed to fetch preflight):', err));
+    fetchExecutors()
+      .then((data) => {
+        setExecutorStatus(data);
+        if (data.active_executor) {
+          setSweepSubstrate(data.active_executor);
+        }
+        const claudeExec = data.executors.find((e) => e.id === 'claude');
+        if (claudeExec?.effort && ['low', 'medium', 'high'].includes(claudeExec.effort)) {
+          setSweepClaudeEffort(claudeExec.effort as 'low' | 'medium' | 'high');
+        }
+      })
+      .catch((err) => console.error('获取执行器状态失败 (Failed to fetch executors):', err));
   }, []);
 
   // 2. Select initial run when runs load
@@ -173,9 +186,6 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
         output: demoOutput || 'runs/demo',
         k: demoK,
         mode: demoMode,
-        executor: demoExecutor,
-        claude_model: demoExecutor === 'claude' ? demoClaudeModel : undefined,
-        claude_thinking_budget: demoExecutor === 'claude' ? demoClaudeThinking : undefined,
       });
       onOpenConsole();
     } catch (err: any) {
@@ -193,6 +203,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     try {
       await launchSweep({
         bench: sweepBench,
+        subset: sweepBench === 'wb' ? sweepSubset : undefined,
         substrate: sweepSubstrate,
         k: sweepK,
         modes: sweepModes,
@@ -200,8 +211,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
         workers: sweepWorkers,
         max_tasks: sweepMaxTasks || null,
         dry_run: sweepDryRun,
-        claude_model: sweepSubstrate === 'claude' ? sweepClaudeModel : undefined,
-        claude_thinking_budget: sweepSubstrate === 'claude' ? sweepClaudeThinking : undefined,
+        model: sweepModel.trim() || undefined,
+        effort: sweepSubstrate === 'claude' && sweepClaudeEffort ? sweepClaudeEffort : undefined,
       });
       onOpenConsole();
     } catch (err: any) {
@@ -286,7 +297,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                 className="px-2.5 py-1 rounded-lg border border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[11px] font-medium flex items-center gap-1 hover:bg-orange-500/20 cursor-pointer"
               >
                 <Flame className="w-3 h-3" />
-                <span>配置 Claude / 密钥</span>
+                <span>配置 Unified API / 执行器</span>
               </button>
             )}
             <span
@@ -379,14 +390,22 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
         <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-              <span>推荐执行器引擎</span>
+              <span>当前默认执行器</span>
               <Flame className="w-4 h-4 text-orange-500" />
             </div>
             <p className="mt-2 text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5">
-              <span>Claude Code</span>
+              <span>
+                {executorStatus?.active_executor === 'oc'
+                  ? 'OpenCode (oc)'
+                  : executorStatus?.active_executor === 'cx'
+                  ? 'Codex (cx)'
+                  : 'Claude Code'}
+              </span>
             </p>
             <span className="text-[11px] text-slate-400 dark:text-slate-500">
-              原生支持深度思考与多轮自检
+              {executorStatus?.unified_config?.base_url || executorStatus?.unified_config?.api_key_configured
+                ? `Unified API 已启用 (${executorStatus.unified_config.protocol})`
+                : '支持 Unified API 一键打通全引擎'}
             </span>
           </div>
           {onOpenExecutorConfig && (
@@ -394,7 +413,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
               onClick={onOpenExecutorConfig}
               className="mt-2 text-xs text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
             >
-              <span>配置引擎与思考预算</span>
+              <span>配置 Unified API 与执行器</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           )}
@@ -501,77 +520,18 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
 
           {activeLauncherTab === 'demo' ? (
             <form onSubmit={handleLaunchDemo} className="space-y-4">
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                无需任何外部大模型凭据即可开箱试跑，在真实 Python 环境中完整经历 Propose-Probe-Compose 递归流水线及跨任务经验库累积。支持随时切换 Claude Code 深度思考执行器。
-              </p>
-
-              {/* Executor Selector */}
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <Flame className="w-3.5 h-3.5 text-orange-500" />
-                    <span>选择执行器引擎 (Executor)</span>
-                  </span>
-                  {onOpenExecutorConfig && (
-                    <button
-                      type="button"
-                      onClick={onOpenExecutorConfig}
-                      className="text-[11px] text-blue-500 hover:underline cursor-pointer"
-                    >
-                      配置密钥与参数
-                    </button>
-                  )}
+              <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/60 flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <span className="font-bold text-blue-700 dark:text-blue-400">本地确定性流水线演练 (Offline Deterministic Demo)：</span>
+                  使用内置 <code className="font-mono text-[11px] bg-white/80 dark:bg-slate-900 px-1 py-0.5 rounded">DemoAdapter + DemoProposer</code> 在本地 Python 环境中完整运行 Propose-Probe-Compose 递归流水线与跨任务经验库累积，无需任何外部大模型 API 凭据或容器。
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDemoExecutor('claude')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      demoExecutor === 'claude'
-                        ? 'bg-orange-500/10 border-orange-500 text-orange-950 dark:text-orange-300 ring-1 ring-orange-500'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex items-center gap-1">
-                      <Flame className="w-3.5 h-3.5 text-orange-500" />
-                      <span>Claude Code (Anthropic)</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">支持 Extended Thinking 深度思考</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setDemoExecutor('oc')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      demoExecutor === 'oc'
-                        ? 'bg-blue-500/10 border-blue-500 text-blue-950 dark:text-blue-300 ring-1 ring-blue-500'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex items-center gap-1">
-                      <Bot className="w-3.5 h-3.5 text-blue-500" />
-                      <span>OpenCode (oc)</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">原生 Substrate 引擎</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setDemoExecutor('cx')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      demoExecutor === 'cx'
-                        ? 'bg-emerald-500/10 border-emerald-500 text-emerald-950 dark:text-emerald-300 ring-1 ring-emerald-500'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex items-center gap-1">
-                      <Terminal className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>Codex (cx)</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">轻量容器 Substrate</div>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveLauncherTab('sweep')}
+                  className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline shrink-0 cursor-pointer"
+                >
+                  需调用真实执行器 (Claude/OpenCode/Codex)？切换至 Sweep →
+                </button>
               </div>
 
               {/* Core Parameters */}
@@ -615,11 +575,11 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                   className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
                 >
                   {showAdvancedDemo ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  <span>{showAdvancedDemo ? '收起高级参数' : '展开高级参数 (输出路径、模型版本与思考预算)'}</span>
+                  <span>{showAdvancedDemo ? '收起高级参数' : '展开高级参数 (输出路径)'}</span>
                 </button>
 
                 {showAdvancedDemo && (
-                  <div className="mt-3 p-4 rounded-xl bg-slate-50/60 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="mt-3 p-4 rounded-xl bg-slate-50/60 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                         输出目录 (Output Path)
@@ -630,31 +590,6 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                         onChange={(e) => setDemoOutput(e.target.value)}
                         className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono"
                         placeholder="runs/demo"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        Claude 模型标识
-                      </label>
-                      <input
-                        type="text"
-                        value={demoClaudeModel}
-                        onChange={(e) => setDemoClaudeModel(e.target.value)}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        Thinking 思考预算 Token
-                      </label>
-                      <input
-                        type="number"
-                        step={1024}
-                        min={0}
-                        max={32768}
-                        value={demoClaudeThinking}
-                        onChange={(e) => setDemoClaudeThinking(Number(e.target.value))}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono"
                       />
                     </div>
                   </div>
@@ -675,14 +610,26 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
           ) : (
             <form onSubmit={handleLaunchSweep} className="space-y-4">
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                在外部标准基准测试套件（JobBench, WorkBuddy, Harvey LAB）上执行多任务流水线适应。支持指定 Claude Code 作为求解引擎。
+                在外部标准基准测试套件（JobBench, WorkBuddy, Harvey LAB）上调度真实执行器（Claude Code / OpenCode / Codex）与 Improver 引擎执行多任务适应。
               </p>
 
               {/* Substrate Selector */}
               <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-1.5">
-                  <Flame className="w-3.5 h-3.5 text-orange-500" />
-                  <span>执行器 Substrate 选择</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-orange-500" />
+                    <span>执行器 Substrate 选择 (--substrate)</span>
+                  </div>
+                  {onOpenExecutorConfig && (
+                    <button
+                      type="button"
+                      onClick={onOpenExecutorConfig}
+                      className="text-[11px] text-orange-600 dark:text-orange-400 hover:underline font-medium cursor-pointer flex items-center gap-1"
+                    >
+                      <Settings className="w-3 h-3" />
+                      <span>配置 Unified API / 端点与模型</span>
+                    </button>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
@@ -696,9 +643,11 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                   >
                     <div className="font-bold text-xs flex items-center gap-1">
                       <Flame className="w-3.5 h-3.5 text-orange-500" />
-                      <span>Claude Code Substrate</span>
+                      <span>Claude Code (claude)</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Anthropic 官方生态一等公民</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5 font-mono truncate">
+                      {executorStatus?.executors.find((e) => e.id === 'claude')?.current_model || 'Anthropic / OpenAI-Chat'}
+                    </div>
                   </button>
 
                   <button
@@ -714,7 +663,9 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                       <Bot className="w-3.5 h-3.5 text-blue-500" />
                       <span>OpenCode (oc)</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">原生多安装模式</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5 font-mono truncate">
+                      {executorStatus?.executors.find((e) => e.id === 'oc')?.current_model || 'Bun + OpenCode Substrate'}
+                    </div>
                   </button>
 
                   <button
@@ -730,13 +681,15 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                       <Terminal className="w-3.5 h-3.5 text-emerald-500" />
                       <span>Codex (cx)</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">容器化隔离环境</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5 font-mono truncate">
+                      {executorStatus?.executors.find((e) => e.id === 'cx')?.current_model || 'Codex CLI + Responses API'}
+                    </div>
                   </button>
                 </div>
               </div>
 
               {/* Core Sweep Parameters */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className={`grid grid-cols-1 ${sweepBench === 'wb' ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-4`}>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     基准套件 (Benchmark)
@@ -751,6 +704,23 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                     <option value="lab">Harvey LAB (法律业务与评分准则)</option>
                   </select>
                 </div>
+
+                {sweepBench === 'wb' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      WorkBuddy 子集 (--subset)
+                    </label>
+                    <select
+                      value={sweepSubset}
+                      onChange={(e) => setSweepSubset(e.target.value as 'office' | 'web' | 'code')}
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    >
+                      <option value="office">office (办公文档与表格)</option>
+                      <option value="web">web (前端与网页构建)</option>
+                      <option value="code">code (软件工程代码)</option>
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -769,16 +739,16 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    演进模式
+                    演进模式 (--modes)
                   </label>
                   <select
                     value={sweepModes}
                     onChange={(e) => setSweepModes(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                   >
-                    <option value="both">Both (并行 + 串行)</option>
-                    <option value="parallel">仅并行 (agg)</option>
-                    <option value="sequential">仅串行 (seq)</option>
+                    <option value="both">Both (parallel,sequential)</option>
+                    <option value="parallel">仅并行 (parallel / agg)</option>
+                    <option value="sequential">仅串行 (sequential / seq)</option>
                   </select>
                 </div>
               </div>
@@ -791,7 +761,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                   className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
                 >
                   {showAdvancedSweep ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  <span>{showAdvancedSweep ? '收起高级参数' : '展开高级参数 (并发线程、划分切分、最大任务量与演练模式)'}</span>
+                  <span>{showAdvancedSweep ? '收起高级参数' : '展开高级参数 (并发线程、划分切分、单次模型覆盖与推理强度)'}</span>
                 </button>
 
                 {showAdvancedSweep && (
@@ -846,29 +816,35 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                       <div>
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          Claude 模型标识
+                          单次运行模型覆盖 (--model，留空使用执行器默认配置)
                         </label>
                         <input
                           type="text"
-                          value={sweepClaudeModel}
-                          onChange={(e) => setSweepClaudeModel(e.target.value)}
+                          value={sweepModel}
+                          onChange={(e) => setSweepModel(e.target.value)}
+                          placeholder="留空则沿用 Unified API / Substrate 默认模型"
                           className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono"
                         />
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          Thinking 思考预算 Token
-                        </label>
-                        <input
-                          type="number"
-                          step={1024}
-                          min={0}
-                          max={32768}
-                          value={sweepClaudeThinking}
-                          onChange={(e) => setSweepClaudeThinking(Number(e.target.value))}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono"
-                        />
-                      </div>
+                      {sweepSubstrate === 'claude' && (
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            Claude 推理强度 (HARNESS2_CLAUDE_EFFORT)
+                          </label>
+                          <select
+                            value={sweepClaudeEffort}
+                            onChange={(e) =>
+                              setSweepClaudeEffort(e.target.value as 'low' | 'medium' | 'high' | '')
+                            }
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono"
+                          >
+                            <option value="">沿用全局配置</option>
+                            <option value="low">low (快速轻量)</option>
+                            <option value="medium">medium (均衡推理)</option>
+                            <option value="high">high (深度思考)</option>
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

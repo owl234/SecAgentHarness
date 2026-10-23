@@ -185,25 +185,67 @@ class UITests(unittest.TestCase):
         self.assertEqual(res_del.json()["status"], "deleted")
 
     def test_api_executors(self):
+        import os
+        import tempfile
+
         res = self.client.get("/api/executors")
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertIn("executors", data)
+        self.assertIn("unified_config", data)
+        self.assertIn("bridge", data)
         executors = data["executors"]
         claude_exec = next((e for e in executors if e["id"] == "claude"), None)
         self.assertIsNotNone(claude_exec)
-        self.assertIn("claude-3-7-sonnet-20250219", claude_exec["supported_models"])
+        self.assertIn("claude-sonnet-4-6", claude_exec["supported_models"])
         self.assertTrue(len(claude_exec["capabilities"]) >= 3)
 
-        # Update config
-        cfg_payload = {
-            "executor_id": "claude",
-            "model": "claude-3-7-sonnet-20250219",
-            "thinking_budget": 8192,
-        }
-        res_cfg = self.client.post("/api/executors/config", json=cfg_payload)
-        self.assertEqual(res_cfg.status_code, 200)
-        self.assertEqual(res_cfg.json()["status"], "updated")
+        # Test isolated config persistence in a temporary workspace so real .env is untouched
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_root = Path(tmpdir)
+            (tmp_root / ".env.example").write_text(
+                "# Example\n# HARNESS2_API_BASE_URL=\n# HARNESS2_CLAUDE_MODEL=\n# HARNESS2_CLAUDE_EFFORT=\n",
+                encoding="utf-8",
+            )
+            tmp_app = create_app(workspace_root=tmp_root, runs_root=self.runs_root)
+            tmp_client = TestClient(tmp_app)
+            saved_env = dict(os.environ)
+            try:
+                cfg_payload = {
+                    "executor_id": "claude",
+                    "model": "claude-sonnet-4-6",
+                    "effort": "high",
+                    "persist_dotenv": True,
+                }
+                res_cfg = tmp_client.post("/api/executors/config", json=cfg_payload)
+                self.assertEqual(res_cfg.status_code, 200)
+                body = res_cfg.json()
+                self.assertEqual(body["status"], "updated")
+                self.assertIn(".env", body["applied"]["synced_files"])
+                env_text = (tmp_root / ".env").read_text(encoding="utf-8")
+                self.assertIn("HARNESS2_CLAUDE_MODEL=claude-sonnet-4-6", env_text)
+                self.assertIn("HARNESS2_CLAUDE_EFFORT=high", env_text)
+
+                # Test unified config update
+                res_uni = tmp_client.post(
+                    "/api/executors/config",
+                    json={
+                        "executor_id": "unified",
+                        "base_url": "https://example.invalid/v1",
+                        "model": "deepseek-v4.1-flash",
+                        "protocol": "openai-chat",
+                        "persist_dotenv": True,
+                    },
+                )
+                self.assertEqual(res_uni.status_code, 200)
+                self.assertEqual(
+                    res_uni.json()["executors"]["unified_config"]["base_url"],
+                    "https://example.invalid/v1",
+                )
+            finally:
+                os.environ.clear()
+                os.environ.update(saved_env)
+                scanner.sync_config_from_env()
 
 
 if __name__ == "__main__":

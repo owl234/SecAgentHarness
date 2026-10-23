@@ -52,33 +52,60 @@ class ComponentApplyRequest(BaseModel):
 
 class ExecutorConfigRequest(BaseModel):
     executor_id: str
-    model: str | None = None
+    base_url: str | None = None
     api_key: str | None = None
+    model: str | None = None
+    protocol: str | None = None
+    effort: str | None = None
+    container_url: str | None = None
+    improver_model: str | None = None
+    judge_model: str | None = None
+    judge_base_url: str | None = None
+    judge_api_key: str | None = None
+    vertex_project: str | None = None
+    vertex_location: str | None = None
+    persist_dotenv: bool = True
+    # Legacy compatibility fields
     thinking_budget: int | None = None
     cli_path: str | None = None
     endpoint: str | None = None
+
+
+class ExecutorProbeRequest(BaseModel):
+    target: str = Field(default="unified", description="unified | claude | oc | cx | vertex")
+    base_url: str | None = None
+    api_key: str | None = None
+    protocol: str | None = None
+    model: str | None = None
+
+
+class BridgeControlRequest(BaseModel):
+    upstream: str | None = None
+    api_key: str | None = None
+    host: str = Field(default="127.0.0.1")
+    port: int = Field(default=0)
+    auto_bind_codex: bool = Field(default=True)
 
 
 class DemoLaunchRequest(BaseModel):
     output: str = Field(default="runs/demo", description="Output directory 输出目录")
     k: int = Field(default=2, ge=1, description="Budget scale k 递归预算")
     mode: str = Field(default="both", description="parallel | sequential | both 递归模式")
-    executor: str = Field(default="claude", description="claude | oc | cx")
-    claude_model: str | None = Field(default=None)
-    claude_thinking_budget: int | None = Field(default=None)
-    claude_api_key: str | None = Field(default=None)
 
 
 class SweepLaunchRequest(BaseModel):
     bench: str = Field(default="jb", description="jb | wb | lab 基准")
+    subset: str | None = Field(default=None, description="office | web | code (仅 wb 必填)")
     substrate: str = Field(default="oc", description="oc | cx | claude 执行基座")
     k: int = Field(default=1, ge=1)
-    modes: str = Field(default="both")
+    modes: str = Field(default="parallel,sequential")
     split: str = Field(default="all")
     workers: int = Field(default=1, ge=1)
     max_tasks: int | None = Field(default=None)
     seed: int | None = Field(default=None)
     dry_run: bool = Field(default=False)
+    model: str | None = Field(default=None)
+    effort: str | None = Field(default=None)
     claude_model: str | None = Field(default=None)
     claude_thinking_budget: int | None = Field(default=None)
     claude_api_key: str | None = Field(default=None)
@@ -154,22 +181,13 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
             "--mode",
             req.mode,
         ]
-        extra_env: dict[str, str] = {}
-        if req.claude_api_key:
-            extra_env["ANTHROPIC_API_KEY"] = req.claude_api_key
-        if req.claude_model:
-            extra_env["HARNESS2_CLAUDE_MODEL"] = req.claude_model
-        if req.claude_thinking_budget is not None:
-            extra_env["HARNESS2_CLAUDE_THINKING_BUDGET"] = str(req.claude_thinking_budget)
-        if req.executor:
-            extra_env["HARNESS2_DEFAULT_EXECUTOR"] = req.executor
-
-        job = await runner.start_job("demo", args, extra_env=extra_env)
+        job = await runner.start_job("demo", args)
         return {"status": "started", "job": job}
 
     @app.post("/api/execute/sweep")
     async def launch_sweep(req: SweepLaunchRequest):
         substrate_val = req.substrate
+        modes_val = "parallel,sequential" if req.modes == "both" else req.modes
         args = [
             "-m",
             "harness2.cli.run_sweep",
@@ -180,12 +198,16 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
             "--k",
             str(req.k),
             "--modes",
-            req.modes,
+            modes_val,
             "--split",
             req.split,
             "--workers",
             str(req.workers),
         ]
+        if req.bench == "wb":
+            args.extend(["--subset", req.subset or "office"])
+        elif req.subset:
+            args.extend(["--subset", req.subset])
         if req.max_tasks is not None:
             args.extend(["--max-tasks", str(req.max_tasks)])
         if req.seed is not None:
@@ -194,13 +216,19 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
             args.append("--dry-run")
 
         extra_env: dict[str, str] = {}
+        eff_model = (req.model or req.claude_model or "").strip()
         if req.claude_api_key:
             extra_env["ANTHROPIC_API_KEY"] = req.claude_api_key
-        if req.claude_model:
-            extra_env["HARNESS2_CLAUDE_MODEL"] = req.claude_model
-        if req.claude_thinking_budget is not None:
-            extra_env["HARNESS2_CLAUDE_THINKING_BUDGET"] = str(req.claude_thinking_budget)
-        if req.substrate == "claude":
+        if eff_model:
+            if substrate_val == "claude":
+                extra_env["HARNESS2_CLAUDE_MODEL"] = eff_model
+            elif substrate_val == "oc":
+                extra_env["HARNESS2_SOLVER_MODEL"] = eff_model
+            elif substrate_val == "cx":
+                extra_env["HARNESS2_CODEX_MODEL"] = eff_model
+        if req.effort:
+            extra_env["HARNESS2_CLAUDE_EFFORT"] = req.effort
+        if substrate_val == "claude":
             extra_env["HARNESS2_DEFAULT_EXECUTOR"] = "claude"
 
         job = await runner.start_job("sweep", args, extra_env=extra_env)
@@ -255,32 +283,145 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
             raise HTTPException(status_code=500, detail=f"Failed to apply component: {exc}")
 
     # -----------------------------
-    # Executor & Engine Management APIs (Claude, OpenCode, Codex, Vertex)
+    # Executor & Engine Management APIs (Unified API, Claude, OpenCode, Codex, Vertex)
     # -----------------------------
     @app.get("/api/executors")
     async def get_executors():
-        return scanner.get_executors_status(workspace_root)
+        return scanner.get_executors_status(workspace_root, runner.get_bridge_info())
 
     @app.post("/api/executors/config")
     async def update_executor_config(req: ExecutorConfigRequest):
-        if req.api_key:
-            if req.executor_id == "claude":
-                os.environ["ANTHROPIC_API_KEY"] = req.api_key
-            elif req.executor_id == "cx":
-                os.environ["HARNESS2_CODEX_API_KEY"] = req.api_key
-            elif req.executor_id == "oc":
-                os.environ["OPENAI_API_KEY"] = req.api_key
-        if req.model:
-            if req.executor_id == "claude":
-                os.environ["HARNESS2_CLAUDE_MODEL"] = req.model
-            elif req.executor_id == "oc":
-                os.environ["HARNESS2_SOLVER_MODEL"] = req.model
-            elif req.executor_id == "cx":
-                os.environ["HARNESS2_CODEX_MODEL"] = req.model
-        if req.thinking_budget is not None and req.executor_id == "claude":
-            os.environ["HARNESS2_CLAUDE_THINKING_BUDGET"] = str(req.thinking_budget)
+        updates: dict[str, str | None] = {}
+        eff_base = req.base_url if req.base_url is not None else req.endpoint
 
-        return {"status": "updated", "executors": scanner.get_executors_status(workspace_root)}
+        if req.executor_id == "unified":
+            if eff_base is not None:
+                updates["HARNESS2_API_BASE_URL"] = eff_base
+            if req.api_key:
+                updates["HARNESS2_API_KEY"] = req.api_key
+            if req.model is not None:
+                updates["HARNESS2_API_MODEL"] = req.model
+            if req.protocol is not None:
+                updates["HARNESS2_API_PROTOCOL"] = req.protocol
+        elif req.executor_id == "claude":
+            if eff_base is not None:
+                updates["HARNESS2_CLAUDE_BASE_URL"] = eff_base
+            if req.api_key:
+                updates["HARNESS2_CLAUDE_API_KEY"] = req.api_key
+                if not eff_base and not os.environ.get("HARNESS2_CLAUDE_BASE_URL"):
+                    updates["ANTHROPIC_API_KEY"] = req.api_key
+            if req.model is not None:
+                updates["HARNESS2_CLAUDE_MODEL"] = req.model
+            if req.protocol is not None:
+                updates["HARNESS2_CLAUDE_PROTOCOL"] = req.protocol
+            if req.effort is not None:
+                updates["HARNESS2_CLAUDE_EFFORT"] = req.effort
+            if req.cli_path is not None:
+                updates["HARNESS2_CLAWGOD_PATH"] = req.cli_path
+        elif req.executor_id == "oc":
+            if eff_base is not None:
+                updates["HARNESS2_OPENCODE_BASE_URL"] = eff_base
+            if req.api_key:
+                updates["HARNESS2_OPENCODE_API_KEY"] = req.api_key
+            if req.model is not None:
+                updates["HARNESS2_SOLVER_MODEL"] = req.model
+            if req.protocol is not None:
+                updates["HARNESS2_OPENCODE_PROTOCOL"] = req.protocol
+        elif req.executor_id == "cx":
+            if eff_base is not None:
+                updates["HARNESS2_CODEX_BASE_URL"] = eff_base
+            if req.container_url is not None:
+                updates["HARNESS2_CODEX_CONTAINER_URL"] = req.container_url
+            if req.api_key:
+                updates["HARNESS2_CODEX_API_KEY"] = req.api_key
+            if req.model is not None:
+                updates["HARNESS2_CODEX_MODEL"] = req.model
+        elif req.executor_id == "vertex":
+            if req.improver_model is not None:
+                updates["HARNESS2_IMPROVER_MODEL"] = req.improver_model
+            if req.judge_model is not None:
+                updates["HARNESS2_JUDGE_MODEL"] = req.judge_model
+            elif req.model is not None:
+                updates["HARNESS2_JUDGE_MODEL"] = req.model
+            if req.judge_base_url is not None:
+                updates["HARNESS2_JUDGE_BASE_URL"] = req.judge_base_url
+            elif eff_base is not None:
+                updates["HARNESS2_JUDGE_BASE_URL"] = eff_base
+            if req.judge_api_key:
+                updates["HARNESS2_JUDGE_API_KEY"] = req.judge_api_key
+            elif req.api_key:
+                updates["HARNESS2_JUDGE_API_KEY"] = req.api_key
+            if req.vertex_project is not None:
+                updates["GOOGLE_CLOUD_PROJECT"] = req.vertex_project
+            if req.vertex_location is not None:
+                updates["GOOGLE_CLOUD_LOCATION"] = req.vertex_location
+
+        persisted = scanner.persist_env_updates(
+            workspace_root, updates, write_dotenv=req.persist_dotenv
+        )
+        return {
+            "status": "updated",
+            "applied": persisted,
+            "executors": scanner.get_executors_status(workspace_root, runner.get_bridge_info()),
+        }
+
+    @app.post("/api/executors/test")
+    async def test_executor_endpoint(req: ExecutorProbeRequest):
+        return scanner.probe_executor_endpoint(
+            workspace_root,
+            req.target,
+            base_url=req.base_url,
+            api_key=req.api_key,
+            protocol=req.protocol,
+            model=req.model,
+        )
+
+    @app.post("/api/executors/bridge/start")
+    async def start_responses_bridge(req: BridgeControlRequest):
+        scanner.sync_config_from_env()
+        upstream = (req.upstream or os.environ.get("HARNESS2_API_BASE_URL", "")).strip()
+        api_key = (req.api_key or os.environ.get("HARNESS2_API_KEY", "")).strip()
+        if not upstream:
+            raise HTTPException(
+                status_code=400,
+                detail="启动 Responses 转换桥需要上游 Chat Completions 地址 (upstream 或 HARNESS2_API_BASE_URL)",
+            )
+        if not api_key:
+            raise HTTPException(
+                status_code=400,
+                detail="启动 Responses 转换桥需要上游 API Key (api_key 或 HARNESS2_API_KEY)",
+            )
+        try:
+            meta = await runner.start_bridge(
+                upstream, api_key, host=req.host or "127.0.0.1", port=req.port
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"启动转换桥失败: {exc}")
+
+        if req.auto_bind_codex and meta.get("settings"):
+            settings = meta["settings"]
+            updates: dict[str, str | None] = {
+                "HARNESS2_CODEX_BASE_URL": settings.get("HARNESS2_CODEX_BASE_URL"),
+                "HARNESS2_CODEX_API_KEY": settings.get("HARNESS2_CODEX_API_KEY"),
+            }
+            if settings.get("HARNESS2_CODEX_CONTAINER_URL"):
+                updates["HARNESS2_CODEX_CONTAINER_URL"] = settings["HARNESS2_CODEX_CONTAINER_URL"]
+            scanner.persist_env_updates(workspace_root, updates, write_dotenv=True)
+
+        return {
+            "status": "started",
+            "bridge": meta,
+            "executors": scanner.get_executors_status(workspace_root, runner.get_bridge_info()),
+        }
+
+    @app.post("/api/executors/bridge/stop")
+    async def stop_responses_bridge():
+        res = await runner.stop_bridge()
+        return {
+            "status": "stopped",
+            "result": res,
+            "executors": scanner.get_executors_status(workspace_root, runner.get_bridge_info()),
+        }
 
     # -----------------------------
     # Runs, Tasks & Artifacts APIs

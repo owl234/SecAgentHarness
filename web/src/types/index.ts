@@ -210,6 +210,43 @@ export interface ComponentTemplate {
   extra_files?: Record<string, string>;
 }
 
+export interface UnifiedApiConfig {
+  base_url: string;
+  api_key_configured: boolean;
+  api_key_masked: string;
+  model: string;
+  protocol: string;
+  improver_model: string;
+  effective_improver_model: string;
+  judge_model: string;
+  judge_base_url: string;
+  judge_api_key_configured: boolean;
+  judge_api_key_masked: string;
+  vertex_project: string;
+  vertex_location: string;
+}
+
+export interface BridgeStatus {
+  running: boolean;
+  port?: number;
+  host: string;
+  upstream: string;
+  local_url: string;
+  container_url: string;
+  key_configured: boolean;
+  managed: boolean;
+}
+
+export interface EndpointProbeResult {
+  ok: boolean;
+  target: string;
+  endpoint: string;
+  protocol: string;
+  status_code: number | null;
+  latency_ms: number;
+  message: string;
+}
+
 export interface ExecutorItem {
   id: string;
   name: string;
@@ -220,14 +257,34 @@ export interface ExecutorItem {
   cli_available: boolean;
   cli_path: string;
   api_key_configured: boolean;
+  api_key_masked?: string;
   current_model: string;
-  thinking_budget?: number;
+  model_override?: string;
+  effort?: 'low' | 'medium' | 'high' | string;
+  base_url?: string;
+  container_url?: string;
+  effective_base_url?: string;
+  protocol?: string;
+  protocol_override?: string;
+  using_unified?: boolean;
+  resolved_endpoint?: string;
+  config_toml_status?: 'ok' | 'stale';
+  config_toml_error?: string;
+  improver_model?: string;
+  effective_improver_model?: string;
+  judge_model?: string;
+  judge_base_url?: string;
+  effective_judge_base_url?: string;
+  vertex_project?: string;
+  vertex_location?: string;
   supported_models: string[];
   capabilities: string[];
 }
 
 export interface ExecutorStatusResponse {
   active_executor: string;
+  unified_config?: UnifiedApiConfig;
+  bridge?: BridgeStatus;
   executors: ExecutorItem[];
 }
 

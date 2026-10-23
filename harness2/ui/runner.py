@@ -35,6 +35,8 @@ class ExecutionManager:
         self.logs: deque[str] = deque(maxlen=4000)
         self.subscribers: set[asyncio.Queue[dict[str, Any]]] = set()
         self._lock = asyncio.Lock()
+        self.bridge_process: asyncio.subprocess.Process | None = None
+        self.bridge_meta: dict[str, Any] = {}
 
     def get_status(self) -> dict[str, Any]:
         if self.current_job is None:
@@ -172,3 +174,105 @@ class ExecutionManager:
                 await self.broadcast("terminate", self.current_job)
 
             return {"message": "Job terminated successfully."}
+
+    def get_bridge_info(self) -> dict[str, Any]:
+        running = self.bridge_process is not None and self.bridge_process.returncode is None
+        return {**self.bridge_meta, "running": running}
+
+    async def start_bridge(
+        self,
+        upstream: str,
+        api_key: str,
+        *,
+        host: str = "127.0.0.1",
+        port: int = 0,
+    ) -> dict[str, Any]:
+        """Start or restart the background `harness2.cli.responses_bridge` process."""
+        await self.stop_bridge()
+        cmd = [
+            sys.executable,
+            "-m",
+            "harness2.cli.responses_bridge",
+            "--upstream",
+            upstream,
+            "--api-key",
+            api_key,
+            "--host",
+            host,
+        ]
+        if port > 0:
+            cmd.extend(["--port", str(port)])
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=str(self.workspace_root),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            env=os.environ.copy(),
+        )
+        self.bridge_process = proc
+
+        settings: dict[str, str] = {}
+        assert proc.stdout is not None
+        try:
+            for _ in range(15):
+                line_bytes = await asyncio.wait_for(proc.stdout.readline(), timeout=2.0)
+                if not line_bytes:
+                    break
+                line = line_bytes.decode("utf-8", errors="replace").strip()
+                if "=" in line and line.startswith("HARNESS2_CODEX_"):
+                    k, _, v = line.partition("=")
+                    settings[k.strip()] = v.strip()
+                if "HARNESS2_CODEX_API_KEY" in settings:
+                    break
+        except asyncio.TimeoutError:
+            pass
+
+        # Drain remaining output in background so pipe never blocks
+        async def _drain() -> None:
+            assert proc.stdout is not None
+            while True:
+                lb = await proc.stdout.readline()
+                if not lb:
+                    break
+
+        asyncio.create_task(_drain())
+        await asyncio.sleep(0.3)
+
+        if proc.returncode is not None:
+            raise RuntimeError(f"Responses bridge exited immediately (code={proc.returncode})")
+
+        resolved_port = port
+        base_url = settings.get("HARNESS2_CODEX_BASE_URL", "")
+        if ":" in base_url:
+            try:
+                resolved_port = int(base_url.rsplit(":", 1)[-1].split("/", 1)[0])
+            except ValueError:
+                pass
+
+        self.bridge_meta = {
+            "running": True,
+            "port": resolved_port,
+            "host": host,
+            "upstream": upstream,
+            "settings": settings,
+        }
+        return self.bridge_meta
+
+    async def stop_bridge(self) -> dict[str, Any]:
+        """Terminate the managed Responses Bridge process if running."""
+        proc = self.bridge_process
+        if proc is None or proc.returncode is not None:
+            self.bridge_process = None
+            self.bridge_meta["running"] = False
+            return {"stopped": False, "message": "Bridge was not running under Web Console."}
+        try:
+            proc.terminate()
+            await asyncio.sleep(0.3)
+            if proc.returncode is None:
+                proc.kill()
+        except ProcessLookupError:
+            pass
+        self.bridge_process = None
+        self.bridge_meta["running"] = False
+        return {"stopped": True, "message": "Responses bridge stopped."}
