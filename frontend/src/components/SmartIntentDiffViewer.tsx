@@ -104,13 +104,13 @@ export const SmartIntentDiffViewer: React.FC<SmartIntentDiffViewerProps> = ({
           </div>
           <div>
             <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{tx('智能体装备改动分析 (Harness Changes)', 'Harness Evolution Diff & Intent')}</span>
+              <span>{tx('智能体装备改动分析', 'Harness Evolution Diff & Intent')}</span>
               <span className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20 font-medium">
                 {tx(`${diff.total_files_changed} 个文件变更`, `${diff.total_files_changed} file(s) changed`)}
               </span>
             </h4>
             <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
-              <span>{tx('对比:', 'Compare:')}</span>
+              <span>{tx('对比：', 'Compare:')}</span>
               <select
                 value={baseLabel}
                 onChange={(e) => onChangeComparison(e.target.value, compareLabel)}
@@ -118,7 +118,7 @@ export const SmartIntentDiffViewer: React.FC<SmartIntentDiffViewerProps> = ({
               >
                 {availableLabels.map((l) => (
                   <option key={l} value={l}>
-                    {tx('基准:', 'Base:')} {l}
+                    {tx('基准：', 'Base:')} {l}
                   </option>
                 ))}
               </select>
@@ -130,7 +130,7 @@ export const SmartIntentDiffViewer: React.FC<SmartIntentDiffViewerProps> = ({
               >
                 {availableLabels.map((l) => (
                   <option key={l} value={l}>
-                    {tx('目标:', 'Target:')} {l}
+                    {tx('目标：', 'Target:')} {l}
                   </option>
                 ))}
               </select>
@@ -161,7 +161,7 @@ export const SmartIntentDiffViewer: React.FC<SmartIntentDiffViewerProps> = ({
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              {tx('代码行级比对 (Diff)', 'Line-by-Line Diff')}
+              {tx('代码行级比对', 'Line-by-Line Diff')}
             </button>
           </div>
 

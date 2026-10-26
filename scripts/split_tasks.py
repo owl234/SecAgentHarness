@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Optionally partition an installed benchmark, stratified by domain."""
+"""按领域分层对已安装的基准测试任务集进行训练/测试切分。"""
 
 from __future__ import annotations
 
@@ -38,9 +38,9 @@ def main(argv=None) -> int:
     p.add_argument("--output", type=Path, required=True)
     args = p.parse_args(argv)
     if (args.bench == "wb") != bool(args.subset):
-        p.error("--subset is required for wb and only applies to wb")
+        p.error("--subset 参数在使用 wb 基准时必填，且仅适用于 wb")
     if not 0 < args.train_fraction < 1:
-        p.error("--train-fraction must be between 0 and 1")
+        p.error("--train-fraction 必须在 0 到 1 之间")
     try:
         by_domain = defaultdict(list)
         for task, domain in discover(args.bench, args.subset).items():
@@ -63,8 +63,8 @@ def main(argv=None) -> int:
             json.dump(data, f, indent=2)
             f.write("\n")
     except (OSError, ValueError) as exc:
-        p.exit(1, f"error: {exc}\n")
-    print(f"{args.output}: {len(train)} train, {len(test)} test")
+        p.exit(1, f"错误：{exc}\n")
+    print(f"{args.output}：训练集 {len(train)} 项，测试集 {len(test)} 项")
     return 0
 
 

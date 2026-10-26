@@ -90,7 +90,7 @@ export const ExecutionProgressStepper: React.FC<StepperProps> = ({
 
   const steps = [
     {
-      title: tx('第一步：初始执行 (Base)', 'Step 1: Baseline Rollout (Base)'),
+      title: tx('第一步：初始执行', 'Step 1: Baseline Rollout (Base)'),
       desc: tx(
         '使用未修改的基准套件运行任务，获取初始执行轨迹与交付成果物',
         'Run the task with the unmodified base harness to capture initial trajectory & deliverables'
@@ -98,15 +98,15 @@ export const ExecutionProgressStepper: React.FC<StepperProps> = ({
       icon: Play,
     },
     {
-      title: tx('第二步：诊断并提议改进 (Propose)', 'Step 2: Diagnose & Propose Edits (Propose)'),
+      title: tx('第二步：诊断并提议改进', 'Step 2: Diagnose & Propose Edits (Propose)'),
       desc: tx(
-        '分析初始缺陷，同时构思通用规则优化 (INV) 与专业技能增强 (DOM)',
+        '分析初始缺陷，同时构思通用工程规则优化 (INV) 与专业业务技能增强 (DOM)',
         'Diagnose trajectory flaws and propose invariant (INV) & domain-specific (DOM) edits'
       ),
       icon: Sparkles,
     },
     {
-      title: tx('第三步：试跑探测 (Probe)', 'Step 3: Probe Candidate Harnesses (Probe)'),
+      title: tx('第三步：试跑探测', 'Step 3: Probe Candidate Harnesses (Probe)'),
       desc: tx(
         '在同一任务中部署候选套件并试跑，收集执行对比差异与行为证据',
         'Deploy candidate harnesses on the task to gather behavioral contrast evidence'
@@ -114,7 +114,7 @@ export const ExecutionProgressStepper: React.FC<StepperProps> = ({
       icon: Zap,
     },
     {
-      title: tx('第四步：融合最佳装备 (Compose)', 'Step 4: Compose & Distill Memory (Compose)'),
+      title: tx('第四步：融合最佳装备', 'Step 4: Compose & Distill Memory (Compose)'),
       desc: tx(
         '根据试跑证据择优组合出最终套件，并将证据沉淀至跨任务经验库',
         'Synthesize the best final harness from probe evidence and persist lessons to the library'

@@ -72,7 +72,7 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
                 tasks = meta.get("tasks", [])
                 runs.append({
                     "id": p.name,
-                    "name": f"Demo: {p.name}",
+                    "name": f"本地演示: {p.name}",
                     "type": "demo",
                     "path": str(p.relative_to(runs_root)),
                     "task_count": meta.get("n_tasks", len(tasks)),
@@ -99,7 +99,7 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
         total = sum(len(d.get("tasks", [])) for d in domain_reps)
         runs.append({
             "id": sw.stem,
-            "name": f"Sweep: {sw.stem}",
+            "name": f"扫描: {sw.stem}",
             "type": "sweep",
             "path": str(sw.relative_to(runs_root)),
             "task_count": total or (done + failed),
@@ -296,7 +296,7 @@ def get_tasks_for_run(runs_root: Path, run_id: str) -> list[dict[str, Any]]:
                             "mode": "agg",
                             "usd": 0.0,
                             "attempts": 1,
-                            "notes": f"Base rollout ({stg_status})",
+                            "notes": f"初始基线采样 ({stg_status})",
                             "fell_back": False,
                         })
                     elif s_name.startswith("inv") or s_name.startswith("dom"):
@@ -308,7 +308,7 @@ def get_tasks_for_run(runs_root: Path, run_id: str) -> list[dict[str, Any]]:
                             "mode": "agg",
                             "usd": 0.0,
                             "attempts": 1,
-                            "notes": f"Proposal {dim} ({stg_status})",
+                            "notes": f"候选提议探测 {dim} ({stg_status})",
                             "fell_back": False,
                         })
                     elif s_name.startswith("agg"):
@@ -319,7 +319,7 @@ def get_tasks_for_run(runs_root: Path, run_id: str) -> list[dict[str, Any]]:
                             "mode": "agg",
                             "usd": 0.0,
                             "attempts": 1,
-                            "notes": f"Compose rollout ({stg_status})",
+                            "notes": f"融合终选运行 ({stg_status})",
                             "fell_back": False,
                         })
 
@@ -481,9 +481,9 @@ def _read_run_artifacts(r_dir: Path) -> dict[str, str]:
                 if f.name.endswith(".md") or f.name.endswith(".txt"):
                     out["answer.txt"] = _safe_read_text(f, max_bytes=200_000)
                 elif f.name.endswith(".docx"):
-                    out.setdefault("answer.txt", f"Deliverable generated: output/{f.name} ({f.stat().st_size} bytes)")
+                    out.setdefault("answer.txt", f"已生成交付文档: output/{f.name} ({f.stat().st_size} 字节)")
     if (r_dir / "transcript.jsonl").is_file() and "trajectory.md" not in out:
-        out["trajectory.md"] = f"Transcript available ({r_dir / 'transcript.jsonl'})"
+        out["trajectory.md"] = f"完整会话记录文件: {r_dir / 'transcript.jsonl'}"
     return out
 
 
@@ -533,9 +533,10 @@ def _build_pipeline_graph(
         b_comp = bool(b_arts.get(".adapt_complete") or b_arts.get("metrics.json"))
         b_act = bool(b_arts.get("opencode_session.jsonl"))
         b_status = "completed" if b_comp else ("running" if (b_act or not rollout_artifacts) else "pending")
+        b_num = "".join(filter(str.isdigit, b_lbl)) or "1"
         b_node = {
             "id": b_lbl,
-            "label": f"Baseline ({b_lbl})",
+            "label": f"初始基准-{b_num} ({b_lbl})",
             "type": "base",
             "status": b_status,
             "dim": "BASE",
@@ -585,7 +586,7 @@ def _build_pipeline_graph(
 
                 nodes.append({
                     "id": inv_lbl,
-                    "label": f"Invariant-{r} ({inv_lbl})",
+                    "label": f"通用工程-{r} ({inv_lbl})",
                     "type": "candidate",
                     "dim": "INV",
                     "mode": "agg",
@@ -600,7 +601,7 @@ def _build_pipeline_graph(
                     "has_trajectory": bool(inv_arts.get("trajectory.md")),
                     "is_chosen": (inv_lbl == chosen_lbl),
                 })
-                edges.append({"source": base_labels[0], "target": inv_lbl, "label": "Propose Invariant"})
+                edges.append({"source": base_labels[0], "target": inv_lbl, "label": "提议通用工程改进"})
                 branch_nodes.append(inv_lbl)
 
                 # Domain candidate node
@@ -616,7 +617,7 @@ def _build_pipeline_graph(
 
                 nodes.append({
                     "id": dom_lbl,
-                    "label": f"Domain-{r} ({dom_lbl})",
+                    "label": f"业务领域-{r} ({dom_lbl})",
                     "type": "candidate",
                     "dim": "DOM",
                     "mode": "agg",
@@ -631,7 +632,7 @@ def _build_pipeline_graph(
                     "has_trajectory": bool(dom_arts.get("trajectory.md")),
                     "is_chosen": (dom_lbl == chosen_lbl),
                 })
-                edges.append({"source": base_labels[0], "target": dom_lbl, "label": "Propose Domain"})
+                edges.append({"source": base_labels[0], "target": dom_lbl, "label": "提议业务领域改进"})
                 branch_nodes.append(dom_lbl)
 
                 # Composed node
@@ -647,7 +648,7 @@ def _build_pipeline_graph(
 
                 nodes.append({
                     "id": agg_lbl,
-                    "label": f"Aggregated-{r} ({agg_lbl})",
+                    "label": f"并行融合-{r} ({agg_lbl})",
                     "type": "composed",
                     "dim": "COMPOSE",
                     "mode": "agg",
@@ -663,7 +664,7 @@ def _build_pipeline_graph(
                     "is_chosen": (agg_lbl == chosen_lbl),
                 })
                 for branch in [inv_lbl, dom_lbl]:
-                    edges.append({"source": branch, "target": agg_lbl, "label": "Compose Final"})
+                    edges.append({"source": branch, "target": agg_lbl, "label": "多路融合合成"})
 
         elif mode == "seq":
             prev_node = base_labels[0] if base_labels else None
@@ -679,13 +680,13 @@ def _build_pipeline_graph(
                     r_arts = rollout_artifacts.get(lbl, {})
                     num = "".join(filter(str.isdigit, lbl)) or "1"
                     if lbl.startswith("inv"):
-                        lbl_friendly = f"Invariant-{num} ({lbl})"
+                        lbl_friendly = f"通用工程-{num} ({lbl})"
                     elif lbl.startswith("dom"):
-                        lbl_friendly = f"Domain-{num} ({lbl})"
+                        lbl_friendly = f"业务领域-{num} ({lbl})"
                     elif lbl.startswith("c") or lbl.startswith("seq"):
-                        lbl_friendly = f"Composed-{num} ({lbl})"
+                        lbl_friendly = f"序列精炼-{num} ({lbl})"
                     elif lbl.startswith("base"):
-                        lbl_friendly = f"Baseline-{num} ({lbl})"
+                        lbl_friendly = f"初始基准-{num} ({lbl})"
                     else:
                         lbl_friendly = f"{lbl} [{dim}]"
 
@@ -716,7 +717,7 @@ def _build_pipeline_graph(
                         continue
                     r_arts = rollout_artifacts.get(f_lbl, {})
                     c_num = "".join(filter(str.isdigit, f_lbl)) or "1"
-                    f_title = f"Composed-{c_num} ({f_lbl})" if (f_lbl.startswith("c") or f_lbl.startswith("seq")) else f"{f_lbl} [FINAL]"
+                    f_title = f"序列精炼-{c_num} ({f_lbl})" if (f_lbl.startswith("c") or f_lbl.startswith("seq")) else f"{f_lbl} [终选]"
                     nodes.append({
                         "id": f_lbl,
                         "label": f_title,
@@ -735,7 +736,7 @@ def _build_pipeline_graph(
                         "is_chosen": (f_lbl == chosen_lbl),
                     })
                     if prev_node:
-                        edges.append({"source": prev_node, "target": f_lbl, "label": "Compose Final"})
+                        edges.append({"source": prev_node, "target": f_lbl, "label": "序列融合合成"})
                     prev_node = f_lbl
 
             else:
@@ -755,7 +756,7 @@ def _build_pipeline_graph(
 
                     nodes.append({
                         "id": seq_lbl,
-                        "label": f"Sequence-{r} ({seq_lbl})",
+                        "label": f"序列步进-{r} ({seq_lbl})",
                         "type": "sequential",
                         "dim": "SEQ",
                         "mode": "seq",
@@ -771,7 +772,7 @@ def _build_pipeline_graph(
                         "is_chosen": (seq_lbl == chosen_lbl),
                     })
                     if prev_node:
-                        edges.append({"source": prev_node, "target": seq_lbl, "label": f"Step {r}"})
+                        edges.append({"source": prev_node, "target": seq_lbl, "label": f"第 {r} 步"})
                     prev_node = seq_lbl
 
     return {"nodes": nodes, "edges": edges}
@@ -1194,12 +1195,12 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c1",
         "type": "c1_prompt",
         "name": "autonomous_engineer_prompt",
-        "label": "自主专家工程师系统提示词 (Autonomous Engineer Persona)",
+        "label": "自主专家工程师系统提示词",
         "path": "systemprompt.md",
         "description": "设定高鲁棒性自主编码与故障排查专家设定，规范第一性原理推演与自检公理。",
-        "tags": ["c1", "System Prompt", "工程规范", "第一性原理"],
+        "tags": ["c1", "系统提示词", "工程规范", "第一性原理"],
         "content": (
-            "# 专家自主执行智能体 (Autonomous Principal Engineer)\n\n"
+            "# 专家自主执行智能体\n\n"
             "你是一个具备高级问题解决与递归优化能力的自主智能体。\n"
             "在执行任何代码分析、测试编写或系统修改前，请务必遵守以下操作公理：\n\n"
             "## 1. 核心工作哲学\n"
@@ -1216,12 +1217,12 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c2",
         "type": "c2_guardrail",
         "name": "production_safety_guard",
-        "label": "生产环境安全护栏与危险命令拦截 (Safety Guardrails)",
+        "label": "生产环境安全护栏与危险命令拦截",
         "path": "guardrails.md",
         "description": "防御性安全屏障，禁止非授权破坏性文件删除、未受控提权以及敏感凭据泄漏。",
-        "tags": ["c2", "Guardrail", "安全防御", "合规审查"],
+        "tags": ["c2", "安全护栏", "安全防御", "合规审查"],
         "content": (
-            "# 操作安全护栏与边界拦截规范 (Safety Guardrails)\n\n"
+            "# 操作安全护栏与边界拦截规范\n\n"
             "在执行任意系统调用、文件操作及外部网络请求时，强制遵守以下红线：\n\n"
             "## 1. 禁止执行的危险操作\n"
             "- **严禁破坏性删除**：禁止执行 `rm -rf /`、清空根目录或删除未受管控的父级工作区。\n"
@@ -1237,12 +1238,12 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c3",
         "type": "c3_memory",
         "name": "incremental_task_ledger",
-        "label": "跨阶段长效运行记忆账本 (Incremental Memory Ledger)",
+        "label": "跨阶段长效运行记忆账本",
         "path": "LongTermMEMORY.md",
         "description": "记录跨轮次提炼的关键坑点、库版本兼容性备忘与高频有效策略，避免重复犯错。",
-        "tags": ["c3", "Memory", "经验复用", "增量账本"],
+        "tags": ["c3", "长期记忆", "经验复用", "增量账本"],
         "content": (
-            "# 跨阶段长效运行记忆账本 (Long-Term Memory Ledger)\n\n"
+            "# 跨阶段长效运行记忆账本\n\n"
             "## 已验证有效的策略模式\n"
             "1. 涉及金融会计金额计算时，始终采用 `Decimal` 或整型分计量，严禁浮点数直接累加导致舍入偏差。\n"
             "2. 涉及异步并发流处理时，优先使用有界缓冲队列并配备连接重连熔断器。\n\n"
@@ -1255,12 +1256,12 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c4",
         "type": "c4_tool",
         "name": "structured_tool_protocol",
-        "label": "结构化工具调用协议与容错指引 (Tool Guidance)",
+        "label": "结构化工具调用协议与容错指引",
         "path": "tool_descriptions/tool_guidance.md",
-        "description": "规范智能体工具调用的参数类型约束、错误处理逻辑与输出 Contract。",
-        "tags": ["c4", "Tool Guidance", "协议规范", "接口契约"],
+        "description": "规范智能体工具调用的参数类型约束、错误处理逻辑与输出契约。",
+        "tags": ["c4", "工具指引", "协议规范", "接口契约"],
         "content": (
-            "# 工具调用协议与异常重试指引 (Tool Guidance Protocol)\n\n"
+            "# 工具调用协议与异常重试指引\n\n"
             "## 参数调用约定\n"
             "- **严格类型校验**：传递给计算工具的数值参数必须与文档声明的类型一致（禁止传递字符串形式的浮点数）。\n"
             "- **幂等性保障**：外部 API 调用必须传递唯一 `idempotency_key`，避免网络超时重试导致重复提交。\n\n"
@@ -1273,17 +1274,17 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c5",
         "type": "c5_subagent",
         "name": "arch_reviewer",
-        "label": "架构审查与代码重构专员 (Architecture Reviewer Subagent)",
+        "label": "架构审查与代码重构专员",
         "path": "sub_agents/arch_reviewer/AGENT.md",
         "description": "专用于在主智能体合成后进行独立 AST 语法扫描与设计模式合规性审查的委托代理。",
-        "tags": ["c5", "Subagent", "代码审查", "架构设计"],
+        "tags": ["c5", "子智能体", "代码审查", "架构设计"],
         "content": (
             "---\n"
             "name: arch_reviewer\n"
             "description: 专门负责代码结构合理性审查与设计模式合规检测的轻量级审查员子智能体。\n"
             "tools: [read_file, run_command]\n"
             "---\n\n"
-            "# 架构审查子智能体 (Architecture Reviewer)\n\n"
+            "# 架构审查子智能体\n\n"
             "你的唯一目标是协助主智能体审阅新提交或合成的代码补丁，评估其架构健壮度。\n\n"
             "## 审查维度\n"
             "1. **模块高内聚低耦合**：是否存在不合理的跨层循环引用？\n"
@@ -1300,16 +1301,16 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c6",
         "type": "c6_skill",
         "name": "data_cleaner",
-        "label": "复杂数据清洗与数值对齐技能 (Data Cleaner Skill)",
+        "label": "复杂数据清洗与数值对齐技能",
         "path": "skills/data_cleaner/SKILL.md",
         "description": "提供标准数据清洗流程手册及自动化 Python 清洗脚本，包含字段归一化与校验。",
-        "tags": ["c6", "Skill", "数据清洗", "自动化流程"],
+        "tags": ["c6", "专业技能", "数据清洗", "自动化流程"],
         "content": (
             "---\n"
             "name: data_cleaner\n"
             "description: 对含格式噪点的交易流水和结构化账单执行清洗、补齐与校验。\n"
             "---\n\n"
-            "# 交易流水数据清洗指南 (Data Cleaner Skill)\n\n"
+            "# 交易流水数据清洗指南\n\n"
             "当面对未知来源的 CSV / JSON / Excel 账目数据时，按此技能手册执行标准化：\n\n"
             "## 步骤流程\n"
             "1. 运行 `scripts/clean_data.py --input <path>` 执行首轮格式规范化。\n"
@@ -1329,7 +1330,7 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
                 '        cleaned["amount"] = str(Decimal(raw)) if raw else "0.00"\n'
                 "    return cleaned\n\n"
                 'if __name__ == "__main__":\n'
-                '    print("Clean utility ready.")\n'
+                '    print("清洗工具已就绪。")\n'
             )
         },
     },
@@ -1338,10 +1339,10 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c7",
         "type": "c7_script",
         "name": "validate_schema",
-        "label": "JSON Schema 快速语法校验脚本 (Validate Schema Script)",
+        "label": "JSON Schema 快速语法校验脚本",
         "path": "scripts/validate_schema.py",
         "description": "独立运行的 Python 校验脚本，验证中间产物与配置文件的完整性。",
-        "tags": ["c7", "Script", "Python", "语法校验"],
+        "tags": ["c7", "辅助脚本", "Python", "语法校验"],
         "content": (
             '"""Validate JSON payload against schema definitions."""\n'
             "import json\n"
@@ -1350,20 +1351,20 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
             "def validate(file_path: str) -> bool:\n"
             "    path = Path(file_path)\n"
             "    if not path.is_file():\n"
-            '        print(f"File not found: {file_path}", file=sys.stderr)\n'
+            '        print(f"未找到文件: {file_path}", file=sys.stderr)\n'
             "        return False\n"
             "    try:\n"
             '        data = json.loads(path.read_text(encoding="utf-8"))\n'
-            '        print(f"Validation OK: {path.name} loaded with {len(data)} items.")\n'
+            '        print(f"校验通过: {path.name} 共加载 {len(data)} 个条目。")\n'
             "        return True\n"
             "    except Exception as e:\n"
-            '        print(f"Validation failed: {e}", file=sys.stderr)\n'
+            '        print(f"校验失败: {e}", file=sys.stderr)\n'
             "        return False\n\n"
             'if __name__ == "__main__":\n'
             "    if len(sys.argv) > 1:\n"
             "        validate(sys.argv[1])\n"
             "    else:\n"
-            '        print("Usage: python3 scripts/validate_schema.py <path>")\n'
+            '        print("用法: python3 scripts/validate_schema.py <path>")\n'
         ),
     },
     {
@@ -1371,22 +1372,21 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c8",
         "type": "c8_hook",
         "name": "execution_auditor",
-        "label": "运行时执行审计与耗时监控钩子 (Execution Auditor Hook)",
+        "label": "运行时执行审计与耗时监控钩子",
         "path": "plugins/execution_auditor.ts",
         "description": "在智能体每次工具调用前后拦截执行上下文，记录调用耗时与入参快照。",
-        "tags": ["c8", "Hook", "事件拦截", "性能审计"],
+        "tags": ["c8", "拦截钩子", "事件拦截", "性能审计"],
         "content": (
             "/**\n"
-            " * Execution Auditor Hook\n"
-            " * Tracks tool execution timing and audits runtime state changes.\n"
+            " * 运行时执行审计与耗时监控钩子\n"
             " */\n"
             "export async function beforeToolCall(toolName: string, args: Record<string, any>) {\n"
-            "  console.log(`[AUDIT] Preparing to execute tool: ${toolName}`);\n"
+            "  console.log(`[审计] 准备执行工具: ${toolName}`);\n"
             "  return { startTimestamp: Date.now() };\n"
             "}\n\n"
             "export async function afterToolCall(toolName: string, result: any, context: { startTimestamp: number }) {\n"
             "  const duration = Date.now() - context.startTimestamp;\n"
-            "  console.log(`[AUDIT] Finished ${toolName} in ${duration}ms`);\n"
+            "  console.log(`[审计] 工具 ${toolName} 执行完毕，耗时 ${duration}ms`);\n"
             "}\n"
         ),
     },
@@ -1395,10 +1395,10 @@ PRESET_COMPONENT_TEMPLATES: list[dict[str, Any]] = [
         "category": "c9",
         "type": "c9_mcp",
         "name": "sec_recon_mcp",
-        "label": "网安资产测绘与协议分析 MCP 服务 (Security Recon & Stateful MCP Server)",
+        "label": "网安资产测绘与协议分析 MCP 服务",
         "path": "mcp/servers.json",
         "description": "提供跨轮次有状态资产指纹缓存、CVE 规则检索与结构化协议解析的 MCP 服务配置及内置服务脚本。",
-        "tags": ["c9", "MCP", "网络安全", "有状态工具", "Protocol"],
+        "tags": ["c9", "MCP", "网络安全", "有状态工具", "协议服务"],
         "content": (
             "{\n"
             '  "mcpServers": {\n'
@@ -1921,7 +1921,7 @@ def probe_executor_endpoint(
             "protocol": eff_proto,
             "status_code": None,
             "latency_ms": 0,
-            "message": "未配置 API Base URL，请先填写端点地址 (No Base URL configured)",
+            "message": "未配置 API 基础地址 (Base URL)，请先填写端点地址",
         }
 
     t0 = time.perf_counter()
@@ -2176,7 +2176,7 @@ def get_executors_status(
             {
                 "id": "claude",
                 "name": "Claude Code (clawgod)",
-                "title": f"Claude Code Substrate (clawgod {config.CLAUDE_VERSION})",
+                "title": f"Claude Code 执行基座 (clawgod {config.CLAUDE_VERSION})",
                 "category": "substrate",
                 "status": claude_status,
                 "status_message": claude_msg,
@@ -2210,7 +2210,7 @@ def get_executors_status(
             {
                 "id": "oc",
                 "name": "OpenCode (oc)",
-                "title": "OpenCode 原生 Substrate 执行器 (v1.14.18)",
+                "title": "OpenCode 原生执行基座 (v1.14.18)",
                 "category": "substrate",
                 "status": oc_status,
                 "status_message": oc_msg,
@@ -2242,7 +2242,7 @@ def get_executors_status(
             {
                 "id": "cx",
                 "name": "Codex (cx)",
-                "title": f"Codex CLI Substrate 执行器 ({config.CODEX_VERSION})",
+                "title": f"Codex CLI 执行基座 ({config.CODEX_VERSION})",
                 "category": "substrate",
                 "status": cx_status,
                 "status_message": cx_msg,
@@ -2275,8 +2275,8 @@ def get_executors_status(
             },
             {
                 "id": "vertex",
-                "name": "改进器与裁判 (Improver & Judge)",
-                "title": "Proposer 改进器、双盲裁判与 Vertex AI 配置",
+                "name": "改进器与裁判",
+                "title": "提议改进器、双盲裁判与 Vertex AI 配置",
                 "category": "cloud",
                 "status": vertex_status,
                 "status_message": vertex_msg,

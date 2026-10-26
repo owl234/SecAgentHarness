@@ -29,6 +29,12 @@ from .tree import SurfaceSpec
 
 VERSION = "harness2-1"
 
+LANGUAGE_DIRECTIVE = """\
+# LANGUAGE REQUIREMENT (中文输出规范)
+
+- 请使用**简体中文**撰写你的所有分析说明、决策理由与经验总结（包括 `<notes>`、`<why>` 以及 `<experience>` 中的 `cue`、`lesson`、`evidence`、`confidence` 值，以及 `<edits>` 中的 `change`、`observed` 描述）。
+- 当你在 `context/harness/` 中新建或修改提示词、安全护栏、长期记忆、工具指引、子智能体或技能文档（`*.md`）时，面向智能体的规则与说明也请优先使用清晰、高密度的**简体中文**（触发技能的固定标识符、文件路径、YAML frontmatter 键名、代码脚本以及协议要求的关键字如 `KEEP_BASE`、`NO_ENTRY`、`helped|hurt|no observed effect|confounded` 必须严格保持英文原样，切勿翻译）。"""
+
 
 def _tidy(text: str) -> str:
     """Collapse blank runs left by an empty optional slot."""
@@ -879,7 +885,7 @@ def _tts_propose(bp: BenchPrompts, dim: str, st: _SurfaceText, *, k: int, index:
     ]
     if bp.yardstick.strip():
         parts.append(f"# WHAT GOOD PROCESS LOOKS LIKE HERE\n\n{bp.yardstick.strip()}")
-    parts += [ANSWER_FREE, EVIDENCE_BOUNDARY, st.tts_surface]
+    parts += [ANSWER_FREE, EVIDENCE_BOUNDARY, st.tts_surface, LANGUAGE_DIRECTIVE]
     return _tidy("\n\n".join(parts))
 
 
@@ -938,10 +944,11 @@ def _tts_aggregate(bp: BenchPrompts, st: _SurfaceText, *, k: int, index: int) ->
         EVIDENCE_BOUNDARY,
         st.tts_surface,
         "# NOTES FORMAT\n\n"
-        "In your single `<notes>` block, one line per decision:\n\n"
+        "In your single `<notes>` block, one line per decision (write the rationale in Simplified Chinese):\n\n"
         "    kept|revised|dropped -> <which edit> -> <the evidence: what the trajectories "
         "showed, with counts where sets are involved>\n\n"
         "A decision without evidence attached is a decision the next reader cannot audit.",
+        LANGUAGE_DIRECTIVE,
     ]
     return _tidy("\n\n".join(parts))
 
@@ -988,9 +995,10 @@ def _tts_select(bp: BenchPrompts, n: int, pool_kind: str, assets_note: str) -> s
                 ANSWER_FREE_SELECT,
                 EVIDENCE_BOUNDARY_SELECT,
                 "# OUTPUT FORMAT\n\nFirst the reasoning, then the choice as the very last thing:\n\n"
-                "<why>\nAt most 5 lines. Name the criterion that decided it, and the closest runner-up "
+                "<why>\nAt most 5 lines (in Simplified Chinese). Name the criterion that decided it, and the closest runner-up "
                 "with the specific thing that cost it the pick.\n</why>\n\n"
                 "```choice\n<the id of the single candidate to submit>\n```",
+                LANGUAGE_DIRECTIVE,
             ]
         )
     )
@@ -1061,7 +1069,7 @@ def propose(
     ]
     if bp.yardstick.strip():
         parts.append(f"# WHAT GOOD PROCESS LOOKS LIKE HERE\n\n{bp.yardstick.strip()}")
-    parts += [ANSWER_FREE, EVIDENCE_BOUNDARY, st.surface_md]
+    parts += [ANSWER_FREE, EVIDENCE_BOUNDARY, st.surface_md, LANGUAGE_DIRECTIVE]
     return _tidy("\n\n".join(parts))
 
 
@@ -1126,11 +1134,12 @@ def aggregate(bp: BenchPrompts, surface: SurfaceSpec | str, *, k: int = 1, index
                 EVIDENCE_BOUNDARY,
                 st.surface_md,
                 "# NOTES FORMAT\n\n"
-                "In your single `<notes>` block, one line per decision, in this exact shape:\n\n"
+                "In your single `<notes>` block, one line per decision, in this exact shape (rationale in Simplified Chinese):\n\n"
                 "    kept|revised|dropped -> <which edit> -> <the trajectory moment or base-set "
                 "pattern that decided it, with counts where sets are involved, e.g. 'failed in "
                 f"{max(k - 1, 2)}/{k} base rollouts'>\n\n"
                 "A decision without evidence attached is a decision the next reader cannot audit.",
+                LANGUAGE_DIRECTIVE,
             ]
         )
     )
@@ -1178,6 +1187,7 @@ def compose_round(bp: BenchPrompts, surface: SurfaceSpec | str, *, t: int, k: in
                 ANSWER_FREE,
                 EVIDENCE_BOUNDARY,
                 st.surface_md,
+                LANGUAGE_DIRECTIVE,
             ]
         )
     )
@@ -1268,10 +1278,11 @@ def select(bp: BenchPrompts, n: int, pool_kind: str = "mixed", assets_note: str 
                 ANSWER_FREE_SELECT,
                 EVIDENCE_BOUNDARY_SELECT,
                 "# OUTPUT FORMAT\n\nFirst the reasoning, then the choice as the very last thing:\n\n"
-                "<why>\nAt most 6 lines. Name the criterion that decided it, and the closest runner-up "
+                "<why>\nAt most 6 lines (in Simplified Chinese). Name the criterion that decided it, and the closest runner-up "
                 "with the specific thing that cost it the pick. If you rejected a candidate on "
                 "CONFORMANCE, say which field, column or section.\n</why>\n\n"
                 "```choice\n<the id of the single candidate to submit>\n```",
+                LANGUAGE_DIRECTIVE,
             ]
         )
     )
@@ -1325,14 +1336,15 @@ def experience(bp: BenchPrompts) -> str:
                 "# OUTPUT FORMAT\n\n"
                 "<edits>\ncomponent: <name as it appears in the harness tree>\n"
                 "candidates: <the labels that carried this edit>\n"
-                "change: <what the edit did>\n"
-                "observed: <the execution difference, and where you saw it>\n"
+                "change: <what the edit did (in Simplified Chinese)>\n"
+                "observed: <the execution difference, and where you saw it (in Simplified Chinese)>\n"
                 "verdict: <helped|hurt|no observed effect|confounded>\n"
                 "(repeat these five lines for each changed component)\n</edits>\n\n"
-                "<experience>\ncue: <the shape of situation this applies to>\n"
-                "lesson: <the transferable operation, naming the component>\n"
-                "evidence: <the edit rows this rests on, and the execution contrast>\n"
-                "confidence: <high|medium|low, and why>\n</experience>",
+                "<experience>\ncue: <the shape of situation this applies to (in Simplified Chinese)>\n"
+                "lesson: <the transferable operation, naming the component (in Simplified Chinese)>\n"
+                "evidence: <the edit rows this rests on, and the execution contrast (in Simplified Chinese)>\n"
+                "confidence: <high|medium|low, and why (in Simplified Chinese)>\n</experience>",
+                LANGUAGE_DIRECTIVE,
             ]
         )
     )

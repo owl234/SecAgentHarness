@@ -59,14 +59,14 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
             <BarChart3 className="w-5 h-5 text-blue-500" />
             <span>
               {tx(
-                '评测分析与效果对比大盘 (Benchmark & Evaluation Dashboard)',
+                '评测分析与效果对比大盘',
                 'Benchmark & Evaluation Dashboard'
               )}
             </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {tx(
-              '基准套件 (Baseline) vs 递归优化后套件 (Adapted) 表现量化对比',
+              '基准套件与递归优化后套件表现量化对比',
               'Quantitative evaluation comparing unmodified Baseline vs. Harness² Adapted harnesses'
             )}
           </p>
@@ -74,7 +74,7 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
 
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            {tx('选择 Run:', 'Run:')}
+            {tx('运行记录：', 'Run:')}
           </span>
           <select
             value={selectedRunId}
@@ -136,7 +136,7 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
-                {tx('基准套件均分 (Baseline)', 'Baseline Mean Score')}
+                {tx('基准套件均分', 'Baseline Mean Score')}
               </span>
               <p className="text-3xl font-extrabold text-slate-700 dark:text-slate-300 mt-2">
                 {report.base_stats.avg_score}%
@@ -151,7 +151,7 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
 
             <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-5 rounded-xl relative overflow-hidden shadow-sm">
               <span className="text-xs text-blue-600 dark:text-blue-400 font-medium block">
-                {tx('优化后套件均分 (Harness² Adapted)', 'Harness² Adapted Mean Score')}
+                {tx('Harness² 优化后套件均分', 'Harness² Adapted Mean Score')}
               </span>
               <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">
                 {report.adapted_stats.avg_score}%
@@ -166,7 +166,7 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
 
             <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm">
               <span className="text-xs text-purple-600 dark:text-purple-400 font-medium block">
-                {tx('综合性能增益 (Gain)', 'Net Adaptation Gain')}
+                {tx('综合性能净增益', 'Net Adaptation Gain')}
               </span>
               <p className="text-3xl font-extrabold text-purple-600 dark:text-purple-300 mt-2 flex items-center gap-1">
                 <TrendingUp className="w-6 h-6 text-purple-500" />
@@ -188,7 +188,7 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
           <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 flex items-center justify-between">
               <h3 className="text-xs font-semibold text-slate-900 dark:text-white">
-                {tx('逐题打分明细 (Per-task Graded Records)', 'Per-Task Graded Records')}
+                {tx('逐题打分明细', 'Per-Task Graded Records')}
               </h3>
               <span className="text-xs text-slate-500 dark:text-slate-400">
                 {tx(
@@ -202,12 +202,12 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100/60 dark:bg-slate-950/40 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                   <tr>
-                    <th className="py-3 px-4 font-medium">Task ID</th>
-                    <th className="py-3 px-4 font-medium">{tx('模式 (Mode)', 'Mode')}</th>
-                    <th className="py-3 px-4 font-medium">{tx('采纳阶段 (Label)', 'Chosen Stage')}</th>
-                    <th className="py-3 px-4 font-medium">{tx('判题得分 (Score)', 'Score')}</th>
-                    <th className="py-3 px-4 font-medium">{tx('全通过 (All Pass)', 'All Pass')}</th>
-                    <th className="py-3 px-4 font-medium">{tx('采纳基准?', 'Kept Base?')}</th>
+                    <th className="py-3 px-4 font-medium">{tx('任务编号', 'Task ID')}</th>
+                    <th className="py-3 px-4 font-medium">{tx('演进模式', 'Mode')}</th>
+                    <th className="py-3 px-4 font-medium">{tx('采纳阶段', 'Chosen Stage')}</th>
+                    <th className="py-3 px-4 font-medium">{tx('判题得分', 'Score')}</th>
+                    <th className="py-3 px-4 font-medium">{tx('全部通过', 'All Pass')}</th>
+                    <th className="py-3 px-4 font-medium">{tx('采纳策略', 'Kept Base?')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-800 dark:text-slate-200">
@@ -254,7 +254,7 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
                               {scorePct}% ({row.n_passed}/{row.n_criteria})
                             </span>
                           ) : (
-                            <span className="text-slate-400 dark:text-slate-500">Ungraded</span>
+                            <span className="text-slate-400 dark:text-slate-500">{tx('未判分', 'Ungraded')}</span>
                           )}
                         </td>
                         <td className="py-3 px-4">
@@ -271,11 +271,11 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
                         <td className="py-3 px-4">
                           {row.chosen_is_base ? (
                             <span className="text-amber-600 dark:text-amber-400 font-medium">
-                              {tx('是 (Base)', 'Yes (Base)')}
+                              {tx('沿用基准', 'Yes (Base)')}
                             </span>
                           ) : (
                             <span className="text-blue-600 dark:text-blue-400 font-medium">
-                              {tx('否 (Refined Final)', 'No (Refined Final)')}
+                              {tx('采纳精炼版', 'No (Refined Final)')}
                             </span>
                           )}
                         </td>

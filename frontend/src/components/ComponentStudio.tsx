@@ -269,7 +269,7 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
             <div className="flex items-center gap-2 mb-1.5">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
                 <Layers className="w-3.5 h-3.5" />
-                <span>Harness² Component Hub</span>
+                <span>{tx('Harness² 组件中枢', 'Harness² Component Hub')}</span>
               </span>
               <span className="text-xs text-slate-400 font-mono">
                 {tx('c1 ~ c9 全架构体系', 'c1 ~ c9 Full Surface Architecture')}
@@ -278,12 +278,12 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5 flex-wrap">
               <span>{tx('Harness 组件工作室', 'Harness Component Studio')}</span>
               <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-                (Component Studio & Visual Assembler)
+                {tx('（组件设计与可视化装配中心）', '(Component Studio & Visual Assembler)')}
               </span>
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
               {tx(
-                '探索、设计、校验与装配智能体的 8 维运行组件。支持随时创建自定义技能（Skill）、编写安全护栏（Guardrail）、注入工具指引并一键挂载至评测环境。',
+                '探索、设计、校验与装配智能体的 9 维运行组件。支持随时创建自定义技能、编写安全护栏、注入工具指引并一键挂载至评测环境。',
                 'Explore, design, validate, and assemble the 8 agent harness surface dimensions. Create custom Skills, Guardrails, Tool Guidance, and inject them directly into evaluation runs.'
               )}
             </p>
@@ -434,7 +434,7 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
               <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                {tx('开箱即用官方模板库 (Preset Templates)', 'Ready-to-Use Preset Templates')}
+                {tx('开箱即用官方模板库', 'Ready-to-Use Preset Templates')}
               </h2>
             </div>
             <span className="text-xs text-slate-400">
@@ -496,7 +496,7 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
           </h2>
           <span className="text-xs text-slate-400">
             {tx(
-              '支持一键注入 (Inject) 到运行中的沙箱或 Demo 环境中立即生效',
+              '支持一键注入到运行中的沙箱或演示环境中立即生效',
               'One-click injection into any target run & harness stage'
             )}
           </span>
@@ -616,7 +616,7 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCopyContent(comp)}
-                        title={tx('复制组件代码 (Copy)', 'Copy component code')}
+                        title={tx('复制组件代码', 'Copy component code')}
                         className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         {copiedId === comp.id ? (
@@ -629,7 +629,7 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
                       <button
                         type="button"
                         onClick={() => handleEditComponent(comp)}
-                        title={tx('查看与编辑 (View & edit)', 'View & edit component')}
+                        title={tx('查看与编辑', 'View & edit component')}
                         className="p-1.5 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -639,7 +639,7 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
                         <button
                           type="button"
                           onClick={() => handleDeleteComponent(comp)}
-                          title={tx('删除组件 (Delete)', 'Delete component')}
+                          title={tx('删除组件', 'Delete component')}
                           className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -653,7 +653,7 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
                       className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-600 dark:bg-blue-900/20 dark:hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xl text-xs font-semibold border border-blue-500/20 transition-all cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
-                      <span>{tx('装配注入 (Apply)', 'Inject (Apply)')}</span>
+                      <span>{tx('装配注入', 'Inject (Apply)')}</span>
                     </button>
                   </div>
                 </div>

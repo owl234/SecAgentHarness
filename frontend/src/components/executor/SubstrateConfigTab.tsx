@@ -739,7 +739,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
       {/* Capabilities List */}
       <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
         <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">
-          {tx('基座架构特性 (Substrate Surface & Capabilities)', 'Substrate Surface & Capabilities')}
+          {tx('基座架构特性与能力边界', 'Substrate Surface & Capabilities')}
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
           {activeExecutor.capabilities.map((cap, idx) => (

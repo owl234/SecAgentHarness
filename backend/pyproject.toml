@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sec-agent-harness2"
 version = "0.1.0"
-description = "Applying recursive agent harnessing (Harness²) to cybersecurity: multi-domain benchmark evaluation & 8-component optimization"
+description = "Applying recursive agent harnessing (Harness²) to cybersecurity: multi-domain benchmark evaluation & 9-component optimization"
 license = "Apache-2.0"
 requires-python = ">=3.12,<3.14"
 classifiers = [

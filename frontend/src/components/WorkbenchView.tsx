@@ -116,7 +116,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/20 text-white border border-white/30 backdrop-blur-sm">
-              {tx('一体化演进工作台 (Harness² Workbench)', 'Harness² Unified Evolution Workbench')}
+              {tx('Harness² 一体化演进工作台', 'Harness² Unified Evolution Workbench')}
             </span>
             <span className="text-xs text-blue-100 flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
@@ -300,7 +300,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
               {tx('9 维架构', '9 Dimensions')}
             </p>
             <span className="text-[11px] text-slate-400 dark:text-slate-500">
-              c1~c9: Prompt, Memory, Skills, MCP...
+              c1~c9：提示词、经验记忆、技能集、MCP 协议等
             </span>
           </div>
           {onNavigateToStudio && (

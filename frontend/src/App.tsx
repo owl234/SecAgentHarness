@@ -70,7 +70,7 @@ export const App: React.FC = () => {
         setSelectedRunId(runsData[0].id, true);
       }
     } catch (err) {
-      console.error('初始加载失败 (Initial load failed):', err);
+      console.error('初始加载失败:', err);
     }
   }, [selectedRunId, setSelectedRunId]);
 

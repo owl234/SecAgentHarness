@@ -19,51 +19,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   setCurrentTab,
 }) => {
-  const { t, lang } = useLang();
+  const { t } = useLang();
 
   const navItems: {
     id: NavTabType;
     label: string;
-    enLabel: string;
+    subLabel: string;
     icon: React.ComponentType<{ className?: string }>;
     badge?: string;
   }[] = [
     {
       id: 'overview',
       label: t('nav.overview'),
-      enLabel: 'Flow Showcase',
+      subLabel: '双层递归全景流',
       icon: Workflow,
-      badge: 'HUD',
+      badge: '大屏',
     },
     {
       id: 'workbench',
       label: t('nav.workbench'),
-      enLabel: 'Workbench',
+      subLabel: '任务调度与启动',
       icon: Activity,
     },
     {
       id: 'dashboard',
       label: t('nav.dashboard'),
-      enLabel: 'Runs & Analytics',
+      subLabel: '历史运行与量化评估',
       icon: BarChart3,
     },
     {
       id: 'studio',
       label: t('nav.studio'),
-      enLabel: 'Harness Studio',
+      subLabel: '9 大套件组件编辑',
       icon: Layers,
       badge: 'c1~c9',
     },
     {
       id: 'pipeline',
       label: t('nav.pipeline'),
-      enLabel: 'Pipeline DAG',
+      subLabel: '递归拓扑与轨迹审阅',
       icon: GitBranch,
     },
     {
       id: 'library',
       label: t('nav.library'),
-      enLabel: 'Experience Library',
+      subLabel: '跨任务持续演进经验',
       icon: BookOpen,
     },
   ];
@@ -89,15 +89,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon className="w-4 h-4 shrink-0" />
                 <span className="flex-1 min-w-0 flex flex-col leading-tight">
                   <span className="truncate">{item.label}</span>
-                  {lang === 'zh' && (
-                    <span
-                      className={`text-[11px] font-normal truncate ${
-                        isActive ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'
-                      }`}
-                    >
-                      {item.enLabel}
-                    </span>
-                  )}
+                  <span
+                    className={`text-[11px] font-normal truncate ${
+                      isActive ? 'text-white/75' : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  >
+                    {item.subLabel}
+                  </span>
                 </span>
                 {item.badge && (
                   <span

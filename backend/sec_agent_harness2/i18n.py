@@ -17,23 +17,21 @@
 
 Usage:
     from sec_agent_harness2 import i18n
-    lang = i18n.get_lang(args.lang)          # 'en' (default) | 'zh'
+    lang = i18n.get_lang(args.lang)          # 'zh' (default) | 'en'
     parser.add_argument("--host", help=i18n.t("ui.host", lang))
 
 Language resolution order (first hit wins):
-    1. explicit `override` argument (i.e. --lang zh)
+    1. explicit `override` argument (i.e. --lang zh / --lang en)
     2. `--lang <v>` / `--lang=<v>` pre-scan of sys.argv (so --help itself is translated)
     3. $SEC_AGENT_HARNESS2_LANG
-    4. $LANG / $LANGUAGE (e.g. zh_CN.UTF-8 -> zh)
-    5. 'en' (default; keeps scripts and tests stable)
+    4. $LANG / $LANGUAGE
+    5. 'zh' (default; native Chinese localization)
 
 Conventions:
-    - EN is the default and the fallback for missing keys.
+    - ZH is the default.
     - t() never raises: unknown keys return the key itself.
     - Machine-readable tokens (bench names, on-disk agg/seq, JSON keys,
       routes, file names) are NEVER translated; only human prose is.
-    - Model-facing prompts (sec_agent_harness2/core/prompts.py) are intentionally
-      excluded — see the DO NOT TRANSLATE note there.
 """
 
 from __future__ import annotations
@@ -72,8 +70,8 @@ _STR: dict[str, tuple[str, str]] = {
         "任务流排序种子；省略则按任务名排序执行",
     ),
     "cell.lang": (
-        "output language: en (default) | zh",
-        "输出语言：en（默认）| zh（简体中文）",
+        "output language: zh (default) | en",
+        "输出语言：zh（默认，简体中文）| en（英文）",
     ),
     "err.unknown_bench": ("unknown bench {v!r}; expected one of {opts}", "未知基准 {v!r}；应为 {opts} 之一"),
     "err.unknown_substrate": (
@@ -419,13 +417,15 @@ _STR: dict[str, tuple[str, str]] = {
 
 
 def normalize(lang: str | None) -> str:
-    """Map 'zh-CN'/'zh_CN.UTF-8' -> 'zh', everything else unknown -> 'en'."""
+    """Map 'zh-CN'/'zh_CN.UTF-8' -> 'zh', 'en*' -> 'en', unknown -> 'zh'."""
     if not lang:
-        return "en"
+        return "zh"
     low = lang.strip().lower().replace("_", "-")
+    if low.startswith("en"):
+        return "en"
     if low.startswith("zh"):
         return "zh"
-    return "en"
+    return "zh"
 
 
 def _prescan_argv(argv: list[str] | None = None) -> str | None:
@@ -446,7 +446,7 @@ def _prescan_argv(argv: list[str] | None = None) -> str | None:
 
 
 def get_lang(override: str | None = None, argv: list[str] | None = None) -> str:
-    """Resolve the active language: override > argv --lang > env > default en."""
+    """Resolve the active language: override > argv --lang > env > default zh."""
     if override:
         return normalize(override)
     pre = _prescan_argv(argv)
@@ -455,12 +455,14 @@ def get_lang(override: str | None = None, argv: list[str] | None = None) -> str:
     for env in ("SEC_AGENT_HARNESS2_LANG", "LANGUAGE", "LANG"):
         val = os.environ.get(env, "")
         if val:
-            # LANG is often like zh_CN.UTF-8
-            if normalize(val) == "zh":
-                return "zh"
+            norm = normalize(val)
             if env == "SEC_AGENT_HARNESS2_LANG":
-                return normalize(val)
-    return "en"
+                return norm
+            if val.strip().lower().startswith("zh"):
+                return "zh"
+            if val.strip().lower().startswith("en") and env == "LANGUAGE":
+                return "en"
+    return "zh"
 
 
 def t(key: str, lang: str | None = None, **kwargs: object) -> str:

@@ -111,12 +111,12 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-blue-500" />
             <span>
-              {tx('递归探索拓扑图 (Recursive Pipeline Graph)', 'Recursive Pipeline DAG Topology')}
+              {tx('递归探索拓扑图', 'Recursive Pipeline DAG Topology')}
             </span>
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {tx(
-              '提议–探测–组合 (Propose–Probe–Compose) 递归循环变迁状态 · 点击任意节点审阅轨迹与产物',
+              '提议—探测—合成递归循环变迁状态 · 点击任意节点审阅轨迹与产物',
               'Propose–Probe–Compose recursive evolution stages · Click any node to inspect rollout & trajectory'
             )}
           </p>
@@ -136,7 +136,7 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
                 }`}
               >
                 <GitMerge className="w-3.5 h-3.5" />
-                <span>{tx('并行合成 (Parallel AGG)', 'Parallel (AGG)')}</span>
+                <span>{tx('并行合成 (AGG)', 'Parallel (AGG)')}</span>
                 {aggHasChosen && (
                   <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
                 )}
@@ -151,7 +151,7 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
                 }`}
               >
                 <GitBranch className="w-3.5 h-3.5" />
-                <span>{tx('串行递推 (Sequential SEQ)', 'Sequential (SEQ)')}</span>
+                <span>{tx('串行递推 (SEQ)', 'Sequential (SEQ)')}</span>
                 {seqHasChosen && (
                   <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
                 )}
@@ -164,25 +164,25 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
               <span className="text-slate-600 dark:text-slate-400">
-                {tx('基准 (Base)', 'Base')}
+                {tx('初始基准', 'Base')}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
               <span className="text-slate-600 dark:text-slate-400">
-                {tx('通用 (INV)', 'INV')}
+                {tx('通用工程 (INV)', 'INV')}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
               <span className="text-slate-600 dark:text-slate-400">
-                {tx('领域 (DOM)', 'DOM')}
+                {tx('业务领域 (DOM)', 'DOM')}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <span className="text-slate-600 dark:text-slate-400">
-                {tx('合成 (Compose)', 'Compose')}
+                {tx('融合终选', 'Compose')}
               </span>
             </div>
           </div>
@@ -196,7 +196,7 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
             {/* Column 1: Base Rollouts */}
             <div className="flex flex-col items-center gap-3">
               <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                {tx('步骤 0: 基准参考 (Base)', 'Step 0: Baseline (Base)')}
+                {tx('步骤 0：基准参考', 'Step 0: Baseline (Base)')}
               </span>
               <div className="flex flex-col gap-3">
                 {baseNodes.map((node) => (
@@ -215,7 +215,7 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
 
             {/* SVG Fork Connector */}
             <DagConnector
-              label={tx('提议分叉 (Propose Invariant & Domain)', 'Propose Invariant & Domain')}
+              label={tx('双轴提议分叉 (INV & DOM)', 'Propose Invariant & Domain')}
               variant="fork"
             />
 
@@ -239,7 +239,7 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
                   {/* Candidates (INV & DOM) */}
                   <div className="flex flex-col items-center gap-2.5">
                     <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      {tx('步骤 1: 探测分支 (Invariant & Domain)', 'Step 1: Probe Candidates (INV & DOM)')}
+                      {tx('步骤 1：试跑探测分支 (INV & DOM)', 'Step 1: Probe Candidates (INV & DOM)')}
                     </span>
                     <div className="flex flex-col gap-2.5">
                       {group.candidates.map((node) => (
@@ -262,7 +262,7 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
                         label={getEdgeLabel(
                           group.candidates[0]?.id || '',
                           group.composed[0]?.id || '',
-                          tx('融合提炼 (Compose Aggregated)', 'Compose Aggregated')
+                          tx('融合提炼 (AGG)', 'Compose Aggregated')
                         )}
                         variant="merge"
                       />
@@ -270,7 +270,7 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
                       {/* Composed Node */}
                       <div className="flex flex-col items-center gap-2.5">
                         <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                          {tx('步骤 2: 并行组合终选 (Aggregated Final)', 'Step 2: Composed Final (Aggregated)')}
+                          {tx('步骤 2：并行融合终选', 'Step 2: Composed Final (Aggregated)')}
                         </span>
                         <div className="flex flex-col gap-2.5">
                           {group.composed.map((node) => (
@@ -297,7 +297,7 @@ export const PipelineGraph: React.FC<PipelineGraphProps> = ({
             {/* Base */}
             <div className="flex flex-col items-center gap-2.5 shrink-0">
               <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                {tx('基准 (Base)', 'Baseline')}
+                {tx('初始基准', 'Baseline')}
               </span>
               {baseNodes.slice(0, 1).map((node) => (
                 <NodeCard
@@ -466,7 +466,7 @@ const NodeCard: React.FC<NodeCardProps> = ({ node, isSelected, onClick }) => {
       {node.is_chosen && (
         <div className="absolute -top-2.5 -right-2 bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 shadow-md shadow-amber-500/30">
           <Star className="w-3 h-3 fill-current" />
-          <span>{tx('已选中 (CHOSEN)', 'CHOSEN')}</span>
+          <span>{tx('胜出采纳', 'CHOSEN')}</span>
         </div>
       )}
 
@@ -530,7 +530,7 @@ const NodeCard: React.FC<NodeCardProps> = ({ node, isSelected, onClick }) => {
           </span>
         ) : isRunning ? (
           <span className="text-[9px] font-mono text-blue-500 dark:text-blue-400 uppercase tracking-wider font-semibold">
-            ACTIVE
+            {tx('运行中', 'ACTIVE')}
           </span>
         ) : null}
       </div>

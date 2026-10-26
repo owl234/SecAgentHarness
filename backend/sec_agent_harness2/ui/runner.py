@@ -90,7 +90,7 @@ class ExecutionManager:
         """Spawn a new background CLI run."""
         async with self._lock:
             if self.process is not None and self.process.returncode is None:
-                raise RuntimeError("Another job is already running. Please terminate it first.")
+                raise RuntimeError("当前已有任务正在运行，请先终止后再启动新任务。")
 
             job_id = f"{job_type}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
             self.logs.clear()
@@ -158,7 +158,7 @@ class ExecutionManager:
         """Terminate the running job."""
         async with self._lock:
             if self.process is None or self.process.returncode is not None:
-                return {"message": "No active job running."}
+                return {"message": "当前没有正在运行的任务。"}
 
             try:
                 self.process.terminate()
@@ -173,7 +173,7 @@ class ExecutionManager:
                 self.current_job["finished_at"] = datetime.now(timezone.utc).isoformat()
                 await self.broadcast("terminate", self.current_job)
 
-            return {"message": "Job terminated successfully."}
+            return {"message": "任务已成功终止。"}
 
     def get_bridge_info(self) -> dict[str, Any]:
         running = self.bridge_process is not None and self.bridge_process.returncode is None
@@ -240,7 +240,7 @@ class ExecutionManager:
         await asyncio.sleep(0.3)
 
         if proc.returncode is not None:
-            raise RuntimeError(f"Responses bridge exited immediately (code={proc.returncode})")
+            raise RuntimeError(f"Responses 转换桥启动后立即退出 (退出码={proc.returncode})")
 
         resolved_port = port
         base_url = settings.get("SEC_AGENT_HARNESS2_CODEX_BASE_URL", "")
@@ -265,7 +265,7 @@ class ExecutionManager:
         if proc is None or proc.returncode is not None:
             self.bridge_process = None
             self.bridge_meta["running"] = False
-            return {"stopped": False, "message": "Bridge was not running under Web Console."}
+            return {"stopped": False, "message": "转换桥当前未在控制台下运行。"}
         try:
             proc.terminate()
             await asyncio.sleep(0.3)
@@ -275,4 +275,4 @@ class ExecutionManager:
             pass
         self.bridge_process = None
         self.bridge_meta["running"] = False
-        return {"stopped": True, "message": "Responses bridge stopped."}
+        return {"stopped": True, "message": "Responses 转换桥已停止。"}

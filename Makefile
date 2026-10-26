@@ -1,13 +1,13 @@
 .PHONY: help install backend frontend build dev test check
 
 help:
-	@echo "Harness² Monorepo Commands (frontend/ + backend/)"
-	@echo "  make install   - Install backend Python package and frontend Node dependencies"
-	@echo "  make build     - Build frontend SPA into frontend/dist/"
-	@echo "  make backend   - Start FastAPI backend & Web Console server (port 8520)"
-	@echo "  make frontend  - Start Vite frontend dev server with HMR (port 5173 -> proxy 8520)"
-	@echo "  make dev       - Build frontend and launch full-stack Web Console"
-	@echo "  make test      - Run backend unit tests and docs sync check"
+	@echo "Harness² 单仓构建与运维命令 (frontend/ + backend/)"
+	@echo "  make install   - 安装后端 Python 依赖包与前端 Node 依赖"
+	@echo "  make build     - 编译前端单页应用产物至 frontend/dist/"
+	@echo "  make backend   - 启动 FastAPI 后端与可视化 Web 控制台服务 (端口 8520)"
+	@echo "  make frontend  - 启动 Vite 前端热更新开发服务器 (端口 5173 -> 代理 8520)"
+	@echo "  make dev       - 编译前端并启动全栈可视化 Web 控制台"
+	@echo "  make test      - 运行后端单元测试、代码规范检查与文档完整性校验"
 
 install:
 	uv pip install -e './backend[ui,render]'
@@ -25,7 +25,7 @@ frontend:
 dev: build backend
 
 test:
-	.venv/bin/pytest backend/tests
+	.venv/bin/python3 -m pytest backend/tests
 	.venv/bin/ruff check --config backend/pyproject.toml backend/
 	.venv/bin/python3 scripts/check_provenance.py
 	.venv/bin/python3 scripts/check_docs_sync.py

@@ -31,7 +31,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
   if (loading) {
     return (
       <div className="p-8 text-center text-xs text-slate-500 bg-white dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800">
-        {tx('正在计算套件差异比对 (Diffing harnesses)...', 'Computing harness component diff...')}
+        {tx('正在计算套件差异比对...', 'Computing harness component diff...')}
       </div>
     );
   }
@@ -89,7 +89,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
         <div className="flex items-center gap-3 flex-wrap">
           <FileCode className="w-4 h-4 text-blue-500" />
           <span className="text-xs font-semibold text-slate-900 dark:text-white">
-            {tx('套件组件变更比对 (Harness Diff)', 'Harness Surface Diff')}
+            {tx('套件组件变更比对', 'Harness Surface Diff')}
           </span>
 
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800">

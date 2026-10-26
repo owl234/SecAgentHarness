@@ -1,5 +1,3 @@
-[English](CONTRIBUTING.md) | [简体中文](CONTRIBUTING_zh.md)
-
 # 如何贡献
 
 非常欢迎您为本项目提交补丁与贡献代码。

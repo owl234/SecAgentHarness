@@ -1,7 +1,3 @@
-<p align="center">
-  <b>简体中文</b> | <a href="README_en.md">English</a>
-</p>
-
 <h3 align="center">
   <img src="assets/Harness2-wordmark.png" alt="SecAgentHarness²" width="360"><br>
   递归智能体运行套件 (Harness²) 在网络安全领域的适配、优化与基准评测
@@ -21,7 +17,7 @@
 
 <p align="center">
   <a href="docs/BENCHMARKS_zh.md#jobbench">
-    <img src="assets/harness2-setup.gif" alt="安装、配置并运行 JobBench: uv pip install -e '.[render]', harness2-setup jb, 然后执行 harness2 --bench jb --k 1 --mode parallel。点击查看前提条件和命令。" width="640">
+    <img src="assets/harness2-setup.gif" alt="安装、配置并运行 JobBench: uv pip install -e './backend[render]', sec-agent-harness2-setup jb, 然后执行 sec-agent-harness2 --bench jb --k 1 --mode parallel。点击查看前提条件和命令。" width="640">
   </a>
 </p>
 
@@ -72,7 +68,7 @@ Harness² 提供开箱即用的交互式可视化 Web 控制台，支持直观�
 ```bash
 uv pip install -e './backend[ui]'
 cd frontend && npm install && npm run build && cd ..
-harness2-ui
+sec-agent-harness2-ui
 ```
 
 启动后会自动在浏览器中打开控制台（默认 `http://127.0.0.1:8520`），涵盖五大核心模块：
@@ -103,16 +99,16 @@ Harness² 围绕模型开放了九个可编辑组件：**系统提示词（syste
 uv venv --python 3.12 .venv
 source .venv/bin/activate
 uv pip install -e './backend[render]'
-harness2-demo --output runs/demo --k 2
+sec-agent-harness2-demo --output runs/demo --k 2
 ```
 
-本地 Demo 采用确定性编辑器与真实的 Python 执行来运行两种递归模式，无需任何模型 API 凭据。
+本地 Demo 采用确定性编辑器与真实的 Python 执行来运行两种递归模式，无需任何模型 API 凭据（`harness2-demo` 仍作为兼容别名可用）。
 
 对于依赖大模型的基准测试运行，请安装 **Node.js 20+、Google Cloud CLI** 以及[基准测试依赖环境](docs/SETUP_zh.md#系统要求)。其中 LAB 需要 Pandoc 和 Poppler；WorkBuddy-Bench 需要 Docker。然后配置您的模型环境：
 
 ```bash
 cp .env.example .env
-# 编辑 .env 文件，填入统一 API 端点 (HARNESS2_API_*) 或 Vertex AI 项目与模型 ID
+# 编辑 .env 文件，填入统一 API 端点 (SEC_AGENT_HARNESS2_API_*) 或 Vertex AI 项目与模型 ID
 gcloud auth application-default login
 ```
 
@@ -124,25 +120,25 @@ gcloud auth application-default login
 以下示例将安装 LAB 并执行一个任务，随后对其结果进行评估和报告。基于大模型的运行会产生 API 费用，建议先从少量任务开始体验：
 
 ```bash
-harness2 setup lab
-harness2 pipeline --bench lab --preset smoke
+sec-agent-harness2 setup lab
+sec-agent-harness2 pipeline --bench lab --preset smoke
 ```
 
-`pipeline` 用同一套实验标识一次跑通 check → run → judge → report，无需重复输入 `--bench/--k/--mode/--substrate/--seed`。`--preset smoke` 展开为文档标准单任务冒烟（`--only-domains antitrust-competition --max-tasks 1`）。基准与执行器支持全名：`--bench jobbench|workbuddy|harvey-labs`、`--substrate opencode|codex`。旧的分立命令（`harness2-setup`、`harness2-check`、`harness2-run`、`harness2-judge`、`harness2-report`）保持可用且参数相同。
+`pipeline` 用同一套实验标识一次跑通 check → run → judge → report，无需重复输入 `--bench/--k/--mode/--substrate/--seed`。`--preset smoke` 展开为文档标准单任务冒烟（`--only-domains antitrust-competition --max-tasks 1`）。基准与执行器支持全名：`--bench jobbench|workbuddy|harvey-labs`、`--substrate opencode|codex|claude`。原分立命令（`sec-agent-harness2-setup`、`sec-agent-harness2-check`、`sec-agent-harness2-run`、`sec-agent-harness2-judge`、`sec-agent-harness2-report`）以及简短前缀 `harness2*` 别名均保持无缝兼容且参数相同。
 
 #### 完整执行生命周期速查
 
-这五条命令构成了 Harness² 标准的评测生命周期闭环：
+这五条命令构成了 SecAgentHarness² 标准的评测生命周期闭环：
 
 | 阶段 | 对应命令 | 是否消耗 API / 计费 | 核心作用与产出 |
 |---|---|:---:|---|
-| **1. 基准安装** | `harness2 setup lab` | ❌ 否 | 自动化拉取上游指定版本的基准仓库，打入裁判与执行补丁，并在 `dependencies/harvey-labs/` 下构建独立虚拟环境与运行时。 |
-| **2. 环境预检** | `harness2 check --bench lab` | ❌ 否 | 静态校验基准环境、系统依赖（如 Pandoc/Poppler）及 `.env` 凭据配置是否完备，确认可运行的任务数量。 |
-| **3. 实验运行** | `harness2 run --bench lab ...` | ✔️ 是 | **核心执行阶段**：调度任务执行器（Solver）运行并由优化器（Improver）提炼经验，输出终态交付物至 `runs/`。 |
-| **4. 裁判盲评** | `harness2 judge --bench lab ...` | ✔️ 是 | 依照法律评分细则（Rubrics），调用裁判模型对最终入选的交付物进行无偏打分，生成 `judged.json`。 |
-| **5. 报表生成** | `harness2 report --bench lab ...` | ❌ 否 | 纯本地静态汇总，解析 `judged.json` 与运行摘要，在终端格式化输出各维度得分、通过率及总花销。 |
+| **1. 基准安装** | `sec-agent-harness2 setup lab` | ❌ 否 | 自动化拉取上游指定版本的基准仓库，打入裁判与执行补丁，并在 `dependencies/harvey-labs/` 下构建独立虚拟环境与运行时。 |
+| **2. 环境预检** | `sec-agent-harness2 check --bench lab` | ❌ 否 | 静态校验基准环境、系统依赖（如 Pandoc/Poppler）及 `.env` 凭据配置是否完备，确认可运行的任务数量。 |
+| **3. 实验运行** | `sec-agent-harness2 run --bench lab ...` | ✔️ 是 | **核心执行阶段**：调度任务执行器（Solver）运行并由优化器（Improver）提炼经验，输出终态交付物至 `runs/`。 |
+| **4. 裁判盲评** | `sec-agent-harness2 judge --bench lab ...` | ✔️ 是 | 依照法律评分细则（Rubrics），调用裁判模型对最终入选的交付物进行无偏打分，生成 `judged.json`。 |
+| **5. 报表生成** | `sec-agent-harness2 report --bench lab ...` | ❌ 否 | 纯本地静态汇总，解析 `judged.json` 与运行摘要，在终端格式化输出各维度得分、通过率及总花销。 |
 
-想一条命令跑完全流程？`harness2 pipeline --bench lab --preset smoke` 用同一套标识跑通全部五个阶段（加 `--dry-run` 仅预览，或 `--skip-judge` 在扫描后停止）。
+想一条命令跑完全流程？`sec-agent-harness2 pipeline --bench lab --preset smoke` 用同一套标识跑通全部五个阶段（加 `--dry-run` 仅预览，或 `--skip-judge` 在扫描后停止）。
 
 > [!TIP]
 > **最小化冒烟测试参数说明**：
@@ -151,13 +147,13 @@ harness2 pipeline --bench lab --preset smoke
 > - `--max-tasks 1`：限制该领域仅执行首个任务，用于以极低成本和耗时快速验证全链路可用性。
 > - `pipeline` 只需输入一次 `--bench`、`--k`、`--mode`、`--substrate`、`--seed`；分步运行时这些实验标识参数在 `run`、`judge` 和 `report` 命令间必须保持完全一致，以便精准定位对应的实验命名空间。
 
-如需进行序列递归（Sequential recursion），只需将上述命令中的参数改为 `--mode sequential`。`--k` 表示任务级递归预算，详见[实验配置](#experiments)。评测（Judging）和报告（Reporting）命令所指定的基准测试、执行器、子集、`--k`、`--mode` 以及随机种子（seed）必须与优化运行保持一致。在 `harness2` 命令中添加 `--dry-run` 可以在不发起模型调用的情况下预览所选取的任务。
+如需进行序列递归（Sequential recursion），只需将上述命令中的参数改为 `--mode sequential`。`--k` 表示任务级递归预算，详见[实验配置](#experiments)。评测（Judging）和报告（Reporting）命令所指定的基准测试、执行器、子集、`--k`、`--mode` 以及随机种子（seed）必须与优化运行保持一致。在 `sec-agent-harness2` 命令中添加 `--dry-run` 可以在不发起模型调用的情况下预览所选取的任务。
 
 | 基准测试 | 任务领域 | 安装命令 | 详细指南 |
 |---|---|---|---|
-| JobBench | 专业日常工作 | `harness2 setup jb` | [JobBench 指南](docs/BENCHMARKS_zh.md#jobbench) |
-| LAB | 法律业务分析 | `harness2 setup lab` | [LAB 指南](docs/BENCHMARKS_zh.md#lab) |
-| WorkBuddy-Bench | 办公、网页与代码 | `harness2 setup wb` | [WorkBuddy 指南](docs/BENCHMARKS_zh.md#workbuddy-bench) |
+| JobBench | 专业日常工作 | `sec-agent-harness2 setup jb` | [JobBench 指南](docs/BENCHMARKS_zh.md#jobbench) |
+| LAB | 法律业务分析 | `sec-agent-harness2 setup lab` | [LAB 指南](docs/BENCHMARKS_zh.md#lab) |
+| WorkBuddy-Bench | 办公、网页与代码 | `sec-agent-harness2 setup wb` | [WorkBuddy 指南](docs/BENCHMARKS_zh.md#workbuddy-bench) |
 
 每条命令指定一个基准测试。对于 WorkBuddy，在完成 setup 后的每条命令中还支持传入 `--subset office`、`--subset web` 或 `--subset code`。各基准测试的数据集、评测领域及评分机制详见[基准测试指南](docs/BENCHMARKS_zh.md)。
 
@@ -179,6 +175,7 @@ harness2 pipeline --bench lab --preset smoke
 | `--k K --mode parallel` | 探测 `K` 个通用候选和 `K` 个领域专属候选，随后基于共享证据生成 `K` 个组合套件 |
 | `--k K --mode sequential` | 通过 `K` 个连续步骤层层递进提炼运行套件 |
 | `--substrate cx` | 使用 Codex 执行器替代默认的 OpenCode 执行器 |
+| `--substrate claude` | 使用 Claude 执行器替代默认的 OpenCode 执行器 |
 
 在完成每个任务后，套件级递归（Harnessing-level recursion）会保留被采纳的运行套件以及有证据支持的经验教训，用于指导后续任务的提炼。有关任务选择、并发设置、可复现性以及基线对比等内容，请参见[实验指南](docs/EXPERIMENTS_zh.md)。
 
@@ -215,7 +212,7 @@ SecAgentHarness² (SecAgentHarness2) 基于 [Google Research 的 Harness²](http
 <a id="contributing"></a>
 ## 贡献指南
 
-请参阅 [CONTRIBUTING_zh.md](CONTRIBUTING_zh.md)（英文原版：[CONTRIBUTING.md](CONTRIBUTING.md)）。
+请参阅 [CONTRIBUTING_zh.md](CONTRIBUTING_zh.md)。
 
 <a id="license"></a>
 ## 开源协议

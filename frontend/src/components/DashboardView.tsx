@@ -145,7 +145,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
             {tx(
-              '集中审视历次运行演进后的套件改动 (Prompt / Skills / Guards / Scripts)、智能意图提炼以及与基准 (Baseline) 的量化得分对比。',
+              '集中审视历次运行演进后的套件改动（提示词、技能、安全护栏与脚本）、智能意图提炼以及与初始基准的量化得分对比。',
               'Centrally inspect adapted harness deliverables, smart intent synthesis, and quantitative score deltas against the baseline.'
             )}
           </p>
@@ -158,7 +158,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {tx('总运行次数 / 累积任务', 'Total Runs / Cumulative Tasks')}
             </span>
             <span className="text-sm font-bold text-slate-900 dark:text-white">
-              {runs.length} Runs · {totalRunsTasks} Tasks
+              {runs.length} 次运行 · {totalRunsTasks} 个任务
             </span>
           </div>
           <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 px-3.5 py-2 rounded-xl text-right">
@@ -366,7 +366,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     }`}
                   >
                     <BarChart3 className="w-4 h-4" />
-                    <span>{tx('基准测试与量化打分 (Benchmark)', 'Benchmark & Evaluation')}</span>
+                    <span>{tx('基准测试与量化打分', 'Benchmark & Evaluation')}</span>
                     {hasBenchmarkData && (
                       <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     )}
@@ -382,7 +382,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="flex items-center gap-2">
                       <Sliders className="w-4 h-4 text-blue-500" />
                       <span className="text-xs font-bold text-slate-900 dark:text-white">
-                        {tx('选择任务 (Task ID):', 'Task Inspector:')}
+                        {tx('选择任务：', 'Task Inspector:')}
                       </span>
                       <select
                         value={selectedTaskId}
@@ -479,7 +479,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
                           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
-                            {tx('基准套件均分 (Baseline)', 'Baseline Mean Score')}
+                            {tx('基准套件均分', 'Baseline Mean Score')}
                           </span>
                           <p className="text-3xl font-extrabold text-slate-700 dark:text-slate-300 mt-2">
                             {benchmarkReport.base_stats.avg_score}%
@@ -494,7 +494,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                         <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl relative overflow-hidden shadow-sm">
                           <span className="text-xs text-blue-600 dark:text-blue-400 font-medium block">
-                            {tx('优化后套件均分 (Harness² Adapted)', 'Harness² Adapted Mean Score')}
+                            {tx('Harness² 优化后套件均分', 'Harness² Adapted Mean Score')}
                           </span>
                           <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">
                             {benchmarkReport.adapted_stats.avg_score}%
@@ -509,7 +509,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                         <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
                           <span className="text-xs text-purple-600 dark:text-purple-400 font-medium block">
-                            {tx('综合性能增益 (Gain)', 'Net Adaptation Gain')}
+                            {tx('综合性能净增益', 'Net Adaptation Gain')}
                           </span>
                           <p className="text-3xl font-extrabold text-purple-600 dark:text-purple-300 mt-2 flex items-center gap-1">
                             <TrendingUp className="w-6 h-6 text-purple-500" />
@@ -537,7 +537,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
                         <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 flex items-center justify-between">
                           <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                            {tx('逐题打分明细 (Per-task Graded Records)', 'Per-Task Graded Records')}
+                            {tx('逐题打分明细', 'Per-Task Graded Records')}
                           </h4>
                           <span className="text-xs text-slate-500 dark:text-slate-400">
                             {tx(
@@ -551,12 +551,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           <table className="w-full text-left text-xs">
                             <thead className="bg-slate-100/60 dark:bg-slate-950/40 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                               <tr>
-                                <th className="py-3 px-4 font-medium">Task ID</th>
-                                <th className="py-3 px-4 font-medium">{tx('模式 (Mode)', 'Mode')}</th>
-                                <th className="py-3 px-4 font-medium">{tx('采纳阶段 (Label)', 'Chosen Stage')}</th>
-                                <th className="py-3 px-4 font-medium">{tx('判题得分 (Score)', 'Score')}</th>
-                                <th className="py-3 px-4 font-medium">{tx('全通过 (All Pass)', 'All Pass')}</th>
-                                <th className="py-3 px-4 font-medium">{tx('采纳基准?', 'Kept Base?')}</th>
+                                <th className="py-3 px-4 font-medium">{tx('任务编号', 'Task ID')}</th>
+                                <th className="py-3 px-4 font-medium">{tx('演进模式', 'Mode')}</th>
+                                <th className="py-3 px-4 font-medium">{tx('采纳阶段', 'Chosen Stage')}</th>
+                                <th className="py-3 px-4 font-medium">{tx('判题得分', 'Score')}</th>
+                                <th className="py-3 px-4 font-medium">{tx('全部通过', 'All Pass')}</th>
+                                <th className="py-3 px-4 font-medium">{tx('采纳策略', 'Kept Base?')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-800 dark:text-slate-200">
@@ -584,7 +584,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                           {scorePct}% ({row.n_passed}/{row.n_criteria})
                                         </span>
                                       ) : (
-                                        <span className="text-slate-400 dark:text-slate-500">Ungraded</span>
+                                        <span className="text-slate-400 dark:text-slate-500">{tx('未判分', 'Ungraded')}</span>
                                       )}
                                     </td>
                                     <td className="py-3 px-4">

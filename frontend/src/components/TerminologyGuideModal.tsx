@@ -25,7 +25,7 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
       color: 'text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20',
     },
     {
-      term: tx('套件递归优化 (Harnessing)', 'Recursive Harnessing'),
+      term: tx('套件递归优化', 'Recursive Harnessing'),
       desc: tx(
         '在冻结大模型权重不变的前提下，通过试跑对比自主发现缺陷并修改这套环境，让智能体在未知新任务中越用越强。',
         'Without updating model weights, an improver agent diagnoses trajectory flaws, proposes harness edits, probes them on the task, and composes stronger harnesses.'
@@ -34,16 +34,16 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
       color: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20',
     },
     {
-      term: tx('Claude 执行器与混合推理 (Claude Executor)', 'Claude Executor & Extended Thinking'),
+      term: tx('Claude 执行器与混合推理', 'Claude Executor & Extended Thinking'),
       desc: tx(
-        '基于 Anthropic Claude / Claude Code CLI 的一等公民执行底座，原生支持 Extended Thinking 深度思考推演。',
+        '基于 Anthropic Claude / Claude Code CLI 的一等公民执行底座，原生支持深度思考推演。',
         'First-class substrate powered by Claude Code CLI (clawgod) with native reasoning effort control (low / medium / high).'
       ),
       icon: Flame,
       color: 'text-orange-500 bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20',
     },
     {
-      term: tx('诊断并提议 (Propose Edits)', 'Diagnose & Propose Edits'),
+      term: tx('诊断并提议', 'Diagnose & Propose Edits'),
       desc: tx(
         '优化器深入分析智能体在基线执行中的轨迹和交付物缺陷，提议通用规则修改 (INV) 或领域技能增强 (DOM)。',
         'Analyzes baseline rollout trajectories and deliverables to propose task-invariant rules (INV) and domain-specific enhancements (DOM).'
@@ -52,7 +52,7 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
       color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20',
     },
     {
-      term: tx('试跑探测 (Probe Rollouts)', 'Probe Rollouts'),
+      term: tx('试跑探测', 'Probe Rollouts'),
       desc: tx(
         '在同一个具体任务中试运行被提议的候选套件，在无标注答案的情况下通过执行轨迹对比差异。',
         'Executes candidate harnesses on the same task without ground-truth labels, collecting empirical behavioral contrasts.'
@@ -61,7 +61,7 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
       color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20',
     },
     {
-      term: tx('融合提炼 (Compose / AGG)', 'Compose & Distill (AGG / SEQ)'),
+      term: tx('融合提炼 (AGG / SEQ)', 'Compose & Distill (AGG / SEQ)'),
       desc: tx(
         '将通用改进与领域改进的高分亮点进行无缝融合，合成兼顾稳健性与专业能力的最终交付套件。',
         'Synthesizes validated invariant and domain edits into a final composed harness and records reusable lessons into the experience library.'
@@ -74,8 +74,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
   const eightComponents = [
     {
       id: 'c1',
-      name: tx('系统提示词 (System Prompt)', 'System Prompt'),
-      role: 'Context',
+      name: tx('系统提示词', 'System Prompt'),
+      role: tx('上下文', 'Context'),
       path: 'systemprompt.md',
       desc: tx(
         '设定智能体的角色定位、工作规范与第一性原理公理。',
@@ -84,8 +84,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
     },
     {
       id: 'c2',
-      name: tx('安全护栏 (Guardrails)', 'Guardrails'),
-      role: 'Context',
+      name: tx('安全护栏', 'Guardrails'),
+      role: tx('上下文', 'Context'),
       path: 'guardrails.md',
       desc: tx(
         '系统级与业务操作红线拦截，防止文件破坏与凭证泄漏。',
@@ -94,8 +94,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
     },
     {
       id: 'c3',
-      name: tx('长期记忆 (Memory)', 'Long-Term Memory'),
-      role: 'Context',
+      name: tx('长期记忆', 'Long-Term Memory'),
+      role: tx('上下文', 'Context'),
       path: 'LongTermMEMORY.md',
       desc: tx(
         '跨轮次与跨任务持久化保留的关键常识与状态。',
@@ -104,8 +104,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
     },
     {
       id: 'c4',
-      name: tx('工具指引 (Tool Guidance)', 'Tool Guidance'),
-      role: 'Interface',
+      name: tx('工具指引', 'Tool Guidance'),
+      role: tx('接口层', 'Interface'),
       path: 'tool_descriptions/tool_guidance.md',
       desc: tx(
         '规范 API 调用参数结构、异常重试与返回契约。',
@@ -114,8 +114,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
     },
     {
       id: 'c5',
-      name: tx('子智能体 (Subagents)', 'Subagents'),
-      role: 'Delegation',
+      name: tx('子智能体', 'Subagents'),
+      role: tx('任务委派', 'Delegation'),
       path: 'sub_agents/<name>/AGENT.md',
       desc: tx(
         '定义委派分工体系与独立专家审查员子角色。',
@@ -124,8 +124,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
     },
     {
       id: 'c6',
-      name: tx('技能手册 (Skills)', 'Skills'),
-      role: 'Context',
+      name: tx('技能手册', 'Skills'),
+      role: tx('上下文', 'Context'),
       path: 'skills/<name>/SKILL.md',
       desc: tx(
         '按需触发的专业技能规范文档与配套可执行脚本。',
@@ -134,8 +134,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
     },
     {
       id: 'c7',
-      name: tx('独立脚本 (Scripts)', 'Helper Scripts'),
-      role: 'Interface',
+      name: tx('独立脚本', 'Helper Scripts'),
+      role: tx('接口层', 'Interface'),
       path: 'scripts/<name>.py',
       desc: tx(
         '直接供智能体调用的数据提取、格式清洗与语法校验脚本。',
@@ -144,8 +144,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
     },
     {
       id: 'c8',
-      name: tx('事件钩子 (Hooks)', 'Hooks / Plugins'),
-      role: 'Middleware',
+      name: tx('事件钩子', 'Hooks / Plugins'),
+      role: tx('中间件', 'Middleware'),
       path: 'plugins/<name>.ts',
       desc: tx(
         '网络拦截、调用前后耗时统计与执行沙箱安全插桩。',
@@ -154,8 +154,8 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
     },
     {
       id: 'c9',
-      name: tx('MCP 协议服务 (MCP Servers)', 'MCP Servers'),
-      role: 'Protocol',
+      name: tx('MCP 协议服务', 'MCP Servers'),
+      role: tx('协议层', 'Protocol'),
       path: 'mcp/servers.json + mcp/<name>.py',
       desc: tx(
         '跨轮次有状态工具服务、外部网安武器库桥接与三端基座原生 Tool Schema 挂载。',

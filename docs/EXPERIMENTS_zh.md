@@ -1,5 +1,3 @@
-[English](EXPERIMENTS.md) | [简体中文](EXPERIMENTS_zh.md)
-
 # 实验指南
 
 请先完成[安装配置](SETUP_zh.md)并选择[基准测试](BENCHMARKS_zh.md)。本指南涵盖递归预算设置、任务选取、实验可复现性以及评测流程。
@@ -21,16 +19,17 @@
 | `--k K --mode sequential` | 通过 `K` 个连续递进步骤提炼运行套件 |
 | `--workers N` | 并发运行 `N` 个领域；每个领域内的任务保持严格串行顺序 |
 | `--substrate cx` | 使用 Codex 执行器替代默认的 OpenCode 执行器 |
+| `--substrate claude` | 使用 Claude 执行器替代默认的 OpenCode 执行器 |
 | `--seed N` | 以可复现的方式打乱任务执行流；不控制模型的采样随机性 |
 
-在优化提炼（Refinement）、评测（Judging）和生成报告（Reporting）时，请务必使用完全相同的基准测试、执行器、子集、`k` 值、递归模式及随机种子。示例：
+在优化提炼（Refinement）、评测（Judging）和生成报告（Reporting）时，请务必使用完全相同的基准测试、执行器、子集、`k` 值、递归模式及随机种子（`harness2` 作为完全兼容的简短别名继续可用）。示例：
 
 ```bash
-export HARNESS2_RUNS_DIR=runs/lab-sequential-k3
-harness2 run --bench lab --k 3 --mode sequential \
+export SEC_AGENT_HARNESS2_RUNS_DIR=runs/lab-sequential-k3
+sec-agent-harness2 run --bench lab --k 3 --mode sequential \
   --only-domains antitrust-competition --max-tasks 1
-harness2 judge --bench lab --k 3 --mode sequential
-harness2 report --bench lab --k 3 --mode sequential
+sec-agent-harness2 judge --bench lab --k 3 --mode sequential
+sec-agent-harness2 report --bench lab --k 3 --mode sequential
 ```
 
 更改预算（`--k`）或模式（`--mode`）时，请使用独立的输出目录，以便于清晰区分不同实验组。
@@ -55,7 +54,7 @@ SUBSET=web bash scripts/run_workbuddy.sh --max-tasks 1
 <a id="reproducibility"></a>
 ## 实验可复现性
 
-对比不同预算或不同模式时，请保持任务选择、执行器、优化器、裁判以及网络访问策略完全一致。更换模型或调整任务选取时，请使用全新的 `HARNESS2_RUNS_DIR` 输出目录；保存的运行配置会阻止不兼容的断点续跑。
+对比不同预算或不同模式时，请保持任务选择、执行器、优化器、裁判以及网络访问策略完全一致。更换模型或调整任务选取时，请使用全新的 `SEC_AGENT_HARNESS2_RUNS_DIR` 输出目录；保存的运行配置会阻止不兼容的断点续跑。
 
 JobBench 的数据集在下载时解析，而非固定在特定 Git Commit 上。安装脚本会将下载时的 Hugging Face 版本记录在 `dependencies/job-bench-eval/dataset/main/.harness2-download.json` 中。在报告 JobBench 评测结果时，建议一并附上该版本号。
 
@@ -66,7 +65,7 @@ JobBench 的数据集在下载时解析，而非固定在特定 Git Commit 上�
 
 ```bash
 python scripts/split_tasks.py --bench lab --seed 42 --output splits/lab.json
-harness2 run --bench lab --split-file splits/lab.json --split test --mode parallel
+sec-agent-harness2 run --bench lab --split-file splits/lab.json --split test --mode parallel
 ```
 
 默认的训练集比例（Train fraction）为 0.5。生成的划分文件属于本地生成文件，并非发布包资产，且该脚本不会覆盖已存在的同名划分文件。
@@ -74,7 +73,7 @@ harness2 run --bench lab --split-file splits/lab.json --split test --mode parall
 <a id="baseline-evaluation"></a>
 ## 基线对比评估
 
-`harness2 judge --bases` 会对当前运行命名空间下的参考执行（Reference executions）进行打分，并在 `judged.json` 同级生成 `base_judged.json`，用于与基础运行套件（Base harness）进行对比。而 `harness2 report` 则专门针对优化提炼后的运行套件进行分析报告。
+`sec-agent-harness2 judge --bases` 会对当前运行命名空间下的参考执行（Reference executions）进行打分，并在 `judged.json` 同级生成 `base_judged.json`，用于与基础运行套件（Base harness）进行对比。而 `sec-agent-harness2 report` 则专门针对优化提炼后的运行套件进行分析报告。
 
 <a id="web-access"></a>
 ## 网络访问控制
@@ -93,6 +92,6 @@ harness2 run --bench lab --split-file splits/lab.json --split test --mode parall
 
 默认输出根目录分别为 `runs/lab/`、`runs/jb/` 以及 `runs/wb/<subset>/`。目录内包含任务摘要、执行产出物、采纳的运行套件、反思笔记以及评分结果。
 
-重复执行相同命令即可从断点继续运行（Resume）。评测失败的任务将保持未评分状态，而不会被计为 0 分。更改模型或修改任务范围时，请使用新的 `HARNESS2_RUNS_DIR`。
+重复执行相同命令即可从断点继续运行（Resume）。评测失败的任务将保持未评分状态，而不会被计为 0 分。更改模型或修改任务范围时，请使用新的 `SEC_AGENT_HARNESS2_RUNS_DIR`。
 
-优化提炼、评测与报告分别使用 `harness2`、`harness2 judge` 和 `harness2 report`；每个命令均支持使用 `--help` 查看完整参数选项。
+优化提炼、评测与报告分别使用 `sec-agent-harness2`、`sec-agent-harness2 judge` 和 `sec-agent-harness2 report`（或 `harness2` 别名）；每个命令均支持使用 `--help` 查看完整参数选项。

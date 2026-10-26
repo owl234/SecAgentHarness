@@ -30,7 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenTerminology,
   onOpenExecutorConfig,
 }) => {
-  const { t, toggle: toggleLang } = useLang();
+  const { t } = useLang();
   const isRunning = systemStatus?.status.status === 'running';
 
   return (
@@ -113,15 +113,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               title={t('nav.guide_title')}
             >
               <HelpCircle className="w-4 h-4" />
-            </button>
-
-            {/* Language Toggle */}
-            <button
-              onClick={toggleLang}
-              className="px-2 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 transition-all cursor-pointer text-[11px] font-bold"
-              title={t('nav.lang_title')}
-            >
-              {t('nav.lang')}
             </button>
 
             {/* Theme Toggle */}

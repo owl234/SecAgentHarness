@@ -90,7 +90,7 @@ export const ComponentEditorModal: React.FC<ComponentEditorModalProps> = ({
             }`}
           >
             <Code2 className="w-4 h-4" />
-            <span>{tx('核心指令与代码 (Main Content)', 'Main Content')}</span>
+            <span>{tx('核心指令与代码', 'Main Content')}</span>
           </button>
 
           <button
@@ -103,7 +103,7 @@ export const ComponentEditorModal: React.FC<ComponentEditorModalProps> = ({
             }`}
           >
             <Folder className="w-4 h-4" />
-            <span>{tx('元数据与装配路径 (Metadata & Path)', 'Metadata & Surface Path')}</span>
+            <span>{tx('元数据与装配路径', 'Metadata & Surface Path')}</span>
           </button>
 
           <button
@@ -116,7 +116,7 @@ export const ComponentEditorModal: React.FC<ComponentEditorModalProps> = ({
             }`}
           >
             <Terminal className="w-4 h-4" />
-            <span>{tx('配套可执行脚本 (Extra Files)', 'Extra Companion Files')}</span>
+            <span>{tx('配套可执行脚本', 'Extra Companion Files')}</span>
           </button>
         </div>
 
@@ -175,7 +175,7 @@ export const ComponentEditorModal: React.FC<ComponentEditorModalProps> = ({
 
               <div className="md:col-span-2">
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {tx('展示标题 (Human Label)', 'Display Title (Human Label)')}
+                  {tx('展示标题', 'Display Title (Human Label)')}
                 </label>
                 <input
                   type="text"
@@ -188,7 +188,7 @@ export const ComponentEditorModal: React.FC<ComponentEditorModalProps> = ({
 
               <div className="md:col-span-2">
                 <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {tx('挂载目标相对路径 (Harness Surface Path)', 'Target Relative Surface Path')}
+                  {tx('挂载目标相对路径', 'Target Relative Surface Path')}
                 </label>
                 <input
                   type="text"
@@ -257,11 +257,11 @@ export const ComponentEditorModal: React.FC<ComponentEditorModalProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    {tx('伴随脚本与附加文件 (Extra Assets)', 'Companion Scripts & Extra Assets')}
+                    {tx('伴随脚本与附加文件', 'Companion Scripts & Extra Assets')}
                   </h4>
                   <p className="text-[11px] text-slate-400">
                     {tx(
-                      '针对 Skill (c6) 的 scripts/*.py 或其它辅助运行资源',
+                      '针对技能组件 (c6) 的 scripts/*.py 或其它辅助运行资源',
                       'Optional helper scripts (e.g. skills/<name>/scripts/*.py) bundled with this component'
                     )}
                   </p>

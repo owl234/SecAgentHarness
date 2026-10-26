@@ -27,14 +27,14 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     id: 's1-task-in',
     titleZh: '任务定义与规格接入',
     titleEn: 'Task Inflow & Spec',
-    subtitleZh: 'Task ID + Domain',
+    subtitleZh: '任务标识 + 领域标签',
     subtitleEn: 'Task ID + Domain',
-    badge: 'Spec Seam',
+    badge: '规格接缝',
     category: 'entry',
     icon: TargetIcon,
     filePath: 'backend/sec_agent_harness2/core/spec.py',
     formula: '\\text{TaskSpec} \\in \\text{BenchSpec}',
-    descriptionZh: '接收用户指定的任务唯一代号 (Task ID) 与领域分类 (Domain)。通过严格的 Seam 规范与评测真实标准绝对物理隔离。',
+    descriptionZh: '接收用户指定的任务唯一代号与领域分类。通过严格的接缝规范与评测真实标准绝对物理隔离。',
     descriptionEn: 'Receives task unique identity and domain spec, keeping zero leakage from benchmark grader.',
     inputsZh: ['任务 ID', '领域标签 (如 accounting, lab, cve)', '基础测试输入'],
     inputsEn: ['Task ID', 'Domain tag', 'Baseline test fixtures'],
@@ -47,12 +47,12 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     titleEn: 'Prior Domain Library',
     subtitleZh: 'INDEX.md / EXPERIENCE.md',
     subtitleEn: 'INDEX.md / EXPERIENCE.md',
-    badge: 'Library Prior',
+    badge: '经验先验',
     category: 'memory',
     icon: Database,
     filePath: 'backend/sec_agent_harness2/core/library.py',
     formula: '\\mathcal{L}_{domain} \\hookrightarrow Context',
-    descriptionZh: '加载同领域之前所有已完成任务累积沉淀的高置信度经验三元组 (Cue / Lesson / Evidence)，为本次任务提供冷启动先验。',
+    descriptionZh: '加载同领域之前所有已完成任务累积沉淀的高置信度经验三元组（触发情景 / 核心原则 / 实证依据），为本次任务提供冷启动先验。',
     descriptionEn: 'Loads persistent high-confidence cross-task experience triples to cold-start current task.',
     invariantsZh: ['只读检索：探针试跑期间经验库处于锁定状态', '置信度去重：防止不良经验误导初始探索'],
     invariantsEn: ['Readonly index during rollouts', 'Confidence deduplication'],
@@ -66,13 +66,13 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     titleEn: 'Base Probe Rollout',
     subtitleZh: '_roll_bases() 初始轨迹采样',
     subtitleEn: '_roll_bases() Baseline Probe',
-    badge: 'Baseline Rollout',
+    badge: '基线执行',
     code: 'Base',
     category: 'probe',
     icon: Play,
     filePath: 'backend/sec_agent_harness2/core/recursion.py',
     formula: 'H_{base} \\xrightarrow{_roll\\_bases()} RunView_{base}',
-    descriptionZh: '将未经优化的初始组件树物化到 Substrate 沙箱中执行一次基线探针试跑，记录初始执行轨迹、工具调用日志与产出物。',
+    descriptionZh: '将未经优化的初始组件树物化到执行器沙箱中执行一次基线探针试跑，记录初始执行轨迹、工具调用日志与产出物。',
     descriptionEn: 'Materializes baseline un-optimized harness tree into sandbox and executes base probe to gather reference trajectory.',
     outputsZh: ['基准运行轨迹 trajectory.jsonl', '初始交付物切片', '基线执行成本 ($ USD)'],
     outputsEn: ['Base trajectory.jsonl', 'Baseline deliverables', 'Base token cost'],
@@ -88,23 +88,23 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     titleEn: 'Evidence Packaging',
     subtitleZh: 'context.build() 差异切片',
     subtitleEn: 'context.build() Evidence Pack',
-    badge: 'Evidence Pack',
+    badge: '对比证据包',
     category: 'core',
     icon: Sparkles,
     filePath: 'backend/sec_agent_harness2/core/context.py',
     formula: '\\text{Context} = \\text{Traj}_{base} \\oplus \\text{Diffs} \\oplus \\mathcal{L}_{domain}',
     descriptionZh: '汇总基线探针的执行轨迹、工具报错切片、组件差异及前序领域经验，组装成结构化对比证据上下文，喂给改写器。',
     descriptionEn: 'Aggregates baseline trajectory, tool failure slices, component diffs, and domain library into contrastive evidence.',
-    invariantsZh: ['严密扫描组件树，防止评分标准或 Grader 判定渗入改写上下文'],
+    invariantsZh: ['严密扫描组件树，防止评分标准或判题结果渗入改写上下文'],
     invariantsEn: ['Strictly assert_tree_has_no_grader_verdicts() to prevent leakage'],
   },
   {
     id: 's2-inv-levers',
-    titleZh: '不变性杠杆提议 (INV)',
+    titleZh: '通用工程杠杆提议 (INV)',
     titleEn: 'Invariant Levers (INV)',
-    subtitleZh: 'c1: Prompt · c2: Guardrails · c4: Guidance',
+    subtitleZh: 'c1: 提示词 · c2: 护栏 · c4: 工具指引',
     subtitleEn: 'c1: Prompt · c2: Guardrails · c4: Guidance',
-    badge: 'INV Proposer',
+    badge: 'INV 提议器',
     code: 'INV',
     category: 'propose',
     icon: Shield,
@@ -118,17 +118,17 @@ export const LIFECYCLE_NODES: FlowNode[] = [
   },
   {
     id: 's2-dom-levers',
-    titleZh: '领域性杠杆提议 (DOM)',
+    titleZh: '业务领域杠杆提议 (DOM)',
     titleEn: 'Domain Levers (DOM)',
-    subtitleZh: 'c6: Skills · c7: Scripts · c8: Plugins · c5: Subagents',
+    subtitleZh: 'c6: 技能 · c7: 脚本 · c8: 钩子 · c5: 子智能体',
     subtitleEn: 'c6: Skills · c7: Scripts · c8: Plugins · c5: Subagents',
-    badge: 'DOM Proposer',
+    badge: 'DOM 提议器',
     code: 'DOM',
     category: 'propose',
     icon: Terminal,
     filePath: 'backend/sec_agent_harness2/core/proposer.py',
     formula: 'DOM \\colon (c5, c6, c7, c8) \\mapsto H_{dom}^{1..k}',
-    descriptionZh: '根据当前领域特有问题（如漏洞复现、账目清洗），编写领域专属 SOP 技能、自动化 Python 辅助脚本与生命周期拦截插件。',
+    descriptionZh: '根据当前领域特有问题（如漏洞复现、账目清洗），编写领域专属技能手册、自动化 Python 辅助脚本与生命周期拦截插件。',
     descriptionEn: 'Synthesizes specialized skills, helper scripts, plugins, and delegated subagents for task challenges.',
     actionTab: 'studio',
     actionLabelZh: '在组件工作室查看',
@@ -140,7 +140,7 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     titleEn: 'SurfaceSpec Validation Gate',
     subtitleZh: '语法校验 + 1次带错重试 (a2)',
     subtitleEn: 'Syntax Gate + 1-Shot Retry (a2)',
-    badge: 'Safety Gate',
+    badge: '安全网关',
     category: 'core',
     icon: CheckCircle2,
     filePath: 'backend/sec_agent_harness2/core/tree.py',
@@ -156,12 +156,12 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     titleEn: 'Probe Rollouts',
     subtitleZh: '_roll_many() 沙箱独立试跑',
     subtitleEn: '_roll_many() Isolated Probes',
-    badge: 'Parallel Probing',
+    badge: '并发探测',
     category: 'probe',
     icon: Zap,
     filePath: 'backend/sec_agent_harness2/core/recursion.py',
     formula: '\\{H_{inv}, H_{dom}\\} \\xrightarrow{_roll\\_many()} \\{RunView_{cand}\\}',
-    descriptionZh: '在互相物理隔离的 Substrate 临时沙箱中并发试跑所有 INV 与 DOM 候选套件，收集各候选真实执行轨迹与输出物。',
+    descriptionZh: '在互相物理隔离的执行器临时沙箱中并发试跑所有 INV 与 DOM 候选套件，收集各候选真实执行轨迹与输出物。',
     descriptionEn: 'Runs all candidate harnesses in physical isolated execution sandboxes concurrently to gather behavior traces.',
     actionTab: 'pipeline',
     actionLabelZh: '查看探针轨迹',
@@ -175,13 +175,13 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     titleEn: 'Composition Engine',
     subtitleZh: '并行模式 (agg) vs 串行模式 (seq)',
     subtitleEn: 'Parallel (agg) vs Sequential (seq)',
-    badge: 'Composer',
+    badge: '合成引擎',
     code: 'Compose',
     category: 'compose',
     icon: GitBranch,
     filePath: 'backend/sec_agent_harness2/core/recursion.py',
     formula: 'agg \\colon \\{H_{inv}, H_{dom}\\} \\mapsto \\{H_{agg}^1, \\dots, H_{agg}^k\\} \\quad | \\quad seq \\colon c_{t-1} \\mapsto c_t',
-    descriptionZh: '融合器 (Composer) 横向对比各路探针表现，剔除退化缺陷并吸收优势修改。并行模式由独立 Aggregator 融合出 k 路精炼套件；串行模式开展 k 轮深化演进。',
+    descriptionZh: '合成器横向对比各路探针表现，剔除退化缺陷并吸收优势修改。并行模式由独立聚合器融合出 k 路精炼套件；串行模式开展 k 轮深化演进。',
     descriptionEn: 'Synthesizes probe advantages, drops regressions, and produces refined final candidate harnesses.',
     actionTab: 'pipeline',
     actionLabelZh: '查看融合拓扑',
@@ -195,7 +195,7 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     titleEn: 'Zero-GT Blind Selection Gate',
     subtitleZh: 'assign_ids() 确定性哈希打乱',
     subtitleEn: 'assign_ids() Hash Shuffle Judge',
-    badge: 'Zero-GT Decision',
+    badge: '无监督盲审',
     code: 'Judge',
     category: 'judge',
     icon: CheckCircle2,
@@ -203,7 +203,7 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     formula: '\\text{Candidates} \\xrightarrow{hash\\_shuffle} \\{A, B, C\\} \\xrightarrow{LLM(Deliverables)} \\text{chosen\\_label}',
     descriptionZh: '确定性哈希打乱匿名化为 A, B, C... 消除命名与位置偏见。终审模型纯粹基于最终交付物的自洽性与完整性选出胜出套件 (chosen_label)。',
     descriptionEn: 'Eliminates position bias via deterministic hash mapping. Judge LLM decides winning harness purely from deliverables with 0 GT.',
-    invariantsZh: ['绝对无监督：严格禁止在裁决时调用基准测试 Ground Truth 或单元测试 Grader'],
+    invariantsZh: ['绝对无监督：严格禁止在裁决时调用基准测试标准答案或单元测试判分器'],
     invariantsEn: ['Zero Ground Truth: never leaks unit test assertions into selection prompt'],
   },
 
@@ -212,14 +212,14 @@ export const LIFECYCLE_NODES: FlowNode[] = [
     id: 's5-reflector',
     titleZh: '经验反思提炼',
     titleEn: 'Experience Reflector',
-    subtitleZh: '<experience> Cue + Lesson + Evidence',
+    subtitleZh: '<experience> 情景 + 原则 + 依据',
     subtitleEn: '<experience> Cue + Lesson + Evidence',
-    badge: 'Harnessing Recursion',
+    badge: '经验递归',
     category: 'memory',
     icon: Brain,
     filePath: 'backend/sec_agent_harness2/core/library.py',
     formula: 'Run_{chosen} \\xrightarrow{Reflector} \\langle Cue, Lesson, Evidence \\rangle',
-    descriptionZh: '从采纳的胜出套件与执行轨迹中提炼出结构化经验三元组：Cue (触发时机) + Lesson (核心经验认知) + Evidence (客观运行论据)。',
+    descriptionZh: '从采纳的胜出套件与执行轨迹中提炼出结构化经验三元组：触发情景 (cue) + 核心原则 (lesson) + 客观运行论据 (evidence)。',
     descriptionEn: 'Distills winning harness into structured triple: Cue + Lesson + Evidence for future tasks.',
     actionTab: 'library',
     actionLabelZh: '前往经验知识库',
@@ -227,11 +227,11 @@ export const LIFECYCLE_NODES: FlowNode[] = [
   },
   {
     id: 's5-update-lib',
-    titleZh: '沉淀至领域经验库 (闭环)',
+    titleZh: '沉淀至领域经验库（闭环）',
     titleEn: 'Domain Library Persistence',
     subtitleZh: '写入 INDEX.md 与 EXPERIENCE.md',
     subtitleEn: 'Updates domain INDEX.md',
-    badge: 'Persistent Memory',
+    badge: '持久化记忆',
     category: 'memory',
     icon: RotateCcw,
     filePath: 'backend/sec_agent_harness2/core/library.py',
@@ -273,11 +273,11 @@ export const LifecyclePipelineFlow: React.FC<LifecyclePipelineFlowProps> = ({
               1
             </span>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{isZh ? '阶段 1 · 任务接入与基线采样 (Task Initialization & Base Rollout)' : 'Stage 1 · Task Baseline Sampling'}</span>
+              <span>{isZh ? '阶段 1 · 任务接入与基线采样' : 'Stage 1 · Task Baseline Sampling'}</span>
             </h3>
           </div>
           <span className="text-[11px] font-mono text-sky-700 bg-sky-50 border border-sky-200 dark:text-sky-400 dark:bg-sky-950/50 px-2.5 py-0.5 rounded-full dark:border-sky-800/40">
-            Cold Start & Prior
+            {isZh ? '冷启动与经验先验' : 'Cold Start & Prior'}
           </span>
         </div>
 
@@ -326,11 +326,11 @@ export const LifecyclePipelineFlow: React.FC<LifecyclePipelineFlowProps> = ({
               2
             </span>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{isZh ? '阶段 2 · 提议–探测对比改写 (Task-Level Recursion: Propose–Probe)' : 'Stage 2 · Propose–Probe Levers'}</span>
+              <span>{isZh ? '阶段 2 · 任务级递归：提议与探测对比改写' : 'Stage 2 · Propose–Probe Levers'}</span>
             </h3>
           </div>
           <span className="text-[11px] font-mono text-blue-700 bg-blue-50 border border-blue-200 dark:text-blue-400 dark:bg-blue-950/50 px-2.5 py-0.5 rounded-full dark:border-blue-800/40">
-            INV & DOM Dual Levers
+            {isZh ? 'INV 与 DOM 双轴杠杆' : 'INV & DOM Dual Levers'}
           </span>
         </div>
 
@@ -417,11 +417,11 @@ export const LifecyclePipelineFlow: React.FC<LifecyclePipelineFlowProps> = ({
               3
             </span>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{isZh ? '阶段 3 · 组合融合与递归深化 (Compose Branch: agg vs seq)' : 'Stage 3 · Composition Engine'}</span>
+              <span>{isZh ? '阶段 3 · 组合融合与递归深化（并行 agg / 串行 seq）' : 'Stage 3 · Composition Engine'}</span>
             </h3>
           </div>
           <span className="text-[11px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 dark:text-indigo-400 dark:bg-indigo-950/50 px-2.5 py-0.5 rounded-full dark:border-indigo-800/40">
-            Parallel / Sequential
+            {isZh ? '并行融合 / 串行精炼' : 'Parallel / Sequential'}
           </span>
         </div>
 
@@ -452,11 +452,11 @@ export const LifecyclePipelineFlow: React.FC<LifecyclePipelineFlowProps> = ({
               4
             </span>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{isZh ? '阶段 4 · 零标注无监督盲选决策 (Blind Selection Gate)' : 'Stage 4 · Zero-GT Blind Selection'}</span>
+              <span>{isZh ? '阶段 4 · 零标注无监督盲选决策' : 'Stage 4 · Zero-GT Blind Selection'}</span>
             </h3>
           </div>
           <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full dark:border-emerald-800/40">
-            Zero Ground Truth
+            {isZh ? '零真值泄露' : 'Zero Ground Truth'}
           </span>
         </div>
 
@@ -487,11 +487,11 @@ export const LifecyclePipelineFlow: React.FC<LifecyclePipelineFlowProps> = ({
               5
             </span>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{isZh ? '阶段 5 · 经验反思与跨任务持续进化 (Harnessing-Level Recursion)' : 'Stage 5 · Harnessing Recursion'}</span>
+              <span>{isZh ? '阶段 5 · 套件级递归：经验反思与跨任务持续进化' : 'Stage 5 · Harnessing Recursion'}</span>
             </h3>
           </div>
           <span className="text-[11px] font-mono text-purple-700 bg-purple-50 border border-purple-200 dark:text-purple-400 dark:bg-purple-950/50 px-2.5 py-0.5 rounded-full dark:border-purple-800/40">
-            Closed Loop Feedback
+            {isZh ? '闭环先验反馈' : 'Closed Loop Feedback'}
           </span>
         </div>
 
@@ -517,7 +517,7 @@ export const LifecyclePipelineFlow: React.FC<LifecyclePipelineFlowProps> = ({
             <span>{isZh ? '闭环反馈：新经验将自动作为先验，注入同领域后续所有任务的阶段 1 冷启动！' : 'Closed Loop: New experience auto-injects into Stage 1 of future tasks in this domain!'}</span>
           </div>
           <span className="font-mono text-[10px] bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-700/50">
-            FEEDFORWARD ACTIVE
+            {isZh ? '先验反馈已激活' : 'FEEDFORWARD ACTIVE'}
           </span>
         </div>
       </div>

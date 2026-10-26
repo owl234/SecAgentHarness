@@ -67,7 +67,7 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
               )}
               {node.is_chosen && (
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30">
-                  🏆 {tx('最终采纳 (Chosen Final)', 'Chosen Final')}
+                  🏆 {tx('最终采纳', 'Chosen Final')}
                 </span>
               )}
             </div>
@@ -102,9 +102,9 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
                 <CheckCircle2 className="w-3.5 h-3.5" />
               )}
               {node.fell_back
-                ? tx('回退 (Fell Back)', 'Fell Back')
+                ? tx('异常回退', 'Fell Back')
                 : node.kept_base
-                ? tx('沿用基准 (Kept Base)', 'Kept Base')
+                ? tx('沿用基准', 'Kept Base')
                 : tx('正常执行', 'Succeeded')}
             </span>
           </div>
@@ -117,7 +117,7 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
           </div>
 
           <div>
-            <span className="text-slate-500 block">{tx('模型花费 (USD)', 'Cost (USD)')}</span>
+            <span className="text-slate-500 block">{tx('模型开销 (USD)', 'Cost (USD)')}</span>
             <span className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5 block font-mono">
               ${(node.usd || 0).toFixed(4)}
             </span>
@@ -149,7 +149,7 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>{tx('生成交付物 (Deliverable)', 'Deliverable Output')}</span>
+            <span>{tx('生成交付物', 'Deliverable Output')}</span>
           </button>
 
           <button
@@ -162,7 +162,7 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
-            <span>{tx('Agent 行为轨迹', 'Agent Trajectory')}</span>
+            <span>{tx('智能体行为轨迹', 'Agent Trajectory')}</span>
           </button>
         </div>
 
@@ -173,7 +173,7 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
               <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                 <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-300 mb-2 flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
-                  <span>{tx('套件编辑器决策说明 (Proposer Decision Notes)', 'Proposer Decision Notes')}</span>
+                  <span>{tx('套件编辑器决策说明', 'Proposer Decision Notes')}</span>
                 </h4>
                 <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
                   {node.notes ||
@@ -202,7 +202,7 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
             <div className="bg-slate-50 dark:bg-slate-950/80 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
               <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-300 mb-2 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>{tx('任务执行产物 (Answer Output)', 'Task Deliverable (answer.txt)')}</span>
+                <span>{tx('任务执行产物 (answer.txt)', 'Task Deliverable (answer.txt)')}</span>
               </h4>
               {deliverableText ? (
                 <pre className="text-xs text-slate-800 dark:text-slate-200 font-mono whitespace-pre-wrap break-all leading-relaxed">
@@ -223,7 +223,7 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
             <div className="bg-slate-50 dark:bg-slate-950/80 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
               <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-300 mb-2 flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-amber-500" />
-                <span>{tx('执行循环轨迹 (Action / Observation Stream)', 'Action / Observation Trajectory')}</span>
+                <span>{tx('执行循环轨迹（动作与观测流）', 'Action / Observation Trajectory')}</span>
               </h4>
               {trajectoryText ? (
                 <div className="space-y-3 font-mono text-xs">
@@ -250,7 +250,7 @@ export const StageDetailDrawer: React.FC<StageDetailDrawerProps> = ({
                 </div>
               ) : (
                 <p className="text-xs text-slate-500">
-                  {tx('暂无捕获到的 Trajectory 步骤', 'No trajectory steps captured for this rollout.')}
+                  {tx('暂无捕获到的轨迹步骤', 'No trajectory steps captured for this rollout.')}
                 </p>
               )}
             </div>

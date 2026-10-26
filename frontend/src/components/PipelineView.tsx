@@ -68,7 +68,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              {tx('选择 Run:', 'Run:')}
+              {tx('运行记录：', 'Run:')}
             </span>
             <select
               value={selectedRunId}
@@ -85,7 +85,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              {tx('选择 Task:', 'Task:')}
+              {tx('选择任务：', 'Task:')}
             </span>
             <select
               value={selectedTaskId}
@@ -186,7 +186,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
 
                     <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans bg-slate-50 dark:bg-slate-950/60 p-3 rounded-lg border border-slate-200 dark:border-slate-900">
                       <span className="font-semibold text-slate-500 dark:text-slate-400">
-                        {tx('裁决依据 (Why): ', 'Rationale (Why): ')}
+                        {tx('裁决依据：', 'Rationale (Why): ')}
                       </span>
                       {sel.why || tx('无', 'None')}
                     </p>
@@ -197,7 +197,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
                           <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
                           <span>
                             {tx(
-                              '沉淀经验 (Continual Learning Memory)',
+                              '持续学习沉淀经验',
                               'Distilled Continual Learning Experience'
                             )}
                           </span>
@@ -206,7 +206,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
                         {exp.cue && (
                           <div className="text-xs">
                             <span className="text-indigo-600 dark:text-indigo-400 font-medium">
-                              {tx('触发情景 (Cue): ', 'Trigger Cue: ')}
+                              {tx('触发情景：', 'Trigger Cue: ')}
                             </span>
                             <span className="text-slate-800 dark:text-slate-200">{exp.cue}</span>
                           </div>
@@ -215,7 +215,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
                         {exp.lesson && (
                           <div className="text-xs">
                             <span className="text-emerald-700 dark:text-emerald-400 font-medium">
-                              {tx('优化原则 (Lesson): ', 'Learned Lesson: ')}
+                              {tx('优化原则：', 'Learned Lesson: ')}
                             </span>
                             <span className="text-slate-800 dark:text-slate-200">
                               {exp.lesson}
@@ -226,7 +226,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
                         {exp.evidence && (
                           <div className="text-xs">
                             <span className="text-slate-500 dark:text-slate-400 font-medium">
-                              {tx('实证依据 (Evidence): ', 'Empirical Evidence: ')}
+                              {tx('实证依据：', 'Empirical Evidence: ')}
                             </span>
                             <span className="text-slate-600 dark:text-slate-400">
                               {exp.evidence}

@@ -47,13 +47,13 @@ class DemoAdapter:
             name="demo",
             runs_root=root / "runs",
             install_mode="workspace_config",
-            prompts=BenchPrompts(work="reconcile signed amounts in a transaction ledger"),
+            prompts=BenchPrompts(work="核对交易账本中的带符号金额明细"),
             channels={"proposer": channel, "selector": channel},
             leak_globs=("reference_answer.txt",),
         )
         self.execution_count = 0
         base = {name: "" for name in self.substrate.surface().always_on}
-        base["systemprompt.md"] = "Reconcile the ledger using python scripts/summarize.py.\n"
+        base["systemprompt.md"] = "请调用 python scripts/summarize.py 核对并汇总交易账本金额。\n"
         base["scripts/summarize.py"] = BASE_SCRIPT
         tree.write_tree(self.substrate.surface(), base, self.base_harness(), stubs=False)
         for task_id, amounts in (
@@ -71,7 +71,7 @@ class DemoAdapter:
         return "accounting"
 
     def task_prompt(self, task_id: str) -> str:
-        return "Sum every signed amount in ledger.csv. Return Total: with two decimal places."
+        return "计算 ledger.csv 中所有带正负符号金额的净总和，按 Total: 保留两位小数输出。"
 
     def task_files(self, task_id: str) -> Path:
         return self.root / "sources" / task_id
@@ -81,7 +81,7 @@ class DemoAdapter:
 
     def validate_tree(self, harness: tree.Tree) -> None:
         if "scripts/summarize.py" not in harness:
-            raise ValueError("The local executor requires scripts/summarize.py")
+            raise ValueError("本地执行器要求必须包含 scripts/summarize.py")
 
     def execute(
         self, task_id: str, harness_dir: Path | None, run_id: str, *, timeout: int | None = None
@@ -99,7 +99,7 @@ class DemoAdapter:
         )
         (run_dir / "answer.txt").write_text(result.stdout, encoding="utf-8")
         (run_dir / "trajectory.md").write_text(
-            "[ACTION] Run scripts/summarize.py on ledger.csv\n[OBSERVATION]\n" + result.stdout,
+            "[执行动作] 在 ledger.csv 上运行 scripts/summarize.py\n[观测输出]\n" + result.stdout,
             encoding="utf-8",
         )
         return run_dir
@@ -133,7 +133,7 @@ class DemoProposer(Proposer):
                 path.stem for path in candidates if f"Total: {expected:.2f}" in path.read_text()
             )
             text = (
-                f"<why>The signed total matches the source ledger.</why>\n```choice\n{chosen}\n```"
+                f"<why>候选产物的带符号净总额与原始账本流水完全吻合，已正确计入负向冲抵项。</why>\n```choice\n{chosen}\n```"
             )
         elif label.startswith("experience."):
             changed = (context / "harness/scripts/summarize.py").read_text() != (
@@ -141,15 +141,14 @@ class DemoProposer(Proposer):
             ).read_text()
             text = (
                 "<edits>\ncomponent: scripts/summarize.py\ncandidates: inv1\n"
-                "change: dropped the positive-only filter from the amount sum\n"
-                "observed: the probe total included the credits the base run omitted\n"
+                "change: 移除了金额求和时仅保留正数的过滤条件 (if amount > 0)\n"
+                "observed: 探测执行结果正确纳入了初始基准运行所遗漏的负向冲销金额\n"
                 f"verdict: {'helped' if changed else 'no observed effect'}\n</edits>\n\n"
             ) + (
-                "<experience>\ncue: When a ledger includes credits and debits\n"
-                "lesson: Include both signs when summing in scripts/summarize.py.\n"
-                "evidence: The scripts/summarize.py row -- removing the positive-only filter "
-                "changed the probe total to include the credits omitted by the base trajectory.\n"
-                "confidence: high for this observed arithmetic contrast\n</experience>"
+                "<experience>\ncue: 当交易账本同时包含正向入账与负向冲销（借贷双向流水）时\n"
+                "lesson: 在 scripts/summarize.py 汇总金额时必须同时保留正负符号，严禁过滤负数项。\n"
+                "evidence: scripts/summarize.py 改动对比显示——移除仅正数过滤后，探测总额准确纳入了初始基准轨迹遗漏的负向流水。\n"
+                "confidence: 高（基于明确的算术执行对比证据）\n</experience>"
                 if changed
                 else "NO_ENTRY"
             )
@@ -157,7 +156,7 @@ class DemoProposer(Proposer):
             workspace = context / "harness"
             script = workspace / "scripts/summarize.py"
             script.write_text(script.read_text().replace(" if amount > 0", ""), encoding="utf-8")
-            text = "<notes>Keep signed amounts: the base total omitted credits in the source ledger.</notes>"
+            text = "<notes>保留带符号金额：初始基准汇总遗漏了原始账本中的负向冲销项。</notes>"
         reply = Reply(label=label, text=text, ok=True, attempts=1, workspace=workspace)
         self._calls.append(reply)
         return reply

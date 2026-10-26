@@ -131,16 +131,16 @@ class Library:
         lines = [
             f"# {task_id}",
             "",
-            f"- adopted: `{label}`" + (f"  (run `{run_id}`)" if run_id else ""),
-            f"- components: {_inventory(self.surface, harness)}",
+            f"- 采纳阶段 (adopted): `{label}`" + (f"  (运行 ID `{run_id}`)" if run_id else ""),
+            f"- 组件清单 (components): {_inventory(self.surface, harness)}",
             "",
         ]
         if why.strip():
-            lines += ["## Why this was chosen", why.strip(), ""]
+            lines += ["## 采纳原因 (Why this was chosen)", why.strip(), ""]
         if exp.get("edits"):
-            lines += ["## What each edit did", str(exp["edits"]).strip(), ""]
+            lines += ["## 候选改动效果分析 (What each edit did)", str(exp["edits"]).strip(), ""]
         if exp.get("lesson"):
-            lines += ["## Transferable lesson"]
+            lines += ["## 可复用经验总结 (Transferable lesson)"]
             lines += [
                 f"- **{f}**: {str(exp[f]).strip()}"
                 for f in ("cue", "lesson", "evidence", "confidence")
@@ -154,27 +154,26 @@ class Library:
     def rebuild_index(self) -> Path:
         """Regenerate INDEX.md from what is on disk."""
         rows = [
-            f"# Library — {self.domain}",
+            f"# 领域经验知识库 (Library) — {self.domain}",
             "",
-            "Each entry is an earlier task in THIS domain whose harness was chosen, stored "
-            "with its FULL component tree and why it was picked. Browse this index, then "
-            "open the entries that look relevant to the matter in front of you.",
+            "本目录下的每个条目均来自本领域已完成并采纳的前序任务，完整保留了当时获胜的套件组件树与采纳经验。"
+            "在开始修改当前任务套件前，请先浏览此索引并按需查阅高相关性的历史套件。",
             "",
         ]
         names = self.entries()
         if not names:
-            rows.append("_(empty — this is the first task in this domain)_")
+            rows.append("_(当前领域暂无历史沉淀，这是本领域的首个任务)_")
         for name in names:
             ed = self.dir / "harnesses" / name
             cue = _field(ed / "EXPERIENCE.md", "cue")
             tree = harness_tree.read_tree(self.surface, ed / "harness")
             rows += [
                 f"## `harnesses/{name}/`",
-                f"- harness: `harnesses/{name}/harness/` — {_inventory(self.surface, tree)}",
-                f"- why:     `harnesses/{name}/EXPERIENCE.md`",
+                f"- 套件目录 (harness): `harnesses/{name}/harness/` — {_inventory(self.surface, tree)}",
+                f"- 经验详情 (why):     `harnesses/{name}/EXPERIENCE.md`",
             ]
             if cue:
-                rows.append(f"- cue:     {cue}")
+                rows.append(f"- 触发情景 (cue):     {cue}")
             rows.append("")
         self.dir.mkdir(parents=True, exist_ok=True)
         self.index.write_text("\n".join(rows), encoding="utf-8")
@@ -183,24 +182,24 @@ class Library:
 
 def _inventory(surface: SurfaceSpec, tree: harness_tree.Tree) -> str:
     """A one-line census of the components actually in this harness."""
-    st: dict[str, int] = {"skills": 0, "sub_agents": 0, "scripts": 0}
+    st: dict[str, int] = {"技能(skills)": 0, "子智能体(sub_agents)": 0, "脚本(scripts)": 0}
     skill_prefix = surface.skill_dir + "/"
     plugin_prefix = None if surface.plugin_dir is None else surface.plugin_dir + "/"
     hooks_file = surface.hooks_file
     for rel in tree:
         if rel.startswith(skill_prefix) and rel.endswith("SKILL.md"):
-            st["skills"] += 1
+            st["技能(skills)"] += 1
         elif rel.startswith("sub_agents/"):
-            st["sub_agents"] += 1
+            st["子智能体(sub_agents)"] += 1
         elif rel.startswith("scripts/"):
-            st["scripts"] += 1
+            st["脚本(scripts)"] += 1
         elif plugin_prefix is not None and rel.startswith(plugin_prefix):
-            st["plugins"] = st.get("plugins", 0) + 1
+            st["插件(plugins)"] = st.get("插件(plugins)", 0) + 1
         elif rel == hooks_file:
-            st["hooks"] = st.get("hooks", 0) + 1
+            st["钩子(hooks)"] = st.get("钩子(hooks)", 0) + 1
     on = len(harness_tree.always_on_text(surface, tree))
-    bits = [f"{v} {k}" for k, v in st.items() if v] or ["always-on edits only"]
-    return f"{', '.join(bits)}; {on:,} always-on chars"
+    bits = [f"{v} 个{k}" for k, v in st.items() if v] or ["仅常驻提示词修改"]
+    return f"{', '.join(bits)}；常驻文本 {on:,} 字符"
 
 
 def _field(path: Path, name: str) -> str:

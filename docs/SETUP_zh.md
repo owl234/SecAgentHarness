@@ -1,5 +1,3 @@
-[English](SETUP.md) | [简体中文](SETUP_zh.md)
-
 # 安装配置指南
 
 请先阅读[快速入门指南](../README.md#安装指南)。本指南详细介绍基准测试依赖、模型 API 凭据配置以及可选的 Codex 执行器。针对具体的基准测试，请参阅[基准测试指南](BENCHMARKS_zh.md)。
@@ -38,13 +36,13 @@ Shell 环境变量的优先级高于 `.env` 文件。
 
 | 配置项 | 含义说明 |
 |---|---|
-| `HARNESS2_API_BASE_URL` | 可选统一 API 端点基础 URL（`…/v1`），自适应驱动三大执行器 |
-| `HARNESS2_API_KEY` | 可选统一 API 密钥 |
-| `HARNESS2_API_MODEL` | 可选统一模型 ID（OpenCode 会自动补齐 `harness2/` 前缀） |
-| `HARNESS2_SOLVER_MODEL` | 执行器模型（采用 OpenCode 的 `provider/model` 格式） |
-| `HARNESS2_IMPROVER_MODEL` | 改进器模型（同上格式；默认使用执行器模型） |
-| `HARNESS2_JUDGE_MODEL` | 基础评测模型 ID（适配器会自动添加 Vertex 前缀） |
-| `HARNESS2_RUNS_DIR` | 结果输出根目录；默认为 `runs/` |
+| `SEC_AGENT_HARNESS2_API_BASE_URL` | 可选统一 API 端点基础 URL（`…/v1`），自适应驱动三大执行器（向下兼容 `HARNESS2_API_BASE_URL`） |
+| `SEC_AGENT_HARNESS2_API_KEY` | 可选统一 API 密钥（向下兼容 `HARNESS2_API_KEY`） |
+| `SEC_AGENT_HARNESS2_API_MODEL` | 可选统一模型 ID（OpenCode 会自动补齐 `sec_agent_harness2/` 前缀） |
+| `SEC_AGENT_HARNESS2_SOLVER_MODEL` | 执行器模型（采用 OpenCode 的 `provider/model` 格式） |
+| `SEC_AGENT_HARNESS2_IMPROVER_MODEL` | 改进器模型（同上格式；默认使用执行器模型） |
+| `SEC_AGENT_HARNESS2_JUDGE_MODEL` | 基础评测模型 ID（适配器会自动添加 Vertex 前缀） |
+| `SEC_AGENT_HARNESS2_RUNS_DIR` | 结果输出根目录；默认为 `runs/` |
 
 提供的配置使用 Vertex Gemini 作为执行器与裁判（Judge），并支持使用 Vertex Claude 或 Gemini 作为优化器（Improver）。LAB 在配置对应凭据后，亦支持上游评测直接对接的 Provider。对于 WorkBuddy，安装程序会根据这些设置生成 Gemini 求解器与裁判路由；如果修改了任一模型，请重新执行 setup。
 
@@ -65,11 +63,11 @@ Shell 环境变量的优先级高于 `.env` 文件。
 仅需安装您计划运行的基准测试：
 
 ```bash
-harness2 setup lab
-harness2 check --bench lab
+sec-agent-harness2 setup lab
+sec-agent-harness2 check --bench lab
 ```
 
-JobBench 请使用 `jb`，WorkBuddy-Bench 请使用 `wb`。子集选择与许可证说明请参阅[基准测试指南](BENCHMARKS_zh.md)。
+JobBench 请使用 `jb`，WorkBuddy-Bench 请使用 `wb`（`harness2` 仍作为无缝别名可用）。子集选择与许可证说明请参阅[基准测试指南](BENCHMARKS_zh.md)。
 
 相关的运行器层（Runner overlays）与兼容性补丁已包含在 [`third_party/`](../third_party/README.md) 中。安装脚本会将受支持的上游指定版本克隆到 `dependencies/` 目录下，应用对应补丁，创建基准测试专用环境，并下载评测任务数据。
 
@@ -84,54 +82,54 @@ Harness² 会自动调用对应的解释器；在执行主命令时**请勿**手
 <a id="installation-checks"></a>
 ### 安装预检
 
-`harness2 setup <bench> --dry-run` 可以在不进行实际更改的情况下预览安装操作。
-`harness2 check` 用于检查已安装的依赖项、凭据和配置，而不会发起模型调用。优化提炼任务在启动前也会执行相同的检查（包括裁判配置检查）。
+`sec-agent-harness2 setup <bench> --dry-run` 可以在不进行实际更改的情况下预览安装操作。
+`sec-agent-harness2 check` 用于检查已安装的依赖项、凭据和配置，而不会发起模型调用。优化提炼任务在启动前也会执行相同的检查（包括裁判配置检查）。
 
 这些检查不会测试模型的可用性。对执行器、优化器或裁判模型的访问权限将在该模型首次被调用时进行检验。如果提炼或评测未能正常完成，命令将返回非零退出状态码。
 
 <a id="codex-executor"></a>
 ## Codex 执行器
 
-Codex 执行器连接到 Responses API 端点。对于 Vertex AI 上的 Gemini，附带的 `harness2-bridge` 通过本地 LiteLLM 服务提供该接口，并复用相同的应用默认凭据（ADC）与 `GOOGLE_CLOUD_PROJECT`。
+Codex 执行器连接到 Responses API 端点。对于 Vertex AI 上的 Gemini，附带的 `sec-agent-harness2-bridge`（别名：`harness2-bridge`）通过本地 LiteLLM 服务提供该接口，并复用相同的应用默认凭据（ADC）与 `GOOGLE_CLOUD_PROJECT`。
 
 在单独的终端会话中安装可选依赖并启动 Bridge：
 
 ```bash
 uv pip install -e './backend[render,bridge]'
-harness2-bridge                 # WorkBuddy 场景需使用：harness2-bridge --host 0.0.0.0
+sec-agent-harness2-bridge        # WorkBuddy 场景需使用：sec-agent-harness2-bridge --host 0.0.0.0
 ```
 
-Bridge 启动后会在终端打印需要添加到 `.env` 中的 `HARNESS2_CODEX_*` 配置项。其端口和生成的访问密钥保存在 `dependencies/codex/` 下，重启时会自动复用。在安装、检查、提炼、评测和报告命令中传入 `--substrate cx`：
+Bridge 启动后会在终端打印需要添加到 `.env` 中的 `SEC_AGENT_HARNESS2_CODEX_*` 配置项。其端口和生成的访问密钥保存在 `dependencies/codex/` 下，重启时会自动复用。在安装、检查、提炼、评测和报告命令中传入 `--substrate cx`：
 
 ```bash
-harness2 setup lab --substrate cx
-harness2 check --bench lab --substrate cx
-harness2 run --bench lab --substrate cx --k 1 --mode parallel \
+sec-agent-harness2 setup lab --substrate cx
+sec-agent-harness2 check --bench lab --substrate cx
+sec-agent-harness2 run --bench lab --substrate cx --k 1 --mode parallel \
   --only-domains antitrust-competition --max-tasks 1
 ```
 
-WorkBuddy 会在 Docker 容器内部执行 Codex，因此 Bridge 必须监听 `--host 0.0.0.0`；它还会打印 `HARNESS2_CODEX_CONTAINER_URL`。注意：这会将 Bridge 绑定到所有网络接口，请确保限制仅受信任的客户端访问。
+WorkBuddy 会在 Docker 容器内部执行 Codex，因此 Bridge 必须监听 `--host 0.0.0.0`；它还会打印 `SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL`。注意：这会将 Bridge 绑定到所有网络接口，请确保限制仅受信任的客户端访问。
 
-如需使用其他 Responses API 端点，可直接设置 `HARNESS2_CODEX_BASE_URL`、`HARNESS2_CODEX_API_KEY` 以及 `HARNESS2_CODEX_MODEL`。若上游为通用 OpenAI Chat Completions 端点（未提供原生 `/v1/responses`），可启动内置 Responses 转换桥：
+如需使用其他 Responses API 端点，可直接设置 `SEC_AGENT_HARNESS2_CODEX_BASE_URL`、`SEC_AGENT_HARNESS2_CODEX_API_KEY` 以及 `SEC_AGENT_HARNESS2_CODEX_MODEL`。若上游为通用 OpenAI Chat Completions 端点（未提供原生 `/v1/responses`），可启动内置 Responses 转换桥：
 
 ```bash
 uv pip install -e './backend[responses-bridge]'
-harness2 responses-bridge --upstream https://your-endpoint.example.com/v1 --api-key "$HARNESS2_API_KEY"
+sec-agent-harness2 responses-bridge --upstream https://your-endpoint.example.com/v1 --api-key "$SEC_AGENT_HARNESS2_API_KEY"
 # WorkBuddy 容器场景需指定 --host 0.0.0.0 ...
 ```
 
-桥接服务会打印生成的 `HARNESS2_CODEX_*` 配置。安装程序会将该端点与模型记录在 `dependencies/codex/home/config.toml` 中；修改任何一项后需重新执行 setup。在此之前，`harness2 check` 会提示配置已过期。
+桥接服务会打印生成的 `SEC_AGENT_HARNESS2_CODEX_*` 配置。安装程序会将该端点与模型记录在 `dependencies/codex/home/config.toml` 中；修改任何一项后需重新执行 setup。在此之前，`sec-agent-harness2 check` 会提示配置已过期。
 
 Codex 运行时其内部沙箱处于禁用状态。评测前请仔细阅读[执行器网络限制](EXPERIMENTS_zh.md#网络访问控制)。
 
 <a id="claude-executor"></a>
 ## Claude 执行器
 
-Claude 执行器运行项目内隔离的 clawgod 发行版（版本钉在 `harness2/config.py` 的 `CLAUDE_VERSION`），位于 `dependencies/claude/` 下并自带 Bun 运行时。它不触碰 `~/.clawgod`：provider 凭据走环境变量（`ANTHROPIC_API_KEY`，非 Anthropic 端点可另加 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN`），宿主机的 `provider.json` / `patches.json` 等个性化配置不会被克隆进来。
+Claude 执行器运行项目内隔离的 clawgod 发行版（版本钉在 `sec_agent_harness2/config.py` 的 `CLAUDE_VERSION`），位于 `dependencies/claude/` 下并自带 Bun 运行时。它不触碰 `~/.clawgod`：provider 凭据走环境变量（`ANTHROPIC_API_KEY`，非 Anthropic 端点可另加 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN`），宿主机的 `provider.json` / `patches.json` 等个性化配置不会被克隆进来。
 
 ```bash
-harness2 setup lab --substrate claude
-harness2 check --bench lab --substrate claude
+sec-agent-harness2 setup lab --substrate claude
+sec-agent-harness2 check --bench lab --substrate claude
 ```
 
 该基座通过 `--agents` 接线 harness 的 `sub_agents/`（工作区根的 `sub_agents/` 目录不会被 Claude Code 自动发现），并以 `--include-hook-events --forward-subagent-text` 捕获 hook 事件。与 Codex 一样，沙箱绕过处于启用状态；评测前请先阅读执行器网络限制。
@@ -149,9 +147,9 @@ harness2 check --bench lab --substrate claude
 | Docker Registry | WorkBuddy 容器镜像 |
 | `astral.sh` | 当宿主机无系统级 Python 3.12 时下载 CPython 3.12 |
 
-在配置网络环境或防火墙时，可使用 `harness2 setup <bench> --dry-run` 预览安装命令。实验运行期间还会访问 `.env` 中配置的模型端点。安装下载与执行器评测阶段的网络访问要求不同；详见[评测期间的网络访问控制](EXPERIMENTS_zh.md#网络访问控制)。
+在配置网络环境或防火墙时，可使用 `sec-agent-harness2 setup <bench> --dry-run` 预览安装命令。实验运行期间还会访问 `.env` 中配置的模型端点。安装下载与执行器评测阶段的网络访问要求不同；详见[评测期间的网络访问控制](EXPERIMENTS_zh.md#网络访问控制)。
 
 <a id="wheel-installations"></a>
 ## Wheel 轮子安装方式
 
-构建的 Wheel 安装包仅分发 `harness2` 核心 Python 包。任务划分脚本 `python scripts/split_tasks.py` 必须依赖源码仓库目录树。如果通过 Wheel 安装，请在一个专属工作目录下操作：`.env`、`dependencies/` 和 `runs/` 将在该目录下被解析与创建。
+构建的 Wheel 安装包仅分发 `sec-agent-harness2` 核心 Python 包。任务划分脚本 `python scripts/split_tasks.py` 必须依赖源码仓库目录树。如果通过 Wheel 安装，请在一个专属工作目录下操作：`.env`、`dependencies/` 和 `runs/` 将在该目录下被解析与创建。

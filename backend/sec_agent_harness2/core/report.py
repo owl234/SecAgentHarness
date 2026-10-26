@@ -50,19 +50,19 @@ class Summary:
     def line(self, bench: str = "") -> str:
         """LAB reports partial credit and all-criteria pass; the others report one score."""
         if not self.n:
-            return f"  {self.name}: no graded task"
+            return f"  {self.name}: 暂无已评分任务"
         figures = (
-            f"partial {self.score:6.2f}% | pass {self.all_pass:5.1f}%"
+            f"部分得分 {self.score:6.2f}% | 全通率 {self.all_pass:5.1f}%"
             if bench == "lab"
-            else f"score {self.score:6.2f}%"
+            else f"得分 {self.score:6.2f}%"
         )
         pick = (
-            f" | picked output: final {self.chose_final} / candidate {self.chose_candidate} / "
-            f"base {self.kept_base}"
+            f" | 采纳来源: 终选融合 {self.chose_final} / 中间候选 {self.chose_candidate} / "
+            f"初始基准 {self.kept_base}"
         )
-        fb = f" | fell back {self.fell_back}" if self.fell_back else ""
-        ug = f" | ungraded {self.n_ungraded}" if self.n_ungraded else ""
-        return f"  {self.name}: n={self.n:>3} | {figures}{pick}{fb}{ug}"
+        fb = f" | 回退次数 {self.fell_back}" if self.fell_back else ""
+        ug = f" | 未评分 {self.n_ungraded}" if self.n_ungraded else ""
+        return f"  {self.name}: 任务数={self.n:>3} | {figures}{pick}{fb}{ug}"
 
 
 def _kind(r: Scored) -> str:
@@ -124,42 +124,38 @@ def render(summaries: Sequence[Summary], *, title: str = "", bench: str = "") ->
         gap = abs(at1["agg"].score - at1["seq"].score)
         lines += [
             "",
-            "  NOTE  at k=1 the parallel and sequential modes are the same procedure "
-            "(one INVARIANT draw, one DOMAIN draw, one composition).",
-            f"        The {gap:.2f} pt between them is therefore a NOISE FLOOR, not a "
-            f"result -- an effect at k>=2 has to clear it.",
+            "  提示  在 k=1 时，并行（parallel）与序列（sequential）模式在流程上完全等价 "
+            "（1 次通用工程提议、1 次业务领域提议、1 次融合合成）。",
+            f"        两者之间 {gap:.2f} 分的差距属于随机采样【噪音基线】，"
+            f"当 k>=2 时的增益必须超过此基线才具统计显著性。",
         ]
 
     for s in summaries:
         if s.n and s.chose_final <= 0.25 * s.n:
             lines += [
                 "",
-                f"  WARNING  {s.name}: the mode's own final was chosen on only "
-                f"{s.chose_final}/{s.n} tasks. These records include outputs outside "
-                f"the published pool of {s.k} composed finals.",
+                f"  警告  {s.name}: 终选融合套件仅在 {s.chose_final}/{s.n} 个任务中被选中。"
+                f"当前记录包含了超出 {s.k} 个标准融合终选池之外的产物。",
             ]
     warn = [s for s in summaries if s.n and s.kept_base >= 0.8 * s.n]
     for s in warn:
         lines += [
             "",
-            f"  WARNING  {s.name}: selection chose a reference output on "
-            f"{s.kept_base}/{s.n} tasks, outside the published pool of composed outputs.",
+            f"  警告  {s.name}: 盲选在 {s.kept_base}/{s.n} 个任务中选择了初始基准产物，"
+            f"未采纳融合演进池中的套件。",
         ]
     fb = [s for s in summaries if s.fell_back]
     for s in fb:
         lines += [
             "",
-            f"  WARNING  {s.name}: {s.fell_back} stage(s) fell back to the "
-            f"inherited harness. Inspect the stage errors when interpreting these results.",
+            f"  警告  {s.name}: 有 {s.fell_back} 个演进阶段校验失败并回退到了上一版套件。"
+            f"请在解读结果时检查对应阶段的错误详情。",
         ]
     for s in summaries:
         if len(s.metrics) > 1:
             lines += [
                 "",
-                f"  WARNING  {s.name}: graded rows carry MIXED scoring units "
-                f"({', '.join(s.metrics)}). The score averages weighted points with "
-                f"unweighted criteria counts (about 20 pt apart on JobBench); re-judge "
-                f"the fallback rows before comparing this line with any published "
-                f"number.",
+                f"  警告  {s.name}: 已评分记录包含混合计分单位 ({', '.join(s.metrics)})。"
+                f"当前分数将加权分与非加权标准数进行了混合平均；请在与公开基线对比前重新评审回退行。",
             ]
     return "\n".join(lines)

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Bilingual CLI regression tests: EN stays default, ZH renders on request."""
+"""Bilingual CLI regression tests: ZH is default, EN renders on request."""
 
 from __future__ import annotations
 
@@ -24,22 +24,24 @@ from unittest import mock
 
 
 class I18nTests(unittest.TestCase):
-    def test_default_is_en(self):
+    def test_default_is_zh(self):
         from sec_agent_harness2 import i18n as I
 
         with mock.patch.dict(os.environ, {}, clear=False):
             for k in ("SEC_AGENT_HARNESS2_LANG", "LANG", "LANGUAGE"):
                 os.environ.pop(k, None)
-            self.assertEqual(I.get_lang(), "en")
+            self.assertEqual(I.get_lang(), "zh")
 
-    def test_env_zh(self):
+    def test_env_zh_and_en(self):
         from sec_agent_harness2 import i18n as I
 
         with mock.patch.dict(os.environ, {"SEC_AGENT_HARNESS2_LANG": "zh"}):
             self.assertEqual(I.get_lang(), "zh")
-        with mock.patch.dict(os.environ, {"LANG": "zh_CN.UTF-8"}, clear=False):
+        with mock.patch.dict(os.environ, {"SEC_AGENT_HARNESS2_LANG": "en"}):
+            self.assertEqual(I.get_lang(), "en")
+        with mock.patch.dict(os.environ, {"LANGUAGE": "en_US.UTF-8"}, clear=False):
             os.environ.pop("SEC_AGENT_HARNESS2_LANG", None)
-            self.assertEqual(I.get_lang(), "zh")
+            self.assertEqual(I.get_lang(), "en")
 
     def test_t_never_raises(self):
         from sec_agent_harness2 import i18n as I
@@ -58,7 +60,7 @@ class I18nTests(unittest.TestCase):
         self.assertEqual(cm.exception.code, 0)
         self.assertIn("可视化", buf.getvalue())
 
-    def test_check_help_en_default(self):
+    def test_check_help_zh_default_and_en_override(self):
         from sec_agent_harness2.cli import check
 
         buf = io.StringIO()
@@ -67,7 +69,14 @@ class I18nTests(unittest.TestCase):
             with redirect_stdout(buf), self.assertRaises(SystemExit) as cm:
                 check.main(["--help"])
         self.assertEqual(cm.exception.code, 0)
-        self.assertIn("Check one installed benchmark", buf.getvalue())
+        self.assertIn("检查", buf.getvalue())
+
+        buf_en = io.StringIO()
+        with mock.patch.dict(os.environ, {**env, "SEC_AGENT_HARNESS2_LANG": "en"}, clear=True):
+            with redirect_stdout(buf_en), self.assertRaises(SystemExit) as cm_en:
+                check.main(["--help"])
+        self.assertEqual(cm_en.exception.code, 0)
+        self.assertIn("Check one installed benchmark", buf_en.getvalue())
 
 
 if __name__ == "__main__":

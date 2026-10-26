@@ -123,7 +123,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-blue-500" />
           <span className="font-bold text-sm text-slate-900 dark:text-white">
-            {tx('交互式任务启动台 (Interactive Launcher)', 'Interactive Task Launcher')}
+            {tx('交互式任务启动台', 'Interactive Task Launcher')}
           </span>
         </div>
 
@@ -138,7 +138,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            {tx('本地快速 Demo (Quick Demo)', 'Offline Quick Demo')}
+            {tx('本地快速演示', 'Offline Quick Demo')}
           </button>
           <button
             type="button"
@@ -149,7 +149,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            {tx('基准评测 Sweep (大规模演进)', 'Benchmark Sweep')}
+            {tx('基准评测大规模演进', 'Benchmark Sweep')}
           </button>
         </div>
       </div>
@@ -168,7 +168,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
               <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                 <span className="font-bold text-blue-700 dark:text-blue-400">
                   {tx(
-                    '本地确定性流水线演练 (Offline Deterministic Demo)：',
+                    '本地确定性流水线演练：',
                     'Offline Deterministic Pipeline Verification: '
                   )}
                 </span>
@@ -177,7 +177,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                   DemoAdapter + DemoProposer
                 </code>
                 {tx(
-                  ' 在本地 Python 环境中完整运行 Propose-Probe-Compose 递归流水线与跨任务经验库累积，无需任何外部大模型 API 凭据或容器。',
+                  ' 在本地 Python 环境中完整运行“提议—探测—合成”递归流水线与跨任务经验库累积，无需任何外部大模型 API 凭据或容器。',
                   ' locally in Python to verify the full Propose–Probe–Compose recursive loop and cross-task experience library without external API keys or Docker.'
                 )}
               </div>
@@ -187,7 +187,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                 className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline shrink-0 cursor-pointer"
               >
                 {tx(
-                  '需调用真实执行器 (Claude/OpenCode/Codex)？切换至 Sweep →',
+                  '需调用真实执行器（Claude / OpenCode / Codex）？切换至基准评测 →',
                   'Need real executors (Claude/OpenCode/Codex)? Switch to Sweep →'
                 )}
               </button>
@@ -205,20 +205,20 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                 >
                   <option value={1}>
-                    {tx('k = 1 (轻量试跑: 4 次执行 / 任务)', 'k = 1 (Light: 4 rollouts / task)')}
+                    {tx('k = 1（轻量试跑：4 次执行 / 任务）', 'k = 1 (Light: 4 rollouts / task)')}
                   </option>
                   <option value={2}>
-                    {tx('k = 2 (推荐精炼: 8 次执行 / 任务)', 'k = 2 (Recommended: 8 rollouts / task)')}
+                    {tx('k = 2（推荐精炼：8 次执行 / 任务）', 'k = 2 (Recommended: 8 rollouts / task)')}
                   </option>
                   <option value={3}>
-                    {tx('k = 3 (高预算探索: 12 次执行 / 任务)', 'k = 3 (Deep: 12 rollouts / task)')}
+                    {tx('k = 3（高预算探索：12 次执行 / 任务）', 'k = 3 (Deep: 12 rollouts / task)')}
                   </option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {tx('演进模式 (Recursion Mode)', 'Recursion Mode')}
+                  {tx('演进模式', 'Recursion Mode')}
                 </label>
                 <select
                   value={demoMode}
@@ -226,13 +226,13 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                 >
                   <option value="both">
-                    {tx('Both (并行 + 串行双分支对比)', 'Both (Parallel + Sequential)')}
+                    {tx('双模式对比（并行 + 串行）', 'Both (Parallel + Sequential)')}
                   </option>
                   <option value="parallel">
-                    {tx('仅并行 (Parallel aggregation)', 'Parallel Only (AGG)')}
+                    {tx('仅并行融合（parallel）', 'Parallel Only (AGG)')}
                   </option>
                   <option value="sequential">
-                    {tx('仅串行 (Sequential chain)', 'Sequential Only (SEQ)')}
+                    {tx('仅串行精炼（sequential）', 'Sequential Only (SEQ)')}
                   </option>
                 </select>
               </div>
@@ -253,7 +253,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                 <span>
                   {showAdvancedDemo
                     ? tx('收起高级参数', 'Hide Advanced Options')
-                    : tx('展开高级参数 (输出路径)', 'Show Advanced Options (Output Path)')}
+                    : tx('展开高级参数（输出目录）', 'Show Advanced Options (Output Path)')}
                 </span>
               </button>
 
@@ -261,7 +261,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                 <div className="mt-3 p-4 rounded-xl bg-slate-50/60 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
                   <div>
                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                      {tx('输出目录 (Output Path)', 'Output Directory')}
+                      {tx('输出目录', 'Output Directory')}
                     </label>
                     <input
                       type="text"
@@ -305,7 +305,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <Flame className="w-3.5 h-3.5 text-orange-500" />
                   <span>
-                    {tx('执行器 Substrate 选择 (--substrate)', 'Executor Substrate (--substrate)')}
+                    {tx('目标执行器底座 (--substrate)', 'Executor Substrate (--substrate)')}
                   </span>
                 </div>
                 {onOpenExecutorConfig && (
@@ -356,7 +356,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                   </div>
                   <div className="text-[10px] text-slate-400 mt-0.5 font-mono truncate">
                     {executorStatus?.executors.find((e) => e.id === 'oc')?.current_model ||
-                      'Bun + OpenCode Substrate'}
+                      'Bun + OpenCode 执行器'}
                   </div>
                 </button>
 
@@ -389,7 +389,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
             >
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {tx('基准套件 (Benchmark)', 'Benchmark Suite')}
+                  {tx('基准套件', 'Benchmark Suite')}
                 </label>
                 <select
                   value={sweepBench}
@@ -397,13 +397,13 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                 >
                   <option value="jb">
-                    {tx('JobBench (日常办公与专业对账)', 'JobBench (Professional workflows)')}
+                    {tx('JobBench（日常办公与专业对账）', 'JobBench (Professional workflows)')}
                   </option>
                   <option value="wb">
-                    {tx('WorkBuddy-Bench (Office+Web+Code)', 'WorkBuddy-Bench (Office+Web+Code)')}
+                    {tx('WorkBuddy-Bench（办公 + 网页 + 代码）', 'WorkBuddy-Bench (Office+Web+Code)')}
                   </option>
                   <option value="lab">
-                    {tx('Harvey LAB (法律业务与评分准则)', 'Harvey LAB (Legal benchmarks)')}
+                    {tx('Harvey LAB（法律业务与评分准则）', 'Harvey LAB (Legal benchmarks)')}
                   </option>
                 </select>
               </div>
@@ -418,9 +418,9 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                     onChange={(e) => setSweepSubset(e.target.value as 'office' | 'web' | 'code')}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                   >
-                    <option value="office">{tx('office (办公文档与表格)', 'office (Docs & Sheets)')}</option>
-                    <option value="web">{tx('web (前端与网页构建)', 'web (Frontend & Web)')}</option>
-                    <option value="code">{tx('code (软件工程代码)', 'code (Software Engineering)')}</option>
+                    <option value="office">{tx('office（办公文档与表格）', 'office (Docs & Sheets)')}</option>
+                    <option value="web">{tx('web（前端与网页构建）', 'web (Frontend & Web)')}</option>
+                    <option value="code">{tx('code（软件工程代码）', 'code (Software Engineering)')}</option>
                   </select>
                 </div>
               )}
@@ -449,9 +449,9 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                   onChange={(e) => setSweepModes(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                 >
-                  <option value="both">Both (parallel,sequential)</option>
-                  <option value="parallel">{tx('仅并行 (parallel / agg)', 'Parallel Only (agg)')}</option>
-                  <option value="sequential">{tx('仅串行 (sequential / seq)', 'Sequential Only (seq)')}</option>
+                  <option value="both">{tx('双模式（parallel,sequential）', 'Both (parallel,sequential)')}</option>
+                  <option value="parallel">{tx('仅并行融合（parallel / agg）', 'Parallel Only (agg)')}</option>
+                  <option value="sequential">{tx('仅串行精炼（sequential / seq）', 'Sequential Only (seq)')}</option>
                 </select>
               </div>
             </div>
@@ -472,7 +472,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                   {showAdvancedSweep
                     ? tx('收起高级参数', 'Hide Advanced Options')
                     : tx(
-                        '展开高级参数 (并发线程、划分切分、单次模型覆盖与推理强度)',
+                        '展开高级参数（并发线程、划分切分、单次模型覆盖与推理强度）',
                         'Show Advanced Options (Workers, Split, Model Override & Effort)'
                       )}
                 </span>
@@ -483,7 +483,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        {tx('并行并发工作线程 (Workers)', 'Parallel Workers')}
+                        {tx('并行工作线程数', 'Parallel Workers')}
                       </label>
                       <input
                         type="number"
@@ -497,7 +497,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
 
                     <div>
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        {tx('数据划分 (Split)', 'Dataset Split')}
+                        {tx('数据集划分', 'Dataset Split')}
                       </label>
                       <select
                         value={sweepSplit}
@@ -512,7 +512,7 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
 
                     <div>
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        {tx('最大任务数 (空代表全部)', 'Max Tasks (blank = all)')}
+                        {tx('最大任务数（留空代表全部）', 'Max Tasks (blank = all)')}
                       </label>
                       <input
                         type="number"

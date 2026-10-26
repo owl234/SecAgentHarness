@@ -74,8 +74,19 @@ load_dotenv()
 
 
 def env(name: str, default=None):
-    """Env override where a set-but-empty variable is the same as an unset one."""
-    return os.environ.get(name) or default
+    """Env override where a set-but-empty variable is the same as an unset one.
+
+    Supports bidirectional fallback between SEC_AGENT_HARNESS2_* and legacy HARNESS2_*.
+    """
+    v = os.environ.get(name)
+    if not v:
+        if name.startswith("SEC_AGENT_HARNESS2_"):
+            legacy_name = "HARNESS2_" + name[len("SEC_AGENT_HARNESS2_") :]
+            v = os.environ.get(legacy_name)
+        elif name.startswith("HARNESS2_"):
+            new_name = "SEC_AGENT_HARNESS2_" + name[len("HARNESS2_") :]
+            v = os.environ.get(new_name)
+    return v or default
 
 
 def env_int(name: str, default: int) -> int:

@@ -70,7 +70,7 @@ class UITests(unittest.TestCase):
         entries = scanner.get_library_index(self.runs_root, "demo")
         self.assertIsInstance(entries, list)
         self.assertTrue(len(entries) >= 1)
-        self.assertTrue(any("credits" in e["cue"] for e in entries))
+        self.assertTrue(any("交易账本" in e["cue"] or "credits" in e["cue"] for e in entries))
 
     def test_api_status(self):
         res = self.client.get("/api/status")
@@ -128,7 +128,7 @@ class UITests(unittest.TestCase):
     def test_static_spa_serving(self):
         res = self.client.get("/")
         self.assertEqual(res.status_code, 200)
-        self.assertIn("Harness² Console", res.text)
+        self.assertTrue("Harness² 控制台" in res.text or "Harness² Console" in res.text)
 
     def test_api_components_and_templates(self):
         res = self.client.get("/api/components/templates")

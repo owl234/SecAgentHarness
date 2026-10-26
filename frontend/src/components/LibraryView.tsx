@@ -155,14 +155,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <BookOpen className="w-5 h-5 text-blue-500" />
             <span>
               {tx(
-                '跨任务持续经验库与套件全景 (Continual Learning & Component Library)',
+                '跨任务持续经验库与套件全景',
                 'Continual Learning Experience Library & 8-Component Inspector'
               )}
             </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {tx(
-              '套件级递归 (Harnessing-level recursion)：跨任务沉淀的经验池与可复用优化知识',
+              '套件级递归：跨任务沉淀的经验池与可复用优化知识',
               'Harnessing-level recursion: cross-task distilled lessons, trigger cues, and runtime surface inspection'
             )}
           </p>
@@ -182,7 +182,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              {tx('选择 Run:', 'Run:')}
+              {tx('运行记录：', 'Run:')}
             </span>
             <select
               value={selectedRunId}
@@ -274,7 +274,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 <div className="space-y-2 text-xs">
                   <div>
                     <span className="text-amber-600 dark:text-amber-400 font-semibold block text-[11px] mb-0.5">
-                      {tx('触发情景 (Cue):', 'Trigger Cue:')}
+                      {tx('触发情景：', 'Trigger Cue:')}
                     </span>
                     <p className="text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 leading-relaxed">
                       {entry.cue || tx('未命名情景', 'Unnamed cue')}
@@ -283,7 +283,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
                   <div>
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold block text-[11px] mb-0.5">
-                      {tx('习得原则 (Lesson):', 'Distilled Lesson:')}
+                      {tx('习得原则：', 'Distilled Lesson:')}
                     </span>
                     <p className="text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 leading-relaxed">
                       {entry.lesson || tx('未命名原则', 'Unnamed lesson')}
@@ -312,7 +312,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Code2 className="w-4 h-4 text-indigo-500" />
               <span>
-                {tx('九大组件全景审阅器 (9-Component Inspector)', '9-Component Runtime Harness Inspector')}
+                {tx('九大组件全景审阅器', '9-Component Runtime Harness Inspector')}
               </span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

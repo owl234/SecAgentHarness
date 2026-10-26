@@ -115,8 +115,8 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
         runs_root = workspace_root / "runs"
 
     app = FastAPI(
-        title="Harness² Web Console 可视化控制台",
-        description="Interactive visual control panel and recursive pipeline explorer for Harness² | 交互式可视化控制台与 Propose-Probe-Compose 递归流水线探索器",
+        title="Harness² 可视化控制台",
+        description="交互式可视化控制台与提议–探测–组合递归流水线探索器",
         version="0.1.0",
     )
 
@@ -262,7 +262,7 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
     async def delete_component(comp_id: str):
         ok = scanner.delete_custom_component(workspace_root, comp_id)
         if not ok:
-            raise HTTPException(status_code=404, detail=f"Component {comp_id} not found")
+            raise HTTPException(status_code=404, detail=f"未找到组件 {comp_id}")
         return {"status": "deleted", "id": comp_id}
 
     @app.post("/api/components/apply")
@@ -279,7 +279,7 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"Failed to apply component: {exc}")
+            raise HTTPException(status_code=500, detail=f"装配组件失败: {exc}")
 
     # -----------------------------
     # Executor & Engine Management APIs (Unified API, Claude, OpenCode, Codex, Vertex)
@@ -450,7 +450,7 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
         components = scanner.get_harness_components(runs_root, run_id, task_id, label)
         if not components:
             raise HTTPException(
-                status_code=404, detail=f"Harness label {label} not found for {task_id}"
+                status_code=404, detail=f"未找到任务 {task_id} 的套件标签 {label}"
             )
         return components
 
@@ -458,7 +458,7 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
     async def get_task_detail(run_id: str, task_id: str):
         detail = scanner.get_task_detail(runs_root, run_id, task_id)
         if detail is None:
-            raise HTTPException(status_code=404, detail=f"Task {task_id} not found in {run_id}")
+            raise HTTPException(status_code=404, detail=f"在运行 {run_id} 中未找到任务 {task_id}")
         return detail
 
     @app.get("/api/runs/{run_id}/library")
@@ -512,9 +512,9 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
             return HTMLResponse(
                 content=(
                     "<!doctype html><html><head><meta charset='utf-8'>"
-                    "<title>Harness² Console</title></head>"
+                    "<title>Harness² 控制台</title></head>"
                     "<body style='font-family:system-ui;padding:2rem;max-width:640px;margin:0 auto'>"
-                    "<h2>Harness² Web Console — Frontend Not Built</h2>"
+                    "<h2>Harness² 可视化控制台 — 前端尚未构建</h2>"
                     "<p>前端静态资源尚未构建（<code>frontend/dist/</code> 缺失）。请在项目根目录执行：</p>"
                     "<pre style='background:#f1f5f9;padding:1rem;border-radius:8px'>"
                     "cd frontend &amp;&amp; npm install &amp;&amp; npm run build\n"

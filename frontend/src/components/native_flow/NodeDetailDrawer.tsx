@@ -119,7 +119,7 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
           <div className="space-y-2">
             <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-              <span>{isZh ? '设计契约与关键不变量 (Invariants)' : 'Design Invariants'}</span>
+              <span>{isZh ? '设计契约与关键不变量' : 'Design Invariants'}</span>
             </span>
             <div className="space-y-1.5">
               {(isZh ? node.invariantsZh : node.invariantsEn)!.map((rule, idx) => (
@@ -142,7 +142,7 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
             {node.inputsZh && (
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800/80 space-y-1.5">
                 <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                  {isZh ? '📥 输入契约 (Inputs)' : '📥 Inputs'}
+                  {isZh ? '📥 输入契约' : '📥 Inputs'}
                 </span>
                 <ul className="space-y-1 text-xs text-slate-700 dark:text-slate-300">
                   {(isZh ? node.inputsZh : node.inputsEn)!.map((item, idx) => (
@@ -159,7 +159,7 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
             {node.outputsZh && (
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800/80 space-y-1.5">
                 <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                  {isZh ? '📤 产出交付物 (Outputs)' : '📤 Outputs'}
+                  {isZh ? '📤 产出交付物' : '📤 Outputs'}
                 </span>
                 <ul className="space-y-1 text-xs text-slate-700 dark:text-slate-300">
                   {(isZh ? node.outputsZh : node.outputsEn)!.map((item, idx) => (
@@ -179,13 +179,13 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
           <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 space-y-1.5">
             <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5" />
-              <span>{isZh ? '实机运行遥测映射 (Live Telemetry)' : 'Live Telemetry'}</span>
+              <span>{isZh ? '实机运行遥测映射' : 'Live Telemetry'}</span>
             </span>
             <div className="font-mono text-[11px] text-slate-700 dark:text-slate-300 space-y-0.5">
-              <div>Domain: <strong className="text-slate-900 dark:text-white">{telemetryData.domain || 'general'}</strong></div>
-              <div>Executed Stages: <strong className="text-blue-600 dark:text-cyan-400">{telemetryData.stageCount || 0}</strong></div>
-              <div>Chosen Winner: <strong className="text-emerald-600 dark:text-emerald-400">{formatStageLabel(telemetryData.chosenLabel || 'base', (zh, en) => isZh ? zh : en).fullName}</strong></div>
-              <div>Experience Reflection: <strong className="text-purple-600 dark:text-purple-400">{telemetryData.hasExperience ? 'Emitted' : 'None'}</strong></div>
+              <div>{isZh ? '业务领域：' : 'Domain: '}<strong className="text-slate-900 dark:text-white">{telemetryData.domain || 'general'}</strong></div>
+              <div>{isZh ? '已执行阶段数：' : 'Executed Stages: '}<strong className="text-blue-600 dark:text-cyan-400">{telemetryData.stageCount || 0}</strong></div>
+              <div>{isZh ? '胜出采纳阶段：' : 'Chosen Winner: '}<strong className="text-emerald-600 dark:text-emerald-400">{formatStageLabel(telemetryData.chosenLabel || 'base', (zh, en) => isZh ? zh : en).fullName}</strong></div>
+              <div>{isZh ? '经验反思沉淀：' : 'Experience Reflection: '}<strong className="text-purple-600 dark:text-purple-400">{telemetryData.hasExperience ? (isZh ? '已生成' : 'Emitted') : (isZh ? '无' : 'None')}</strong></div>
             </div>
           </div>
         )}

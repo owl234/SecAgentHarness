@@ -98,7 +98,7 @@ export const ComponentApplyModal: React.FC<ComponentApplyModalProps> = ({
         <div className="space-y-3 text-xs">
           <div>
             <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {tx('目标评测运行 (Run ID)', 'Target Run ID')}
+              {tx('目标评测运行', 'Target Run ID')}
             </label>
             <select
               value={targetRunId}
@@ -115,7 +115,7 @@ export const ComponentApplyModal: React.FC<ComponentApplyModalProps> = ({
 
           <div>
             <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {tx('目标评测任务 (Task ID)', 'Target Task ID')}
+              {tx('目标评测任务', 'Target Task ID')}
             </label>
             <select
               value={targetTaskId}
@@ -138,17 +138,17 @@ export const ComponentApplyModal: React.FC<ComponentApplyModalProps> = ({
 
           <div>
             <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {tx('目标 Harness 分支阶段 (Label)', 'Target Harness Stage Label')}
+              {tx('目标 Harness 分支阶段', 'Target Harness Stage Label')}
             </label>
             <select
               value={targetLabel}
               onChange={(e) => onChangeLabel(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white"
             >
-              <option value="base">{tx('base (基线套件)', 'base (Baseline harness)')}</option>
-              <option value="agg1">{tx('agg1 (并行合成首轮套件)', 'agg1 (Parallel composed round 1)')}</option>
-              <option value="seq1">{tx('seq1 (串行递推首轮套件)', 'seq1 (Sequential round 1)')}</option>
-              <option value="c1">{tx('c1 (首轮候选阶段)', 'c1 (Candidate stage 1)')}</option>
+              <option value="base">{tx('base（基线套件）', 'base (Baseline harness)')}</option>
+              <option value="agg1">{tx('agg1（并行合成首轮套件）', 'agg1 (Parallel composed round 1)')}</option>
+              <option value="seq1">{tx('seq1（串行递推首轮套件）', 'seq1 (Sequential round 1)')}</option>
+              <option value="c1">{tx('c1（首轮候选阶段）', 'c1 (Candidate stage 1)')}</option>
             </select>
           </div>
         </div>
