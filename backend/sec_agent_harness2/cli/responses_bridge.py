@@ -18,7 +18,7 @@ Run it in front of any OpenAI-compatible endpoint that has no `/v1/responses`:
 
     harness2-responses-bridge --upstream https://host/v1 --api-key sk-...
 
-The bridge prints the HARNESS2_CODEX_* settings to put in `.env`, exactly like
+The bridge prints the SEC_AGENT_HARNESS2_CODEX_* settings to put in `.env`, exactly like
 `harness2-bridge`, but it does not need Vertex or LiteLLM.
 """
 
@@ -35,9 +35,9 @@ import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from harness2 import config
-from harness2 import i18n as I18N
-from harness2.responses_bridge import (
+from sec_agent_harness2 import config
+from sec_agent_harness2 import i18n as I18N
+from sec_agent_harness2.responses_bridge import (
     StreamTranslator,
     TranslationError,
     from_chat,
@@ -189,12 +189,12 @@ def main(argv=None):
     port = endpoint["port"]
     base = f"http://{args.host}:{port}/v1"
     settings = {
-        "HARNESS2_CODEX_BASE_URL": base,
-        "HARNESS2_CODEX_API_KEY": endpoint["key"],
-        "HARNESS2_CODEX_MODEL": config.SOLVER_MODEL_CX,
+        "SEC_AGENT_HARNESS2_CODEX_BASE_URL": base,
+        "SEC_AGENT_HARNESS2_CODEX_API_KEY": endpoint["key"],
+        "SEC_AGENT_HARNESS2_CODEX_MODEL": config.SOLVER_MODEL_CX,
     }
     if args.host not in ("127.0.0.1", "localhost"):
-        settings["HARNESS2_CODEX_CONTAINER_URL"] = f"http://host.docker.internal:{port}/v1"
+        settings["SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL"] = f"http://host.docker.internal:{port}/v1"
     print(I18N.t("responses_bridge.hint", lang), flush=True)
     print("\n".join(f"{k}={v}" for k, v in settings.items()), flush=True)
 

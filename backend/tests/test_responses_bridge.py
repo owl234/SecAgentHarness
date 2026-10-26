@@ -20,8 +20,8 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from harness2.cli.responses_bridge import create_app
-from harness2.responses_bridge import (
+from sec_agent_harness2.cli.responses_bridge import create_app
+from sec_agent_harness2.responses_bridge import (
     StreamTranslator,
     TranslationError,
     from_chat,
@@ -291,7 +291,7 @@ def test_create_app_responses_error_handling():
 
 
 def test_main_cli_dispatch_responses_bridge():
-    from harness2.cli import main as cli_main
+    from sec_agent_harness2.cli import main as cli_main
 
     with pytest.raises(SystemExit) as exc:
         cli_main.main(["responses-bridge", "--help"])

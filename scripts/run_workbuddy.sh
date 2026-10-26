@@ -27,11 +27,11 @@ K=${K:-1}
 MODE=${MODE:-parallel}
 run=(--bench wb --subset "$SUBSET" --substrate "$SUBSTRATE" --k "$K" --mode "$MODE")
 
-harness2-check --bench wb --subset "$SUBSET" --substrate "$SUBSTRATE" || exit
-harness2 "${run[@]}" "$@"
+sec-agent-harness2-check --bench wb --subset "$SUBSET" --substrate "$SUBSTRATE" || exit
+sec-agent-harness2 "${run[@]}" "$@"
 status=$?
 [[ " $* " == *" --dry-run "* ]] && exit $status
-harness2-judge "${run[@]}"
+sec-agent-harness2-judge "${run[@]}"
 judged=$?
-harness2-report "${run[@]}"
+sec-agent-harness2-report "${run[@]}"
 exit $((status ? status : judged))

@@ -19,7 +19,7 @@ const BASE = '/api';
 /** Module-level translator: reads persisted lang (set by LangProvider). */
 function t(key: keyof typeof dicts.zh): string {
   try {
-    const lang = (localStorage.getItem('harness2_lang') === 'en' ? 'en' : 'zh') as 'zh' | 'en';
+    const lang = (localStorage.getItem('sec_agent_harness2_lang') === 'en' ? 'en' : 'zh') as 'zh' | 'en';
     return dicts[lang][key] ?? dicts.zh[key] ?? key;
   } catch { return dicts.zh[key] ?? key; }
 }

@@ -451,7 +451,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             'Benchmark grading is executed after a sweep via '
                           )}
                           <code className="text-blue-600 dark:text-blue-400 font-mono px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 rounded">
-                            harness2-judge
+                            sec-agent-harness2-judge
                           </code>
                           {tx(
                             ' 独立执行。本地 Demo 任务关注的是确定性递归演进机制与交付物，无需独立大模型裁决打分。',

@@ -18,7 +18,7 @@ The figure each benchmark reports per (mode, k) — partial credit and all-crite
 one score elsewhere — with pick provenance, the k=1 noise-floor note and the sanity warnings;
 fell-back counts and improver spend come from the task summaries.
 
-    python3 -m harness2.cli.report --bench jb --substrate oc --k 1,2
+    python3 -m sec_agent_harness2.cli.report --bench jb --substrate oc --k 1,2
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ def _spend_and_fallbacks(ns_dir: Path, modes: tuple[str, ...], k: int) -> tuple[
 def main(argv: list[str] | None = None) -> int:
     lang = I18N.get_lang()
     p = argparse.ArgumentParser(
-        prog="harness2.cli.report", description=I18N.t("report.desc", lang), formatter_class=C.HelpFormatter
+        prog="sec_agent_harness2.cli.report", description=I18N.t("report.desc", lang), formatter_class=C.HelpFormatter
     )
     C.add_cell_args(p.add_argument_group(I18N.t("sweep.group_cell", lang)))
     g = p.add_argument_group(I18N.t("report.group_identity", lang))

@@ -826,7 +826,7 @@ class JobBenchAdapter:
         env = self.substrate.exec_env(os.environ, codex_home=codex_home)
         env.update(
             {
-                "HARNESS2_CODEX_BIN": str(Path(config.CODEX_DIST) / "codex"),
+                "SEC_AGENT_HARNESS2_CODEX_BIN": str(Path(config.CODEX_DIST) / "codex"),
                 "TASK_IDS": task_id,
                 "LABEL": label,
                 "HARNESS_RENDER_DIR": str(install.staging_dir),
@@ -844,12 +844,12 @@ class JobBenchAdapter:
         task_id, label, t = self._launch_common(req)
         self.substrate.preflight()
         binary = find_claude_binary()
-        model = os.environ.get("HARNESS2_CLAUDE_MODEL", config.SOLVER_MODEL_CLAUDE)
-        effort = os.environ.get("HARNESS2_CLAUDE_EFFORT", "high")
+        model = os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_MODEL", config.SOLVER_MODEL_CLAUDE)
+        effort = os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_EFFORT", "high")
         env = self.substrate.exec_env(os.environ)
         env.update(
             {
-                "HARNESS2_CLAUDE_BIN": str(binary),
+                "SEC_AGENT_HARNESS2_CLAUDE_BIN": str(binary),
                 "TASK_IDS": task_id,
                 "LABEL": label,
                 "HARNESS_RENDER_DIR": str(install.staging_dir),
@@ -1012,7 +1012,7 @@ class JobBenchAdapter:
             endpoint = api.codex()
             if endpoint is None or not endpoint.api_key:
                 raise config.ConfigError(
-                    "HARNESS2_CODEX_API_KEY (or HARNESS2_API_KEY) is required for JB codex "
+                    "SEC_AGENT_HARNESS2_CODEX_API_KEY (or SEC_AGENT_HARNESS2_API_KEY) is required for JB codex "
                     "cells; see .env.example"
                 )
             # The rollout reads the endpoint from CODEX_HOME/config.toml, not from the
@@ -1044,7 +1044,7 @@ class JobBenchAdapter:
             )
         if not config.JB_JUDGE_API_BASE:
             print(
-                "  [jb] WARNING: HARNESS2_JUDGE_BASE_URL is empty; rollouts will run "
+                "  [jb] WARNING: SEC_AGENT_HARNESS2_JUDGE_BASE_URL is empty; rollouts will run "
                 "but judging refuses until it is set (see .env.example)",
                 flush=True,
             )

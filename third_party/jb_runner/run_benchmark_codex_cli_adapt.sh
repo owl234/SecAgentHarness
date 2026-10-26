@@ -48,7 +48,7 @@ TIMEOUT_PER_TASK="${TIMEOUT_PER_TASK:-3600}"  # default 60 minutes
 TRAJ_DIR_NAME="${TRAJ_DIR_NAME:-model_traj}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="${TASKS_BASE_DIR}/.harness2-logs"
+LOG_DIR="${TASKS_BASE_DIR}/.sec_agent_harness2-logs"
 
 mkdir -p "$LOG_DIR"
 
@@ -328,7 +328,7 @@ traj_file = sys.argv[6]
 with open(log_file, 'a', encoding='utf-8') as log, open(traj_file, 'w', encoding='utf-8') as traj:
     result = subprocess.run(
         [
-            os.environ['HARNESS2_CODEX_BIN'], 'exec',
+            os.environ['SEC_AGENT_HARNESS2_CODEX_BIN'], 'exec',
             prompt_content,
             '--model', model,
             '-c', f'model_reasoning_effort=\"{reasoning_effort}\"',
@@ -490,7 +490,7 @@ main() {
 
     # Check the executable installed by the release setup script.
     echo "Checking Codex CLI availability..."
-    "${HARNESS2_CODEX_BIN:?Run scripts/setup_benchmark.py with --substrate cx}" --version 2>&1 || {
+    "${SEC_AGENT_HARNESS2_CODEX_BIN:?Run scripts/setup_benchmark.py with --substrate cx}" --version 2>&1 || {
         echo "[ERROR] Codex CLI not available. Run scripts/setup_benchmark.py with --substrate cx."
         exit 1
     }

@@ -18,11 +18,11 @@ from __future__ import annotations
 
 import argparse
 
-from harness2 import api
-from harness2 import i18n as I18N
-from harness2.cli import _common as C
-from harness2.cli._common import make_adapter
-from harness2.preflight import check
+from sec_agent_harness2 import api
+from sec_agent_harness2 import i18n as I18N
+from sec_agent_harness2.cli import _common as C
+from sec_agent_harness2.cli._common import make_adapter
+from sec_agent_harness2.preflight import check
 
 
 def main(argv=None):

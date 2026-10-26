@@ -3,7 +3,7 @@ import { ExecutorStatusResponse } from '../../types';
 export type DrawerTabId = 'unified' | 'claude' | 'oc' | 'cx' | 'vertex';
 
 export interface ExecutorFormValues {
-  // 0. Unified API (HARNESS2_API_*)
+  // 0. Unified API (SEC_AGENT_HARNESS2_API_*)
   unifiedBaseUrl: string;
   unifiedApiKey: string;
   unifiedModel: string;

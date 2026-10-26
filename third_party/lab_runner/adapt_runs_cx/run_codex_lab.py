@@ -44,9 +44,9 @@ CONFIG_TOML_TEMPLATE = """\
 # Per-run CODEX_HOME (throwaway; codex writes a [projects] trust entry into this file).
 # Endpoint and model are supplied by the adapter from user configuration.
 model = "{model}"
-model_provider = "harness2"
+model_provider = "sec_agent_harness2"
 
-[model_providers.harness2]
+[model_providers.sec_agent_harness2]
 name = "Configured Responses endpoint"
 base_url = "{base_url}"
 wire_api = "responses"

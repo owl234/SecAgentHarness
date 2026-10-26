@@ -83,8 +83,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               {tx(
-                'Claude 模型 ID (HARNESS2_CLAUDE_MODEL · 留空默认复用统一 API 模型)',
-                'Claude Model ID (HARNESS2_CLAUDE_MODEL · blank inherits Unified API model)'
+                'Claude 模型 ID (SEC_AGENT_HARNESS2_CLAUDE_MODEL · 留空默认复用统一 API 模型)',
+                'Claude Model ID (SEC_AGENT_HARNESS2_CLAUDE_MODEL · blank inherits Unified API model)'
               )}
             </label>
             <input
@@ -119,8 +119,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
                 <Sparkles className="w-4 h-4 text-amber-500" />
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {tx(
-                    '推理强度档位 (HARNESS2_CLAUDE_EFFORT · 传递为 clawgod --effort)',
-                    'Reasoning Effort (HARNESS2_CLAUDE_EFFORT · passed as clawgod --effort)'
+                    '推理强度档位 (SEC_AGENT_HARNESS2_CLAUDE_EFFORT · 传递为 clawgod --effort)',
+                    'Reasoning Effort (SEC_AGENT_HARNESS2_CLAUDE_EFFORT · passed as clawgod --effort)'
                   )}
                 </span>
               </div>
@@ -169,7 +169,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {tx('专属端点覆盖 (HARNESS2_CLAUDE_BASE_URL)', 'Endpoint Override (HARNESS2_CLAUDE_BASE_URL)')}
+                {tx('专属端点覆盖 (SEC_AGENT_HARNESS2_CLAUDE_BASE_URL)', 'Endpoint Override (SEC_AGENT_HARNESS2_CLAUDE_BASE_URL)')}
               </label>
               <input
                 type="text"
@@ -189,7 +189,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {tx('线协议 (HARNESS2_CLAUDE_PROTOCOL)', 'Wire Protocol (HARNESS2_CLAUDE_PROTOCOL)')}
+                {tx('线协议 (SEC_AGENT_HARNESS2_CLAUDE_PROTOCOL)', 'Wire Protocol (SEC_AGENT_HARNESS2_CLAUDE_PROTOCOL)')}
               </label>
               <select
                 value={form.claudeProtocol}
@@ -211,8 +211,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
                 <Key className="w-3.5 h-3.5 text-slate-400" />
                 <span>
                   {tx(
-                    '专属密钥覆盖 (HARNESS2_CLAUDE_API_KEY / ANTHROPIC_API_KEY)',
-                    'API Key Override (HARNESS2_CLAUDE_API_KEY / ANTHROPIC_API_KEY)'
+                    '专属密钥覆盖 (SEC_AGENT_HARNESS2_CLAUDE_API_KEY / ANTHROPIC_API_KEY)',
+                    'API Key Override (SEC_AGENT_HARNESS2_CLAUDE_API_KEY / ANTHROPIC_API_KEY)'
                   )}
                 </span>
               </label>
@@ -255,8 +255,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
                 {activeExecutor.cli_available
                   ? activeExecutor.cli_path
                   : tx(
-                      '未安装 · 请运行 harness2 setup <bench> --substrate claude',
-                      'Not installed · Run harness2 setup <bench> --substrate claude'
+                      '未安装 · 请运行 sec-agent-harness2 setup <bench> --substrate claude',
+                      'Not installed · Run sec-agent-harness2 setup <bench> --substrate claude'
                     )}
               </div>
             </div>
@@ -283,15 +283,15 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               {tx(
-                'OpenCode 求解器模型 (HARNESS2_SOLVER_MODEL · 需带 provider/ 前缀)',
-                'OpenCode Solver Model (HARNESS2_SOLVER_MODEL · with provider/ prefix)'
+                'OpenCode 求解器模型 (SEC_AGENT_HARNESS2_SOLVER_MODEL · 需带 provider/ 前缀)',
+                'OpenCode Solver Model (SEC_AGENT_HARNESS2_SOLVER_MODEL · with provider/ prefix)'
               )}
             </label>
             <input
               type="text"
               value={form.ocModel}
               onChange={(e) => updateForm({ ocModel: e.target.value })}
-              placeholder="harness2/claude-sonnet-4-6"
+              placeholder="sec_agent_harness2/claude-sonnet-4-6"
               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
             />
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -312,8 +312,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
             </div>
             <p className="text-[11px] text-slate-400 mt-1.5">
               {tx(
-                '当配置了统一 API (HARNESS2_API_BASE_URL) 时，系统会自动通过 OPENCODE_CONFIG_CONTENT 注入名为 harness2 的 Provider 块。',
-                'When HARNESS2_API_BASE_URL is set, Harness² automatically injects the "harness2" provider block via OPENCODE_CONFIG_CONTENT.'
+                '当配置了统一 API (SEC_AGENT_HARNESS2_API_BASE_URL) 时，系统会自动通过 OPENCODE_CONFIG_CONTENT 注入名为 sec_agent_harness2 的 Provider 块。',
+                'When SEC_AGENT_HARNESS2_API_BASE_URL is set, Harness² automatically injects the "sec_agent_harness2" provider block via OPENCODE_CONFIG_CONTENT.'
               )}
             </p>
           </div>
@@ -322,8 +322,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                 {tx(
-                  '专属端点覆盖 (HARNESS2_OPENCODE_BASE_URL)',
-                  'Endpoint Override (HARNESS2_OPENCODE_BASE_URL)'
+                  '专属端点覆盖 (SEC_AGENT_HARNESS2_OPENCODE_BASE_URL)',
+                  'Endpoint Override (SEC_AGENT_HARNESS2_OPENCODE_BASE_URL)'
                 )}
               </label>
               <input
@@ -344,7 +344,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {tx('SDK 协议包 (HARNESS2_OPENCODE_PROTOCOL)', 'SDK Protocol (HARNESS2_OPENCODE_PROTOCOL)')}
+                {tx('SDK 协议包 (SEC_AGENT_HARNESS2_OPENCODE_PROTOCOL)', 'SDK Protocol (SEC_AGENT_HARNESS2_OPENCODE_PROTOCOL)')}
               </label>
               <select
                 value={form.ocProtocol}
@@ -362,7 +362,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
 
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {tx('专属 API Key 覆盖 (HARNESS2_OPENCODE_API_KEY)', 'API Key Override (HARNESS2_OPENCODE_API_KEY)')}
+              {tx('专属 API Key 覆盖 (SEC_AGENT_HARNESS2_OPENCODE_API_KEY)', 'API Key Override (SEC_AGENT_HARNESS2_OPENCODE_API_KEY)')}
             </label>
             <input
               type={showApiKey ? 'text' : 'password'}
@@ -394,8 +394,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
                   <Activity className="w-4 h-4 text-emerald-500" />
                   <span className="text-xs font-bold text-slate-900 dark:text-white">
                     {tx(
-                      '内置 Responses 协议转换桥 (harness2-responses-bridge)',
-                      'Built-in Responses Wire Bridge (harness2-responses-bridge)'
+                      '内置 Responses 协议转换桥 (sec-agent-harness2-responses-bridge)',
+                      'Built-in Responses Wire Bridge (sec-agent-harness2-responses-bridge)'
                     )}
                   </span>
                   <span
@@ -511,8 +511,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               {tx(
-                'Codex 模型 ID (HARNESS2_CODEX_MODEL · 不带 provider 前缀)',
-                'Codex Model ID (HARNESS2_CODEX_MODEL · without provider prefix)'
+                'Codex 模型 ID (SEC_AGENT_HARNESS2_CODEX_MODEL · 不带 provider 前缀)',
+                'Codex Model ID (SEC_AGENT_HARNESS2_CODEX_MODEL · without provider prefix)'
               )}
             </label>
             <input
@@ -543,7 +543,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {tx('Responses 端点 (HARNESS2_CODEX_BASE_URL)', 'Responses Endpoint (HARNESS2_CODEX_BASE_URL)')}
+                {tx('Responses 端点 (SEC_AGENT_HARNESS2_CODEX_BASE_URL)', 'Responses Endpoint (SEC_AGENT_HARNESS2_CODEX_BASE_URL)')}
               </label>
               <input
                 type="text"
@@ -564,8 +564,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                 {tx(
-                  '容器内端点 (HARNESS2_CODEX_CONTAINER_URL · 可选)',
-                  'Container Endpoint (HARNESS2_CODEX_CONTAINER_URL)'
+                  '容器内端点 (SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL · 可选)',
+                  'Container Endpoint (SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL)'
                 )}
               </label>
               <input
@@ -580,7 +580,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
 
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              {tx('Codex 鉴权密钥 (HARNESS2_CODEX_API_KEY)', 'Codex API Key (HARNESS2_CODEX_API_KEY)')}
+              {tx('Codex 鉴权密钥 (SEC_AGENT_HARNESS2_CODEX_API_KEY)', 'Codex API Key (SEC_AGENT_HARNESS2_CODEX_API_KEY)')}
             </label>
             <input
               type={showApiKey ? 'text' : 'password'}
@@ -592,7 +592,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
                       `已配置 (${activeExecutor.api_key_masked || '继承自统一API'}) · 留空保持不变`,
                       `Configured (${activeExecutor.api_key_masked || 'Inherited'}) · Leave blank to keep`
                     )
-                  : tx('留空默认继承 HARNESS2_API_KEY', 'Blank inherits HARNESS2_API_KEY')
+                  : tx('留空默认继承 SEC_AGENT_HARNESS2_API_KEY', 'Blank inherits SEC_AGENT_HARNESS2_API_KEY')
               }
               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
             />
@@ -608,7 +608,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {tx('改进器模型 (HARNESS2_IMPROVER_MODEL)', 'Improver Model (HARNESS2_IMPROVER_MODEL)')}
+                {tx('改进器模型 (SEC_AGENT_HARNESS2_IMPROVER_MODEL)', 'Improver Model (SEC_AGENT_HARNESS2_IMPROVER_MODEL)')}
               </label>
               <input
                 type="text"
@@ -634,7 +634,7 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                {tx('双盲裁判模型 (HARNESS2_JUDGE_MODEL)', 'Blind Judge Model (HARNESS2_JUDGE_MODEL)')}
+                {tx('双盲裁判模型 (SEC_AGENT_HARNESS2_JUDGE_MODEL)', 'Blind Judge Model (SEC_AGENT_HARNESS2_JUDGE_MODEL)')}
               </label>
               <input
                 type="text"
@@ -662,8 +662,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                 {tx(
-                  '裁判专属端点 (HARNESS2_JUDGE_BASE_URL · 可选)',
-                  'Judge Endpoint (HARNESS2_JUDGE_BASE_URL)'
+                  '裁判专属端点 (SEC_AGENT_HARNESS2_JUDGE_BASE_URL · 可选)',
+                  'Judge Endpoint (SEC_AGENT_HARNESS2_JUDGE_BASE_URL)'
                 )}
               </label>
               <input
@@ -678,8 +678,8 @@ export const SubstrateConfigTab: React.FC<SubstrateConfigTabProps> = ({
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                 {tx(
-                  '裁判专属密钥 (HARNESS2_JUDGE_API_KEY · 可选)',
-                  'Judge API Key (HARNESS2_JUDGE_API_KEY)'
+                  '裁判专属密钥 (SEC_AGENT_HARNESS2_JUDGE_API_KEY · 可选)',
+                  'Judge API Key (SEC_AGENT_HARNESS2_JUDGE_API_KEY)'
                 )}
               </label>
               <input

@@ -177,7 +177,7 @@ def workbuddy_models(*, dry_run=False):
             "model": {
                 "name": "google/" + model,
                 "protocols": ["openai"],
-                "backend_url_env": "HARNESS2_WB_VERTEX_URL",
+                "backend_url_env": "SEC_AGENT_HARNESS2_WB_VERTEX_URL",
                 "backend_key_command": "gcloud auth application-default print-access-token",
                 "backend_key_ttl": 1800,
                 "thought_signature_passback": True,
@@ -275,7 +275,7 @@ def main() -> int:
         not args
         or args[0] != "exec"
         or any(f in args for f in ("-V", "--version", "-h", "--help"))
-        or os.environ.get("HARNESS2_NO_CODEX_SHIM")
+        or os.environ.get("SEC_AGENT_HARNESS2_NO_CODEX_SHIM")
     ):
         os.execv(str(REAL_BIN), [str(REAL_BIN), *args])
 
@@ -406,14 +406,14 @@ def _share_with_containers(root: Path) -> None:
 
 
 CODEX_CONFIG_REMEDY = "rerun harness2-setup <bench> --substrate cx"
-CODEX_PROVIDER = "harness2"
+CODEX_PROVIDER = "sec_agent_harness2"
 
 
 def configure_codex(*, dry_run=False):
     endpoint = api.codex()
     if endpoint is None or not endpoint.base_url:
         raise config.ConfigError(
-            "HARNESS2_CODEX_BASE_URL (or HARNESS2_API_BASE_URL) is required for Codex setup; "
+            "SEC_AGENT_HARNESS2_CODEX_BASE_URL (or SEC_AGENT_HARNESS2_API_BASE_URL) is required for Codex setup; "
             "see .env.example"
         )
     body = (
@@ -434,7 +434,7 @@ def codex_config_error() -> str | None:
 
     `configure_codex` bakes the endpoint and the model into a file that the Codex CLI
     reads at rollout time, and setup is the only thing that writes it. Nothing else
-    re-reads `HARNESS2_CODEX_BASE_URL` / `HARNESS2_CODEX_MODEL` afterwards, so callers
+    re-reads `SEC_AGENT_HARNESS2_CODEX_BASE_URL` / `SEC_AGENT_HARNESS2_CODEX_MODEL` afterwards, so callers
     verify the derived file here before a rollout is paid for -- otherwise a changed
     endpoint is silently ignored and the run contacts the stale one. Returns None when
     the file agrees with the environment, else a message naming the remedy.
@@ -574,7 +574,7 @@ def download_jobbench(*, dry_run=False):
     """
     repo = config.jb_repo()
     dest = repo / "dataset" / "main"
-    if (dest / ".harness2-download.json").is_file():
+    if (dest / ".sec_agent_harness2-download.json").is_file():
         return
 
     code = """from huggingface_hub import HfApi, snapshot_download
@@ -600,4 +600,4 @@ open(sys.argv[1]+"/revision.json", "w").write(json.dumps({"revision": revision})
         if dest.exists():
             dest.rmdir()
         staged.rename(dest)
-        shutil.copy2(Path(tmp) / "revision.json", dest / ".harness2-download.json")
+        shutil.copy2(Path(tmp) / "revision.json", dest / ".sec_agent_harness2-download.json")

@@ -25,8 +25,8 @@ missing judge after the sweep means paying for the sweep twice. The check is off
 judge model must be named and a benchmark that grades in its own environment must have it
 installed — so it catches an unset or unbuilt judge, not one an account cannot serve.
 
-    python3 -m harness2.cli.run_sweep --bench jb --substrate oc --k 2 --split all
-    python3 -m harness2.cli.run_sweep --bench wb --subset web --substrate cx \\
+    python3 -m sec_agent_harness2.cli.run_sweep --bench jb --substrate oc --k 2 --split all
+    python3 -m sec_agent_harness2.cli.run_sweep --bench wb --subset web --substrate cx \\
         --k 1 --split all --seed 7 --modes parallel --max-tasks 2 --dry-run
 """
 
@@ -48,7 +48,7 @@ from . import _common as C
 def _build_parser() -> argparse.ArgumentParser:
     lang = I18N.get_lang()
     p = argparse.ArgumentParser(
-        prog="harness2.cli.run_sweep", description=I18N.t("sweep.desc", lang), formatter_class=C.HelpFormatter
+        prog="sec_agent_harness2.cli.run_sweep", description=I18N.t("sweep.desc", lang), formatter_class=C.HelpFormatter
     )
     C.add_cell_args(p.add_argument_group(I18N.t("sweep.group_cell", lang)))
     C.add_run_identity_args(p.add_argument_group(I18N.t("sweep.group_identity", lang)))
@@ -221,7 +221,7 @@ def _main(args: argparse.Namespace) -> int:
     print(I18N.t("sweep.record", lang, rec=rec))
     lang = I18N.resolve_lang(args)
     print(
-        I18N.t("sweep.next", lang) + f"   python3 -m harness2.cli.judge --bench {args.bench}"
+        I18N.t("sweep.next", lang) + f"   python3 -m sec_agent_harness2.cli.judge --bench {args.bench}"
         + (f" --subset {args.subset}" if args.subset else "")
         + f" --substrate {args.substrate} --k {args.k}"
         + (f" --seed {args.seed}" if args.seed is not None else "")

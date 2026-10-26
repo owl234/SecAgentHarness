@@ -337,7 +337,7 @@ class OpencodeSubstrate:
         """The reference permission fence and output-token ceiling; see run_argv. Without
         OPENCODE_PERMISSION the session auto-rejects reads of its own working tree.
 
-        A shared HARNESS2_API_* endpoint becomes an OPENCODE_CONFIG_CONTENT provider
+        A shared SEC_AGENT_HARNESS2_API_* endpoint becomes an OPENCODE_CONFIG_CONTENT provider
         block, which OpenCode merges after every file config.
         """
         allow = {"*": "deny", str(workspace): "allow", f"{workspace}/**": "allow"}

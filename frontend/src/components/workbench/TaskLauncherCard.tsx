@@ -550,8 +550,8 @@ export const TaskLauncherCard: React.FC<TaskLauncherCardProps> = ({
                       <div>
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                           {tx(
-                            'Claude 推理强度 (HARNESS2_CLAUDE_EFFORT)',
-                            'Claude Reasoning Effort (HARNESS2_CLAUDE_EFFORT)'
+                            'Claude 推理强度 (SEC_AGENT_HARNESS2_CLAUDE_EFFORT)',
+                            'Claude Reasoning Effort (SEC_AGENT_HARNESS2_CLAUDE_EFFORT)'
                           )}
                         </label>
                         <select

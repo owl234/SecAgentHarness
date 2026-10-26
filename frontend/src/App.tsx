@@ -38,12 +38,12 @@ export const App: React.FC = () => {
 
   // Theme state: 'dark' | 'light'
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const saved = localStorage.getItem('harness2_theme');
+    const saved = localStorage.getItem('sec_agent_harness2_theme');
     return saved === 'light' || saved === 'dark' ? saved : 'dark';
   });
 
   useEffect(() => {
-    localStorage.setItem('harness2_theme', theme);
+    localStorage.setItem('sec_agent_harness2_theme', theme);
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {

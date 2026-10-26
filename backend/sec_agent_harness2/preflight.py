@@ -104,7 +104,7 @@ def check(adapter, *, judge=False) -> list[str]:
         )
         if not config.JB_JUDGE_API_BASE:
             errors.append(
-                "Set GOOGLE_CLOUD_PROJECT or HARNESS2_JUDGE_BASE_URL for JobBench judging"
+                "Set GOOGLE_CLOUD_PROJECT or SEC_AGENT_HARNESS2_JUDGE_BASE_URL for JobBench judging"
             )
         if (
             config.JUDGE_MODEL
@@ -112,7 +112,7 @@ def check(adapter, *, judge=False) -> list[str]:
             and not config.JUDGE_MODEL.startswith("gemini")
         ):
             errors.append(
-                "A non-Gemini JobBench judge requires HARNESS2_JUDGE_BASE_URL and HARNESS2_JUDGE_API_KEY"
+                "A non-Gemini JobBench judge requires SEC_AGENT_HARNESS2_JUDGE_BASE_URL and SEC_AGENT_HARNESS2_JUDGE_API_KEY"
             )
     elif bench == "wb":
         probe("Docker daemon", ["docker", "info", "--format", "{{.ServerVersion}}"])
@@ -148,7 +148,7 @@ def check(adapter, *, judge=False) -> list[str]:
 def require_ready(adapter, *, judge=False):
     """Raise before a caller spends anything when this benchmark is not ready to run.
 
-    `judge=True` also demands what grading will need: `HARNESS2_JUDGE_MODEL` set, and,
+    `judge=True` also demands what grading will need: `SEC_AGENT_HARNESS2_JUDGE_MODEL` set, and,
     where a benchmark grades in its own environment, that environment installed and
     pointed at an endpoint. Those are offline presence and import checks — they catch an
     unset or unbuilt judge, not an account that cannot serve the judge model, which is

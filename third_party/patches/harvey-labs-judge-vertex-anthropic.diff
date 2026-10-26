@@ -9,8 +9,8 @@ index ffad89de..6594d6ed 100644
 -    """Return 'anthropic', 'google', 'openai', or 'mistral' from the model name."""
 +    """Return 'vertex-anthropic', 'anthropic', 'google', 'openai', 'openai-chat', or 'mistral'."""
      name = model.lower()
-+    if os.environ.get("HARNESS2_JUDGE_BASE_URL") or (
-+        os.environ.get("HARNESS2_API_BASE_URL") and not name.startswith("vertex/")
++    if os.environ.get("SEC_AGENT_SEC_AGENT_HARNESS2_JUDGE_BASE_URL") or (
++        os.environ.get("SEC_AGENT_SEC_AGENT_HARNESS2_API_BASE_URL") and not name.startswith("vertex/")
 +    ):
 +        return "openai-chat"
 +    if name.startswith("vertex/gemini"):
@@ -50,12 +50,12 @@ index ffad89de..6594d6ed 100644
          elif self.provider == "openai":
              self.client = openai.OpenAI()
 +        elif self.provider == "openai-chat":
-+            base_url = os.environ.get("HARNESS2_JUDGE_BASE_URL") or os.environ.get(
-+                "HARNESS2_API_BASE_URL"
++            base_url = os.environ.get("SEC_AGENT_SEC_AGENT_HARNESS2_JUDGE_BASE_URL") or os.environ.get(
++                "SEC_AGENT_SEC_AGENT_HARNESS2_API_BASE_URL"
 +            )
 +            api_key = (
-+                os.environ.get("HARNESS2_JUDGE_API_KEY")
-+                or os.environ.get("HARNESS2_API_KEY")
++                os.environ.get("SEC_AGENT_SEC_AGENT_HARNESS2_JUDGE_API_KEY")
++                or os.environ.get("SEC_AGENT_SEC_AGENT_HARNESS2_API_KEY")
 +                or os.environ.get("OPENAI_API_KEY")
 +                or "unused"
 +            )

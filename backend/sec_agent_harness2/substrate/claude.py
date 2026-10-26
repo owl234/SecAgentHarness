@@ -119,7 +119,7 @@ def mcp_config_json(harness_dir: Path | None) -> str:
 def find_claude_binary() -> Path:
     """Find the project-local Claude Code binary (clawgod) or explicit override."""
     # 1. Explicit env override
-    custom = os.environ.get("HARNESS2_CLAWGOD_PATH")
+    custom = os.environ.get("SEC_AGENT_HARNESS2_CLAWGOD_PATH")
     if custom and Path(custom).is_file() and os.access(custom, os.X_OK):
         return Path(custom)
 
@@ -233,7 +233,7 @@ class ClaudeSubstrate:
     def exec_env(self, base_env: Mapping[str, str], *, workspace: Path | None = None) -> dict[str, str]:
         """Build the execution environment for Claude Code / clawgod.
 
-        The shared HARNESS2_API_* pair (or the per-substrate ANTHROPIC_* / HARNESS2_CLAUDE_*)
+        The shared SEC_AGENT_HARNESS2_API_* pair (or the per-substrate ANTHROPIC_* / SEC_AGENT_HARNESS2_CLAUDE_*)
         is mapped onto the variables clawgod reads. Values already in `base_env` win.
         """
         env = dict(base_env)

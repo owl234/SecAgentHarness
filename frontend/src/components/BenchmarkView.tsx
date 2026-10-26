@@ -111,7 +111,7 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({
                 '基准测试打分通常在 Sweep 跑完后由 ',
                 'Benchmark grading is executed after a sweep via '
               )}
-              <code className="text-blue-600 dark:text-blue-400 font-mono">harness2-judge</code>
+              <code className="text-blue-600 dark:text-blue-400 font-mono">sec-agent-harness2-judge</code>
               {tx(
                 ' 独立执行。本地 Demo 任务关注的是确定性递归优化机制与交付物，无需独立大模型裁决打分。',
                 '. Offline Demo runs verify deterministic Propose–Probe–Compose mechanics without requiring an external LLM judge.'

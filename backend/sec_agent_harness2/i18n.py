@@ -16,14 +16,14 @@
 """Central bilingual (EN/ZH) string table for Harness2 CLIs and user-facing errors.
 
 Usage:
-    from harness2 import i18n
+    from sec_agent_harness2 import i18n
     lang = i18n.get_lang(args.lang)          # 'en' (default) | 'zh'
     parser.add_argument("--host", help=i18n.t("ui.host", lang))
 
 Language resolution order (first hit wins):
     1. explicit `override` argument (i.e. --lang zh)
     2. `--lang <v>` / `--lang=<v>` pre-scan of sys.argv (so --help itself is translated)
-    3. $HARNESS2_LANG
+    3. $SEC_AGENT_HARNESS2_LANG
     4. $LANG / $LANGUAGE (e.g. zh_CN.UTF-8 -> zh)
     5. 'en' (default; keeps scripts and tests stable)
 
@@ -32,7 +32,7 @@ Conventions:
     - t() never raises: unknown keys return the key itself.
     - Machine-readable tokens (bench names, on-disk agg/seq, JSON keys,
       routes, file names) are NEVER translated; only human prose is.
-    - Model-facing prompts (harness2/core/prompts.py) are intentionally
+    - Model-facing prompts (sec_agent_harness2/core/prompts.py) are intentionally
       excluded — see the DO NOT TRANSLATE note there.
 """
 
@@ -147,8 +147,8 @@ _STR: dict[str, tuple[str, str]] = {
     "sweep.record": ("record: {rec}", "记录：{rec}"),
     "sweep.err_identity": (
         "This run directory belongs to different models or tasks. "
-        "Choose a new HARNESS2_RUNS_DIR for a new experiment.",
-        "该运行目录属于不同的模型或任务。请为新实验选择新的 HARNESS2_RUNS_DIR。",
+        "Choose a new SEC_AGENT_HARNESS2_RUNS_DIR for a new experiment.",
+        "该运行目录属于不同的模型或任务。请为新实验选择新的 SEC_AGENT_HARNESS2_RUNS_DIR。",
     ),
     # ---------- judge ----------
     "judge.desc": (
@@ -176,8 +176,8 @@ _STR: dict[str, tuple[str, str]] = {
     ),
     "judge.wrote": ("wrote {o}: {n} row(s), {g} graded", "已写入 {o}：共 {n} 行，已评分 {g} 行"),
     "judge.err_model_changed": (
-        "Judge model changed for this experiment; choose a new HARNESS2_RUNS_DIR",
-        "本实验的裁判模型已变更；请选择新的 HARNESS2_RUNS_DIR",
+        "Judge model changed for this experiment; choose a new SEC_AGENT_HARNESS2_RUNS_DIR",
+        "本实验的裁判模型已变更；请选择新的 SEC_AGENT_HARNESS2_RUNS_DIR",
     ),
     "judge.err_nothing": (
         "nothing to judge: {d} does not exist — has the sweep `{ns}` run on this machine?",
@@ -317,12 +317,12 @@ _STR: dict[str, tuple[str, str]] = {
         "上游超时时间（秒）",
     ),
     "responses_bridge.no_upstream": (
-        "Set --upstream or HARNESS2_API_BASE_URL",
-        "请设置 --upstream 或 HARNESS2_API_BASE_URL",
+        "Set --upstream or SEC_AGENT_HARNESS2_API_BASE_URL",
+        "请设置 --upstream 或 SEC_AGENT_HARNESS2_API_BASE_URL",
     ),
     "responses_bridge.no_key": (
-        "Set --api-key or HARNESS2_API_KEY",
-        "请设置 --api-key 或 HARNESS2_API_KEY",
+        "Set --api-key or SEC_AGENT_HARNESS2_API_KEY",
+        "请设置 --api-key 或 SEC_AGENT_HARNESS2_API_KEY",
     ),
     "responses_bridge.hint": (
         "Add these to .env (Codex reads them through CODEX_HOME):",
@@ -452,13 +452,13 @@ def get_lang(override: str | None = None, argv: list[str] | None = None) -> str:
     pre = _prescan_argv(argv)
     if pre:
         return normalize(pre)
-    for env in ("HARNESS2_LANG", "LANGUAGE", "LANG"):
+    for env in ("SEC_AGENT_HARNESS2_LANG", "LANGUAGE", "LANG"):
         val = os.environ.get(env, "")
         if val:
             # LANG is often like zh_CN.UTF-8
             if normalize(val) == "zh":
                 return "zh"
-            if env == "HARNESS2_LANG":
+            if env == "SEC_AGENT_HARNESS2_LANG":
                 return normalize(val)
     return "en"
 

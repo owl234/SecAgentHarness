@@ -1651,21 +1651,21 @@ def sync_config_from_env() -> None:
     from .. import config
 
     config.VERTEX_PROJECT = config.env(
-        "GOOGLE_CLOUD_PROJECT", config.env("HARNESS2_VERTEX_PROJECT", "")
+        "GOOGLE_CLOUD_PROJECT", config.env("SEC_AGENT_HARNESS2_VERTEX_PROJECT", "")
     )
     config.VERTEX_REGION = config.env("GOOGLE_CLOUD_LOCATION", "global")
-    config.API_BASE_URL = config.env("HARNESS2_API_BASE_URL", "")
-    config.API_KEY = config.env("HARNESS2_API_KEY", "")
-    config.API_MODEL = config.env("HARNESS2_API_MODEL", "")
+    config.API_BASE_URL = config.env("SEC_AGENT_HARNESS2_API_BASE_URL", "")
+    config.API_KEY = config.env("SEC_AGENT_HARNESS2_API_KEY", "")
+    config.API_MODEL = config.env("SEC_AGENT_HARNESS2_API_MODEL", "")
     config.SOLVER_MODEL_OC = config._solver_model_oc()
     config.SOLVER_MODEL_CX = config.env(
-        "HARNESS2_CODEX_MODEL", config.SOLVER_MODEL_OC.split("/", 1)[-1]
+        "SEC_AGENT_HARNESS2_CODEX_MODEL", config.SOLVER_MODEL_OC.split("/", 1)[-1]
     )
     config.SOLVER_MODEL_CLAUDE = config.env(
-        "HARNESS2_CLAUDE_MODEL", config.API_MODEL or "claude-3-7-sonnet-20250219"
+        "SEC_AGENT_HARNESS2_CLAUDE_MODEL", config.API_MODEL or "claude-3-7-sonnet-20250219"
     )
-    config.IMPROVER_MODEL = config.env("HARNESS2_IMPROVER_MODEL", config.SOLVER_MODEL_OC)
-    config.JUDGE_MODEL = config.env("HARNESS2_JUDGE_MODEL", "")
+    config.IMPROVER_MODEL = config.env("SEC_AGENT_HARNESS2_IMPROVER_MODEL", config.SOLVER_MODEL_OC)
+    config.JUDGE_MODEL = config.env("SEC_AGENT_HARNESS2_JUDGE_MODEL", "")
     config.PROPOSER_MODEL_BY_CHANNEL = {
         "opencode": config.IMPROVER_MODEL,
         "claude_cli": config.IMPROVER_MODEL,
@@ -1680,10 +1680,10 @@ def sync_config_from_env() -> None:
         f"/locations/{config.VERTEX_REGION}/endpoints/openapi"
     )
     config.JB_JUDGE_API_BASE = config.env(
-        "HARNESS2_JUDGE_BASE_URL",
+        "SEC_AGENT_HARNESS2_JUDGE_BASE_URL",
         config.VERTEX_OPENAI_URL if config.VERTEX_PROJECT else "",
     )
-    config.JB_JUDGE_API_KEY = config.env("HARNESS2_JUDGE_API_KEY", "")
+    config.JB_JUDGE_API_KEY = config.env("SEC_AGENT_HARNESS2_JUDGE_API_KEY", "")
     config.LAB_JUDGE_MODEL = (
         "vertex/" + config.JUDGE_MODEL
         if config.JUDGE_MODEL.startswith(("claude", "gemini"))
@@ -1691,12 +1691,12 @@ def sync_config_from_env() -> None:
     )
     config.JB_JUDGE_MODEL = (
         "google/" + config.JUDGE_MODEL
-        if config.JUDGE_MODEL.startswith("gemini") and not config.env("HARNESS2_JUDGE_BASE_URL")
+        if config.JUDGE_MODEL.startswith("gemini") and not config.env("SEC_AGENT_HARNESS2_JUDGE_BASE_URL")
         else config.JUDGE_MODEL
     )
-    config.CODEX_BASE_URL = config.env("HARNESS2_CODEX_BASE_URL", config.API_BASE_URL)
-    config.CODEX_CONTAINER_URL = config.env("HARNESS2_CODEX_CONTAINER_URL", config.CODEX_BASE_URL)
-    config.VERTEX_PROXY_KEY = config.env("HARNESS2_CODEX_API_KEY", config.API_KEY)
+    config.CODEX_BASE_URL = config.env("SEC_AGENT_HARNESS2_CODEX_BASE_URL", config.API_BASE_URL)
+    config.CODEX_CONTAINER_URL = config.env("SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL", config.CODEX_BASE_URL)
+    config.VERTEX_PROXY_KEY = config.env("SEC_AGENT_HARNESS2_CODEX_API_KEY", config.API_KEY)
 
 
 def persist_env_updates(
@@ -1813,7 +1813,7 @@ def get_bridge_status(workspace_root: Path, managed_info: dict[str, Any] | None 
     port = (managed_info or {}).get("port") or saved.get("port")
     host = (managed_info or {}).get("host") or "127.0.0.1"
     key = saved.get("key") or ""
-    upstream = (managed_info or {}).get("upstream") or os.environ.get("HARNESS2_API_BASE_URL", "")
+    upstream = (managed_info or {}).get("upstream") or os.environ.get("SEC_AGENT_HARNESS2_API_BASE_URL", "")
     running = False
 
     if port:
@@ -1886,7 +1886,7 @@ def probe_executor_endpoint(
         ) if config.JB_JUDGE_API_BASE else None
     else:
         # unified
-        default_proto = os.environ.get("HARNESS2_API_PROTOCOL") or "openai-chat"
+        default_proto = os.environ.get("SEC_AGENT_HARNESS2_API_PROTOCOL") or "openai-chat"
         default_model = config.API_MODEL
         ep = (
             api.Endpoint(
@@ -1903,7 +1903,7 @@ def probe_executor_endpoint(
     eff_key = (api_key if api_key is not None and api_key.strip() else (ep.api_key if ep else "")).strip()
     if not eff_key and target == "claude":
         eff_key = (
-            os.environ.get("HARNESS2_CLAUDE_API_KEY")
+            os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_API_KEY")
             or os.environ.get("ANTHROPIC_AUTH_TOKEN")
             or os.environ.get("ANTHROPIC_API_KEY", "")
         ).strip()
@@ -2033,10 +2033,10 @@ def get_executors_status(
     from ..substrate.claude import find_claude_binary
 
     # 0. Unified API & Bridge inspection
-    unified_base_url = os.environ.get("HARNESS2_API_BASE_URL", "")
-    unified_key = os.environ.get("HARNESS2_API_KEY", "")
-    unified_model = os.environ.get("HARNESS2_API_MODEL", "")
-    unified_protocol = os.environ.get("HARNESS2_API_PROTOCOL", "")
+    unified_base_url = os.environ.get("SEC_AGENT_HARNESS2_API_BASE_URL", "")
+    unified_key = os.environ.get("SEC_AGENT_HARNESS2_API_KEY", "")
+    unified_model = os.environ.get("SEC_AGENT_HARNESS2_API_MODEL", "")
+    unified_protocol = os.environ.get("SEC_AGENT_HARNESS2_API_PROTOCOL", "")
     bridge_info = get_bridge_status(workspace_root, managed_bridge)
 
     # 1. Claude Code (clawgod) inspection
@@ -2045,18 +2045,18 @@ def get_executors_status(
     claude_bin = str(claude_binary_path) if claude_cli_ok else ""
     ep_claude = api.claude()
     claude_raw_key = (
-        os.environ.get("HARNESS2_CLAUDE_API_KEY")
+        os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_API_KEY")
         or os.environ.get("ANTHROPIC_AUTH_TOKEN")
         or os.environ.get("ANTHROPIC_API_KEY", "")
     )
     claude_has_key = bool((ep_claude and ep_claude.api_key) or claude_raw_key)
     claude_model = config.SOLVER_MODEL_CLAUDE
-    claude_model_override = os.environ.get("HARNESS2_CLAUDE_MODEL", "")
-    claude_effort = os.environ.get("HARNESS2_CLAUDE_EFFORT", "high") or "high"
-    claude_base_override = os.environ.get("HARNESS2_CLAUDE_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL", "")
-    claude_proto_override = os.environ.get("HARNESS2_CLAUDE_PROTOCOL", "")
+    claude_model_override = os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_MODEL", "")
+    claude_effort = os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_EFFORT", "high") or "high"
+    claude_base_override = os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL", "")
+    claude_proto_override = os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_PROTOCOL", "")
     claude_effective_proto = ep_claude.protocol if ep_claude else (claude_proto_override or "anthropic")
-    claude_using_unified = bool(unified_base_url and not os.environ.get("HARNESS2_CLAUDE_BASE_URL"))
+    claude_using_unified = bool(unified_base_url and not os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_BASE_URL"))
 
     if claude_cli_ok and claude_has_key:
         claude_status = "ready"
@@ -2072,7 +2072,7 @@ def get_executors_status(
         )
     else:
         claude_status = "needs_config"
-        claude_msg = "clawgod CLI 已就绪，待配置统一 API (HARNESS2_API_*) 或 ANTHROPIC_API_KEY"
+        claude_msg = "clawgod CLI 已就绪，待配置统一 API (SEC_AGENT_HARNESS2_API_*) 或 ANTHROPIC_API_KEY"
 
     # 2. OpenCode (oc) Substrate inspection
     opencode_dir = workspace_root / "dependencies" / "opencode"
@@ -2085,9 +2085,9 @@ def get_executors_status(
     vertex_region = config.VERTEX_REGION
     oc_has_key = bool((ep_oc and ep_oc.api_key) or vertex_project or os.environ.get("OPENAI_API_KEY"))
     oc_model = config.SOLVER_MODEL_OC
-    oc_model_override = os.environ.get("HARNESS2_SOLVER_MODEL", "")
-    oc_base_override = os.environ.get("HARNESS2_OPENCODE_BASE_URL", "")
-    oc_proto_override = os.environ.get("HARNESS2_OPENCODE_PROTOCOL", "")
+    oc_model_override = os.environ.get("SEC_AGENT_HARNESS2_SOLVER_MODEL", "")
+    oc_base_override = os.environ.get("SEC_AGENT_HARNESS2_OPENCODE_BASE_URL", "")
+    oc_proto_override = os.environ.get("SEC_AGENT_HARNESS2_OPENCODE_PROTOCOL", "")
     oc_effective_proto = ep_oc.protocol if ep_oc else (oc_proto_override or "openai-chat")
     oc_using_unified = bool(unified_base_url and not oc_base_override)
 
@@ -2102,7 +2102,7 @@ def get_executors_status(
         oc_msg = "未完成 dependencies/opencode 与 Bun 初始化（请运行 harness2 setup <bench>）"
     else:
         oc_status = "needs_config"
-        oc_msg = "OpenCode 运行时已就绪，需配置统一 API 或 HARNESS2_SOLVER_MODEL"
+        oc_msg = "OpenCode 运行时已就绪，需配置统一 API 或 SEC_AGENT_HARNESS2_SOLVER_MODEL"
 
     # 3. Codex (cx) Substrate inspection
     codex_bin_path = Path(config.CODEX_DIST) / "codex"
@@ -2110,9 +2110,9 @@ def get_executors_status(
     ep_cx = api.codex()
     cx_has_key = bool(ep_cx and ep_cx.api_key)
     cx_model = config.SOLVER_MODEL_CX
-    cx_model_override = os.environ.get("HARNESS2_CODEX_MODEL", "")
-    cx_base_override = os.environ.get("HARNESS2_CODEX_BASE_URL", "")
-    cx_container_url = os.environ.get("HARNESS2_CODEX_CONTAINER_URL", "")
+    cx_model_override = os.environ.get("SEC_AGENT_HARNESS2_CODEX_MODEL", "")
+    cx_base_override = os.environ.get("SEC_AGENT_HARNESS2_CODEX_BASE_URL", "")
+    cx_container_url = os.environ.get("SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL", "")
     cx_using_unified = bool(unified_base_url and not cx_base_override)
     toml_err = install.codex_config_error() if (cx_cli_ok or (ep_cx and ep_cx.base_url)) else "not configured"
 
@@ -2134,14 +2134,14 @@ def get_executors_status(
         cx_msg = (
             f"需配置 Responses API 端点或启动内置转换桥 ({toml_err})"
             if toml_err
-            else "待配置 HARNESS2_CODEX_BASE_URL / API_KEY"
+            else "待配置 SEC_AGENT_HARNESS2_CODEX_BASE_URL / API_KEY"
         )
 
     # 4. Improver, Judge & Vertex AI inspection
-    improver_override = os.environ.get("HARNESS2_IMPROVER_MODEL", "")
+    improver_override = os.environ.get("SEC_AGENT_HARNESS2_IMPROVER_MODEL", "")
     judge_model = config.JUDGE_MODEL
-    judge_base_override = os.environ.get("HARNESS2_JUDGE_BASE_URL", "")
-    judge_key_raw = os.environ.get("HARNESS2_JUDGE_API_KEY", "")
+    judge_base_override = os.environ.get("SEC_AGENT_HARNESS2_JUDGE_BASE_URL", "")
+    judge_key_raw = os.environ.get("SEC_AGENT_HARNESS2_JUDGE_API_KEY", "")
     vertex_ready = bool(vertex_project or (judge_model and judge_base_override) or unified_base_url)
     vertex_status = "ready" if vertex_ready else "needs_config"
     if vertex_project:
@@ -2149,11 +2149,11 @@ def get_executors_status(
     elif judge_base_override or unified_base_url:
         vertex_msg = f"使用自定义/统一 API 驱动改进器与裁判 · 改进器: {config.IMPROVER_MODEL or '未指定'} · 裁判: {judge_model or '未指定'}"
     else:
-        vertex_msg = "未设置 GOOGLE_CLOUD_PROJECT 或独立裁判端点 (HARNESS2_JUDGE_*)"
+        vertex_msg = "未设置 GOOGLE_CLOUD_PROJECT 或独立裁判端点 (SEC_AGENT_HARNESS2_JUDGE_*)"
 
     return {
         "active_executor": os.environ.get(
-            "HARNESS2_DEFAULT_EXECUTOR",
+            "SEC_AGENT_HARNESS2_DEFAULT_EXECUTOR",
             "claude" if (claude_cli_ok and claude_has_key) else "oc",
         ),
         "unified_config": {
@@ -2217,7 +2217,7 @@ def get_executors_status(
                 "cli_available": oc_cli_ok,
                 "cli_path": str(bun_bin_path) if bun_ok else "",
                 "api_key_configured": oc_has_key,
-                "api_key_masked": _mask_secret(os.environ.get("HARNESS2_OPENCODE_API_KEY") or (ep_oc.api_key if ep_oc else "")),
+                "api_key_masked": _mask_secret(os.environ.get("SEC_AGENT_HARNESS2_OPENCODE_API_KEY") or (ep_oc.api_key if ep_oc else "")),
                 "current_model": oc_model,
                 "model_override": oc_model_override,
                 "base_url": oc_base_override,
@@ -2229,8 +2229,8 @@ def get_executors_status(
                 "supported_models": [
                     "google-vertex/gemini-2.5-pro",
                     "google-vertex/gemini-2.5-flash",
-                    "harness2/claude-sonnet-4-6",
-                    "harness2/gpt-4o",
+                    "sec_agent_harness2/claude-sonnet-4-6",
+                    "sec_agent_harness2/gpt-4o",
                     "openai/gpt-4o",
                 ],
                 "capabilities": [
@@ -2249,7 +2249,7 @@ def get_executors_status(
                 "cli_available": cx_cli_ok,
                 "cli_path": str(codex_bin_path) if cx_cli_ok else "",
                 "api_key_configured": cx_has_key,
-                "api_key_masked": _mask_secret(os.environ.get("HARNESS2_CODEX_API_KEY") or (ep_cx.api_key if ep_cx else "")),
+                "api_key_masked": _mask_secret(os.environ.get("SEC_AGENT_HARNESS2_CODEX_API_KEY") or (ep_cx.api_key if ep_cx else "")),
                 "current_model": cx_model,
                 "model_override": cx_model_override,
                 "base_url": cx_base_override,
@@ -2300,8 +2300,8 @@ def get_executors_status(
                     "gpt-4o",
                 ],
                 "capabilities": [
-                    "Proposer / Selector 演进通道模型独立配置 (HARNESS2_IMPROVER_MODEL)",
-                    "支持外部 OpenAI 兼容裁判端点 (HARNESS2_JUDGE_BASE_URL / API_KEY)",
+                    "Proposer / Selector 演进通道模型独立配置 (SEC_AGENT_HARNESS2_IMPROVER_MODEL)",
+                    "支持外部 OpenAI 兼容裁判端点 (SEC_AGENT_HARNESS2_JUDGE_BASE_URL / API_KEY)",
                     "支持 Google Cloud Vertex AI ADC 统一认证",
                 ],
             },

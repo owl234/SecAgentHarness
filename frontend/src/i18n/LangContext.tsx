@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { dicts, type Lang } from './en';
 import type { ZhKey } from './zh';
 
-const STORAGE_KEY = 'harness2_lang';
+const STORAGE_KEY = 'sec_agent_harness2_lang';
 
 function detect(): Lang {
   try {

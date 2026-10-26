@@ -26,7 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
-from harness2.benchmarks.tasks import discover
+from sec_agent_harness2.benchmarks.tasks import discover
 
 
 def main(argv=None) -> int:

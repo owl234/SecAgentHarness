@@ -100,7 +100,7 @@ class Proposer:
 
     def __post_init__(self) -> None:
         if not self.spec.model.strip():
-            raise ValueError("Set HARNESS2_IMPROVER_MODEL before starting model sessions")
+            raise ValueError("Set SEC_AGENT_HARNESS2_IMPROVER_MODEL before starting model sessions")
 
     def env(self) -> dict[str, str]:
         e = {k: v for k, v in os.environ.items() if k not in _DROP_ENV}

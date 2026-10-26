@@ -19,11 +19,11 @@ from pathlib import Path
 
 import pytest
 
-from harness2.cli._common import make_adapter, normalize_substrate
-from harness2.core import tree as HT
-from harness2.core.spec import BenchSpec
-from harness2.substrate.base import Substrate
-from harness2.substrate.claude import (
+from sec_agent_harness2.cli._common import make_adapter, normalize_substrate
+from sec_agent_harness2.core import tree as HT
+from sec_agent_harness2.core.spec import BenchSpec
+from sec_agent_harness2.substrate.base import Substrate
+from sec_agent_harness2.substrate.claude import (
     CLAUDE_SURFACE,
     ClaudeSubstrate,
     find_claude_binary,
@@ -51,18 +51,18 @@ def test_find_claude_binary(monkeypatch, tmp_path):
     fake_bin.write_text("#!/bin/sh\necho clawgod\n")
     fake_bin.chmod(0o755)
 
-    monkeypatch.setenv("HARNESS2_CLAWGOD_PATH", str(fake_bin))
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_CLAWGOD_PATH", str(fake_bin))
     found = find_claude_binary()
     assert found == fake_bin
 
-    monkeypatch.delenv("HARNESS2_CLAWGOD_PATH", raising=False)
-    from harness2 import config
+    monkeypatch.delenv("SEC_AGENT_HARNESS2_CLAWGOD_PATH", raising=False)
+    from sec_agent_harness2 import config
     assert find_claude_binary() == config.CLAUDE_BIN
 
 
 def test_materialise(tmp_path):
     sub = ClaudeSubstrate()
-    from harness2.core.spec import ChannelSpec
+    from sec_agent_harness2.core.spec import ChannelSpec
     dummy_ch = ChannelSpec(kind="claude_cli", model="claude-3-7-sonnet-20250219")
     spec = BenchSpec(
         name="test",
@@ -117,7 +117,7 @@ def test_exec_argv():
 def test_exec_argv_agents_wiring(tmp_path):
     import json as _json
 
-    from harness2.substrate.claude import agents_json
+    from sec_agent_harness2.substrate.claude import agents_json
 
     staged = tmp_path / "staged"
     (staged / "sub_agents" / "researcher").mkdir(parents=True)
@@ -243,7 +243,7 @@ def test_benchmark_adapters_claude_support():
 def test_lab_claude_run_dir_preserves_nested_hierarchy(tmp_path):
     import importlib.util
 
-    from harness2 import config
+    from sec_agent_harness2 import config
 
     runner_py = config.THIRD_PARTY / "lab_runner" / "adapt_runs_claude" / "run_claude_lab.py"
     spec = importlib.util.spec_from_file_location("_test_run_claude_lab", runner_py)
@@ -267,7 +267,7 @@ def test_lab_claude_run_dir_preserves_nested_hierarchy(tmp_path):
 
 
 def test_workbuddy_claude_job_yaml_mounts_and_env(tmp_path, monkeypatch):
-    from harness2.benchmarks.workbuddy import SUBSETS, _job_yaml
+    from sec_agent_harness2.benchmarks.workbuddy import SUBSETS, _job_yaml
 
     monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://example.anthropic.proxy/v1")
     monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "test-token")
@@ -289,10 +289,10 @@ def test_workbuddy_claude_job_yaml_mounts_and_env(tmp_path, monkeypatch):
 
 
 def test_claude_prompt_surface_and_subagent_rules(tmp_path):
-    from harness2.core import context, prompts
-    from harness2.core import tree as HT
-    from harness2.core.spec import BenchPrompts
-    from harness2.substrate.claude import CLAUDE_SURFACE
+    from sec_agent_harness2.core import context, prompts
+    from sec_agent_harness2.core import tree as HT
+    from sec_agent_harness2.core.spec import BenchPrompts
+    from sec_agent_harness2.substrate.claude import CLAUDE_SURFACE
 
     bp = BenchPrompts(
         work="Produce a legal analysis memo.",
@@ -349,7 +349,7 @@ def test_claude_prompt_surface_and_subagent_rules(tmp_path):
 
 
 def test_jobbench_claude_runner_prompt_parity():
-    from harness2 import config
+    from sec_agent_harness2 import config
 
     cx_runner = (
         config.THIRD_PARTY / "jb_runner" / "run_benchmark_codex_cli_adapt.sh"
@@ -369,9 +369,9 @@ def test_jobbench_claude_runner_prompt_parity():
 
 
 def test_c9_mcp_validation_and_multi_substrate_materialisation(tmp_path):
-    from harness2.core.spec import ChannelSpec
-    from harness2.substrate.codex import CODEX_SURFACE, CodexSubstrate
-    from harness2.substrate.opencode import OPENCODE_SURFACE, OpencodeSubstrate
+    from sec_agent_harness2.core.spec import ChannelSpec
+    from sec_agent_harness2.substrate.codex import CODEX_SURFACE, CodexSubstrate
+    from sec_agent_harness2.substrate.opencode import OPENCODE_SURFACE, OpencodeSubstrate
 
     for surface in (OPENCODE_SURFACE, CODEX_SURFACE, CLAUDE_SURFACE):
         assert HT.is_allowed(surface, "mcp/servers.json")

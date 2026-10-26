@@ -16,7 +16,7 @@
 """Render installation, JobBench setup, and a run in one terminal line (requires Pillow).
 
 Run: python scripts/render_readme_typing.py
-Optional: --preview /tmp/harness2-setup.png --font /path/to/monospace.ttf
+Optional: --preview /tmp/sec-agent-harness2-setup.png --font /path/to/monospace.ttf
 
 The 2560x256 GIF is displayed at 640x64 CSS pixels. Preserve its native pixels
 when saving: downsampling before embedding defeats high-DPI text rendering.
@@ -37,8 +37,8 @@ PURPLE = "#c6acf5"
 BORDER = "#46516b"
 COMMANDS = (
     "uv pip install -e '.[render]'",
-    "harness2-setup jb",
-    "harness2 --bench jb --k 1 --mode parallel",
+    "sec-agent-harness2-setup jb",
+    "sec-agent-harness2 --bench jb --k 1 --mode parallel",
 )
 
 
@@ -92,7 +92,7 @@ def render_frame(font_path, command, length, cursor=True):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--font")
-    parser.add_argument("--output", type=Path, default=ROOT / "assets/harness2-setup.gif")
+    parser.add_argument("--output", type=Path, default=ROOT / "assets/sec-agent-harness2-setup.gif")
     parser.add_argument("--preview", type=Path)
     args = parser.parse_args()
     font_path = find_font(args.font)

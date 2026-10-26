@@ -76,7 +76,7 @@ def resolve_channel_model(
     if kind == "opencode" and "/" not in model:
         raise ValueError(
             f"opencode channel needs a provider-prefixed model id "
-            f"in HARNESS2_IMPROVER_MODEL or HARNESS2_SOLVER_MODEL, got {model!r}"
+            f"in SEC_AGENT_HARNESS2_IMPROVER_MODEL or SEC_AGENT_HARNESS2_SOLVER_MODEL, got {model!r}"
         )
     if kind == "claude_cli" and "/" in model:
         raise ValueError(

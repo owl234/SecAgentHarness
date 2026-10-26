@@ -20,8 +20,8 @@ import argparse
 import shutil
 import subprocess
 
-from harness2 import config, install
-from harness2 import i18n as I18N
+from sec_agent_harness2 import config, install
+from sec_agent_harness2 import i18n as I18N
 
 from . import _common as C
 

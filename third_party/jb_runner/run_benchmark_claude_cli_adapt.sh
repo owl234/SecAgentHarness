@@ -33,7 +33,7 @@ TIMEOUT_PER_TASK="${TIMEOUT_PER_TASK:-3600}"
 TRAJ_DIR_NAME="${TRAJ_DIR_NAME:-model_traj}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="${TASKS_BASE_DIR}/.harness2-logs"
+LOG_DIR="${TASKS_BASE_DIR}/.sec_agent_harness2-logs"
 mkdir -p "$LOG_DIR"
 
 TEMP_WORKSPACE_BASE="/tmp/claude_benchmark_workspace"
@@ -276,7 +276,7 @@ log_file = sys.argv[4]
 reasoning_effort = sys.argv[5]
 traj_file = sys.argv[6]
 
-claude_bin = os.environ.get('HARNESS2_CLAUDE_BIN', 'clawgod')
+claude_bin = os.environ.get('SEC_AGENT_HARNESS2_CLAUDE_BIN', 'clawgod')
 
 import json as _json
 import re as _re
@@ -370,7 +370,7 @@ PYTHON_EXEC
         "$attempt_started_at" \
         "$attempt_finished_at" \
         "$attempt_traj_file" \
-        "${HARNESS2_CLAUDE_VERSION:-$("${HARNESS2_CLAUDE_BIN:-clawgod}" --version 2>/dev/null | head -1)}"
+        "${SEC_AGENT_HARNESS2_CLAUDE_VERSION:-$("${SEC_AGENT_HARNESS2_CLAUDE_BIN:-clawgod}" --version 2>/dev/null | head -1)}"
 
     if [[ -d "$temp_output_dir" ]] && [[ -n "$(ls -A "$temp_output_dir" 2>/dev/null)" ]]; then
         mkdir -p "$final_output_dir"
@@ -451,8 +451,8 @@ main() {
     echo "=========================================="
 
     echo "Checking Claude CLI availability..."
-    "${HARNESS2_CLAUDE_BIN:-clawgod}" --version 2>&1 || {
-        echo "[ERROR] Claude CLI (${HARNESS2_CLAUDE_BIN:-clawgod}) not available."
+    "${SEC_AGENT_HARNESS2_CLAUDE_BIN:-clawgod}" --version 2>&1 || {
+        echo "[ERROR] Claude CLI (${SEC_AGENT_HARNESS2_CLAUDE_BIN:-clawgod}) not available."
         exit 1
     }
 

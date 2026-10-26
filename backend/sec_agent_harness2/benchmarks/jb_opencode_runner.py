@@ -92,7 +92,7 @@ def _settings() -> Settings:
         agent_steps=env.get("AGENT_STEPS", ""),
         timeout_per_task=env.get("TIMEOUT_PER_TASK") or "3600",
         max_retries=int(env.get("MAX_RETRIES") or 2),
-        log_dir=tasks_base / ".harness2-logs",
+        log_dir=tasks_base / ".sec_agent_harness2-logs",
     )
 
 

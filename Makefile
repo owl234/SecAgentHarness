@@ -17,7 +17,7 @@ build:
 	cd frontend && npm run build
 
 backend:
-	.venv/bin/harness2-ui
+	.venv/bin/sec-agent-harness2-ui
 
 frontend:
 	cd frontend && npm run dev

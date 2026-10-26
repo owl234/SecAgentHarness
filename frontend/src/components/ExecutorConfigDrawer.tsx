@@ -313,8 +313,8 @@ export const ExecutorConfigDrawer: React.FC<ExecutorConfigDrawerProps> = ({
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {tx(
-                  '一处配置 HARNESS2_API_* 同时驱动 Claude (clawgod)、OpenCode 与 Codex，支持按基座独立覆盖',
-                  'Configure HARNESS2_API_* once to drive Claude (clawgod), OpenCode, and Codex with per-substrate overrides'
+                  '一处配置 SEC_AGENT_HARNESS2_API_* 同时驱动 Claude (clawgod)、OpenCode 与 Codex，支持按基座独立覆盖',
+                  'Configure SEC_AGENT_HARNESS2_API_* once to drive Claude (clawgod), OpenCode, and Codex with per-substrate overrides'
                 )}
               </p>
             </div>

@@ -98,38 +98,38 @@ def require(name: str, *, needed_by: str) -> str:
     return str(v)
 
 
-RUNS = Path(env("HARNESS2_RUNS_DIR", ROOT / "runs")).expanduser().resolve()
-VERTEX_PROJECT = env("GOOGLE_CLOUD_PROJECT", env("HARNESS2_VERTEX_PROJECT", ""))
+RUNS = Path(env("SEC_AGENT_HARNESS2_RUNS_DIR", ROOT / "runs")).expanduser().resolve()
+VERTEX_PROJECT = env("GOOGLE_CLOUD_PROJECT", env("SEC_AGENT_HARNESS2_VERTEX_PROJECT", ""))
 VERTEX_REGION = env("GOOGLE_CLOUD_LOCATION", "global")
 if VERTEX_PROJECT:
     os.environ.setdefault("GOOGLE_CLOUD_PROJECT", VERTEX_PROJECT)
 os.environ.setdefault("GOOGLE_CLOUD_LOCATION", VERTEX_REGION)
 
 
-# One endpoint and key can drive all three substrates; see harness2/api.py for the
+# One endpoint and key can drive all three substrates; see sec_agent_harness2/api.py for the
 # per-substrate protocol mapping. The per-substrate variables still win.
-API_BASE_URL = env("HARNESS2_API_BASE_URL", "")
-API_KEY = env("HARNESS2_API_KEY", "")
-API_MODEL = env("HARNESS2_API_MODEL", "")
+API_BASE_URL = env("SEC_AGENT_HARNESS2_API_BASE_URL", "")
+API_KEY = env("SEC_AGENT_HARNESS2_API_KEY", "")
+API_MODEL = env("SEC_AGENT_HARNESS2_API_MODEL", "")
 
 
 def _solver_model_oc() -> str:
     """The executor model in OpenCode's `provider/model` form.
 
-    A shared endpoint owns its own provider id (`harness2/`), so a bare
-    HARNESS2_API_MODEL is qualified here rather than at every call site.
+    A shared endpoint owns its own provider id (`sec_agent_harness2/`), so a bare
+    SEC_AGENT_HARNESS2_API_MODEL is qualified here rather than at every call site.
     """
-    explicit = env("HARNESS2_SOLVER_MODEL", "")
+    explicit = env("SEC_AGENT_HARNESS2_SOLVER_MODEL", "")
     if explicit or not API_MODEL:
         return explicit
-    return f"harness2/{API_MODEL}" if API_BASE_URL else API_MODEL
+    return f"sec_agent_harness2/{API_MODEL}" if API_BASE_URL else API_MODEL
 
 
 SOLVER_MODEL_OC = _solver_model_oc()
-SOLVER_MODEL_CX = env("HARNESS2_CODEX_MODEL", SOLVER_MODEL_OC.split("/", 1)[-1])
-SOLVER_MODEL_CLAUDE = env("HARNESS2_CLAUDE_MODEL", "claude-3-7-sonnet-20250219")
-IMPROVER_MODEL = env("HARNESS2_IMPROVER_MODEL", SOLVER_MODEL_OC)
-JUDGE_MODEL = env("HARNESS2_JUDGE_MODEL", "")
+SOLVER_MODEL_CX = env("SEC_AGENT_HARNESS2_CODEX_MODEL", SOLVER_MODEL_OC.split("/", 1)[-1])
+SOLVER_MODEL_CLAUDE = env("SEC_AGENT_HARNESS2_CLAUDE_MODEL", "claude-3-7-sonnet-20250219")
+IMPROVER_MODEL = env("SEC_AGENT_HARNESS2_IMPROVER_MODEL", SOLVER_MODEL_OC)
+JUDGE_MODEL = env("SEC_AGENT_HARNESS2_JUDGE_MODEL", "")
 
 DEPENDENCY_PINS = {
     "job-bench-eval": "fa03a17f9ff662f136798a274e10011c3aa00fd0",
@@ -167,7 +167,7 @@ LAB_DELIV_CAP = 60000
 JB_JUDGE_PYTHON = jb_repo() / ".venv" / "bin" / "python"
 JB_JUDGE_MODEL = (
     "google/" + JUDGE_MODEL
-    if JUDGE_MODEL.startswith("gemini") and not env("HARNESS2_JUDGE_BASE_URL")
+    if JUDGE_MODEL.startswith("gemini") and not env("SEC_AGENT_HARNESS2_JUDGE_BASE_URL")
     else JUDGE_MODEL
 )
 _vertex_host = (
@@ -179,25 +179,25 @@ VERTEX_OPENAI_URL = (
     f"https://{_vertex_host}/v1/projects/{VERTEX_PROJECT}"
     f"/locations/{VERTEX_REGION}/endpoints/openapi"
 )
-JB_JUDGE_API_BASE = env("HARNESS2_JUDGE_BASE_URL", VERTEX_OPENAI_URL if VERTEX_PROJECT else "")
-JB_JUDGE_API_KEY = env("HARNESS2_JUDGE_API_KEY", "")
+JB_JUDGE_API_BASE = env("SEC_AGENT_HARNESS2_JUDGE_BASE_URL", VERTEX_OPENAI_URL if VERTEX_PROJECT else "")
+JB_JUDGE_API_KEY = env("SEC_AGENT_HARNESS2_JUDGE_API_KEY", "")
 JB_JUDGE_REASONING_EFFORT = "low"
 JB_REPORTING_JUDGE_DETAILS = ""
 JB_OBS_TRUNC = 50000
 
 CODEX_VERSION = "0.144.6"
 CODEX_DIST = str(DEPENDENCIES / "codex" / "dist")
-CODEX_BASE_URL = env("HARNESS2_CODEX_BASE_URL", API_BASE_URL)
-CODEX_CONTAINER_URL = env("HARNESS2_CODEX_CONTAINER_URL", CODEX_BASE_URL)
-VERTEX_PROXY_KEY = env("HARNESS2_CODEX_API_KEY", API_KEY)
+CODEX_BASE_URL = env("SEC_AGENT_HARNESS2_CODEX_BASE_URL", API_BASE_URL)
+CODEX_CONTAINER_URL = env("SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL", CODEX_BASE_URL)
+VERTEX_PROXY_KEY = env("SEC_AGENT_HARNESS2_CODEX_API_KEY", API_KEY)
 CODEX_HOME_DIR = DEPENDENCIES / "codex" / "home"
 
 CLAUDE_DIST = DEPENDENCIES / "claude"
 CLAUDE_BIN = CLAUDE_DIST / "bin" / "clawgod"
 CLAUDE_VERSION = "2.1.307"
 
-WB_SOLVER_MODEL = "harness2/solver"
-WB_WEB_JUDGE = "harness2/judge"
+WB_SOLVER_MODEL = "sec_agent_harness2/solver"
+WB_WEB_JUDGE = "sec_agent_harness2/judge"
 WB_RENDER_PY = sys.executable
 WB_OC_HARNESS_VER = "1.14.18"
 WB_CX_HARNESS_VER = CODEX_VERSION
@@ -216,8 +216,8 @@ PROPOSER_CONCURRENCY = 2
 def validate_models(*, judge: bool = False) -> None:
     if not SOLVER_MODEL_OC:
         raise ConfigError(
-            "HARNESS2_SOLVER_MODEL is required for executor rollouts; set it in .env or "
-            "the shell, or set HARNESS2_API_MODEL alongside HARNESS2_API_BASE_URL "
+            "SEC_AGENT_HARNESS2_SOLVER_MODEL is required for executor rollouts; set it in .env or "
+            "the shell, or set SEC_AGENT_HARNESS2_API_MODEL alongside SEC_AGENT_HARNESS2_API_BASE_URL "
             "(see .env.example)"
         )
     if "/" not in SOLVER_MODEL_OC or "/" not in IMPROVER_MODEL:
@@ -226,4 +226,4 @@ def validate_models(*, judge: bool = False) -> None:
         if not VERTEX_PROJECT:
             raise ConfigError("Set GOOGLE_CLOUD_PROJECT for Vertex AI")
     if judge:
-        require("HARNESS2_JUDGE_MODEL", needed_by="benchmark judging")
+        require("SEC_AGENT_HARNESS2_JUDGE_MODEL", needed_by="benchmark judging")

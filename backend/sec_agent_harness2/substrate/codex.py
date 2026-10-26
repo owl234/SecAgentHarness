@@ -229,7 +229,7 @@ class CodexSubstrate:
         """The reference `codex exec` environment; the real launchers build their own.
 
         The custom provider comes from CODEX_HOME, not a global OpenAI URL override.
-        A shared HARNESS2_API_KEY lands in VERTEX_PROXY_KEY, the name config.toml's
+        A shared SEC_AGENT_HARNESS2_API_KEY lands in VERTEX_PROXY_KEY, the name config.toml's
         `env_key` names.
         """
         env = dict(base_env)
@@ -268,17 +268,17 @@ class CodexSubstrate:
         endpoint = api.codex()
         if endpoint is None or not endpoint.base_url:
             raise config.ConfigError(
-                "HARNESS2_CODEX_BASE_URL is required for the Codex Responses endpoint; "
-                "set it or HARNESS2_API_BASE_URL in .env (see .env.example)"
+                "SEC_AGENT_HARNESS2_CODEX_BASE_URL is required for the Codex Responses endpoint; "
+                "set it or SEC_AGENT_HARNESS2_API_BASE_URL in .env (see .env.example)"
             )
         if not endpoint.api_key:
             raise config.ConfigError(
-                "HARNESS2_CODEX_API_KEY is required for Codex endpoint authentication; "
-                "set it or HARNESS2_API_KEY in .env (see .env.example)"
+                "SEC_AGENT_HARNESS2_CODEX_API_KEY is required for Codex endpoint authentication; "
+                "set it or SEC_AGENT_HARNESS2_API_KEY in .env (see .env.example)"
             )
         url = urlparse(endpoint.base_url)
         if url.scheme not in ("http", "https") or not url.hostname:
-            raise config.ConfigError("HARNESS2_CODEX_BASE_URL must be an HTTP(S) URL")
+            raise config.ConfigError("SEC_AGENT_HARNESS2_CODEX_BASE_URL must be an HTTP(S) URL")
         binary = Path(config.CODEX_DIST) / "codex"
         if not binary.is_file():
             raise RuntimeError(
@@ -286,7 +286,7 @@ class CodexSubstrate:
             )
         if require_bridge and not config.CODEX_CONTAINER_URL:
             raise RuntimeError(
-                "Set HARNESS2_CODEX_CONTAINER_URL to a container-accessible Responses endpoint"
+                "Set SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL to a container-accessible Responses endpoint"
             )
         with socket.create_connection(
             (url.hostname, url.port or (443 if url.scheme == "https" else 80)), timeout=5

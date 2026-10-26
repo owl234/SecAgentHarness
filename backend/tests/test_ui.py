@@ -21,9 +21,9 @@ from pathlib import Path
 
 from starlette.testclient import TestClient
 
-from harness2 import config as C
-from harness2.ui import scanner
-from harness2.ui.server import create_app
+from sec_agent_harness2 import config as C
+from sec_agent_harness2.ui import scanner
+from sec_agent_harness2.ui.server import create_app
 
 
 class UITests(unittest.TestCase):
@@ -206,7 +206,7 @@ class UITests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_root = Path(tmpdir)
             (tmp_root / ".env.example").write_text(
-                "# Example\n# HARNESS2_API_BASE_URL=\n# HARNESS2_CLAUDE_MODEL=\n# HARNESS2_CLAUDE_EFFORT=\n",
+                "# Example\n# SEC_AGENT_HARNESS2_API_BASE_URL=\n# SEC_AGENT_HARNESS2_CLAUDE_MODEL=\n# SEC_AGENT_HARNESS2_CLAUDE_EFFORT=\n",
                 encoding="utf-8",
             )
             tmp_app = create_app(workspace_root=tmp_root, runs_root=self.runs_root)
@@ -225,8 +225,8 @@ class UITests(unittest.TestCase):
                 self.assertEqual(body["status"], "updated")
                 self.assertIn(".env", body["applied"]["synced_files"])
                 env_text = (tmp_root / ".env").read_text(encoding="utf-8")
-                self.assertIn("HARNESS2_CLAUDE_MODEL=claude-sonnet-4-6", env_text)
-                self.assertIn("HARNESS2_CLAUDE_EFFORT=high", env_text)
+                self.assertIn("SEC_AGENT_HARNESS2_CLAUDE_MODEL=claude-sonnet-4-6", env_text)
+                self.assertIn("SEC_AGENT_HARNESS2_CLAUDE_EFFORT=high", env_text)
 
                 # Test unified config update
                 res_uni = tmp_client.post(

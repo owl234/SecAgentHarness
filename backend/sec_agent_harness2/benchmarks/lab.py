@@ -397,7 +397,7 @@ def _lab_env() -> dict[str, str]:
 
 
 def _oc_env() -> dict[str, str]:
-    """`_lab_env` plus the provider block OpenCode resolves `harness2/<model>` from."""
+    """`_lab_env` plus the provider block OpenCode resolves `sec_agent_harness2/<model>` from."""
     env = _lab_env()
     endpoint = api.opencode()
     if endpoint is not None:

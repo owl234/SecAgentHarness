@@ -20,12 +20,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from harness2 import config
-from harness2.core import context, judge, recursion, schedule, tree
-from harness2.core.library import Library
-from harness2.core.proposer import Proposer, ProposerError, Reply
-from harness2.core.spec import resolve_channel_model
-from harness2.demo import BASE_SCRIPT, DemoAdapter, DemoProposer
+from sec_agent_harness2 import config
+from sec_agent_harness2.core import context, judge, recursion, schedule, tree
+from sec_agent_harness2.core.library import Library
+from sec_agent_harness2.core.proposer import Proposer, ProposerError, Reply
+from sec_agent_harness2.core.spec import resolve_channel_model
+from sec_agent_harness2.demo import BASE_SCRIPT, DemoAdapter, DemoProposer
 
 
 class WorkflowTests(unittest.TestCase):
@@ -138,8 +138,8 @@ class WorkflowTests(unittest.TestCase):
 
         proposer = Proposer(self.proposer.spec)
         with (
-            patch("harness2.core.proposer._opencode_dir", return_value=self.root),
-            patch("harness2.core.proposer.subprocess.run", side_effect=run_opencode),
+            patch("sec_agent_harness2.core.proposer._opencode_dir", return_value=self.root),
+            patch("sec_agent_harness2.core.proposer.subprocess.run", side_effect=run_opencode),
         ):
             for index in range(2):
                 proposer.call("Read this task only", None, f"isolation{index}")

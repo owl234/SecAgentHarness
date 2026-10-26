@@ -25,19 +25,29 @@ responses-bridge = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "httpx>=0.27.0"]
 ui = ["fastapi>=0.115.0", "uvicorn>=0.30.0"]
 
 [project.scripts]
-harness2 = "harness2.cli.main:main"
-harness2-run = "harness2.cli.run_sweep:main"
-harness2-judge = "harness2.cli.judge:main"
-harness2-report = "harness2.cli.report:main"
-harness2-setup = "harness2.cli.setup:main"
-harness2-check = "harness2.cli.check:main"
-harness2-demo = "harness2.cli.demo:main"
-harness2-bridge = "harness2.cli.bridge:main"
-harness2-responses-bridge = "harness2.cli.responses_bridge:main"
-harness2-ui = "harness2.cli.ui:main"
+sec-agent-harness2 = "sec_agent_harness2.cli.main:main"
+sec-agent-harness2-run = "sec_agent_harness2.cli.run_sweep:main"
+sec-agent-harness2-judge = "sec_agent_harness2.cli.judge:main"
+sec-agent-harness2-report = "sec_agent_harness2.cli.report:main"
+sec-agent-harness2-setup = "sec_agent_harness2.cli.setup:main"
+sec-agent-harness2-check = "sec_agent_harness2.cli.check:main"
+sec-agent-harness2-demo = "sec_agent_harness2.cli.demo:main"
+sec-agent-harness2-bridge = "sec_agent_harness2.cli.bridge:main"
+sec-agent-harness2-responses-bridge = "sec_agent_harness2.cli.responses_bridge:main"
+sec-agent-harness2-ui = "sec_agent_harness2.cli.ui:main"
+harness2 = "sec_agent_harness2.cli.main:main"
+harness2-run = "sec_agent_harness2.cli.run_sweep:main"
+harness2-judge = "sec_agent_harness2.cli.judge:main"
+harness2-report = "sec_agent_harness2.cli.report:main"
+harness2-setup = "sec_agent_harness2.cli.setup:main"
+harness2-check = "sec_agent_harness2.cli.check:main"
+harness2-demo = "sec_agent_harness2.cli.demo:main"
+harness2-bridge = "sec_agent_harness2.cli.bridge:main"
+harness2-responses-bridge = "sec_agent_harness2.cli.responses_bridge:main"
+harness2-ui = "sec_agent_harness2.cli.ui:main"
 
 [tool.setuptools.packages.find]
-include = ["harness2*"]
+include = ["sec_agent_harness2*"]
 
 [tool.ruff]
 target-version = "py312"
@@ -48,7 +58,7 @@ extend-exclude = ["third_party", "dependencies"]
 select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["harness2"]
+known-first-party = ["sec_agent_harness2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

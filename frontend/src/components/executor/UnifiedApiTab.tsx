@@ -29,7 +29,7 @@ export const UnifiedApiTab: React.FC<UnifiedApiTabProps> = ({
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
             <Globe className="w-4 h-4" />
-            <span>{tx('统一 API 网关接入 (harness2/api.py)', 'Unified API Gateway (harness2/api.py)')}</span>
+            <span>{tx('统一 API 网关接入 (sec_agent_harness2/api.py)', 'Unified API Gateway (sec_agent_harness2/api.py)')}</span>
           </div>
           <span
             className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
@@ -45,8 +45,8 @@ export const UnifiedApiTab: React.FC<UnifiedApiTabProps> = ({
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
           {tx(
-            '只需填写一组 HARNESS2_API_BASE_URL 与 HARNESS2_API_KEY，系统会自动按各 CLI 的线协议完成适配：Claude 走 Anthropic Messages（或 clawgod 代理）、OpenCode 自动生成 harness2/<model> Provider 块、Codex 走 Responses 协议。',
-            'Configure HARNESS2_API_BASE_URL and HARNESS2_API_KEY once: Harness² automatically adapts wire protocols across Claude (Anthropic Messages / clawgod proxy), OpenCode (harness2/<model> provider block), and Codex (OpenAI Responses).'
+            '只需填写一组 SEC_AGENT_HARNESS2_API_BASE_URL 与 SEC_AGENT_HARNESS2_API_KEY，系统会自动按各 CLI 的线协议完成适配：Claude 走 Anthropic Messages（或 clawgod 代理）、OpenCode 自动生成 harness2/<model> Provider 块、Codex 走 Responses 协议。',
+            'Configure SEC_AGENT_HARNESS2_API_BASE_URL and SEC_AGENT_HARNESS2_API_KEY once: Harness² automatically adapts wire protocols across Claude (Anthropic Messages / clawgod proxy), OpenCode (harness2/<model> provider block), and Codex (OpenAI Responses).'
           )}
         </p>
       </div>
@@ -54,7 +54,7 @@ export const UnifiedApiTab: React.FC<UnifiedApiTabProps> = ({
       {/* Base URL */}
       <div>
         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-          {tx('统一 API 端点地址 (HARNESS2_API_BASE_URL)', 'Unified API Base URL (HARNESS2_API_BASE_URL)')}
+          {tx('统一 API 端点地址 (SEC_AGENT_HARNESS2_API_BASE_URL)', 'Unified API Base URL (SEC_AGENT_HARNESS2_API_BASE_URL)')}
         </label>
         <input
           type="text"
@@ -70,7 +70,7 @@ export const UnifiedApiTab: React.FC<UnifiedApiTabProps> = ({
         <div className="flex items-center justify-between mb-1.5">
           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
             <Key className="w-3.5 h-3.5 text-slate-400" />
-            <span>{tx('统一 API 密钥 (HARNESS2_API_KEY)', 'Unified API Key (HARNESS2_API_KEY)')}</span>
+            <span>{tx('统一 API 密钥 (SEC_AGENT_HARNESS2_API_KEY)', 'Unified API Key (SEC_AGENT_HARNESS2_API_KEY)')}</span>
           </label>
           <button
             type="button"
@@ -100,7 +100,7 @@ export const UnifiedApiTab: React.FC<UnifiedApiTabProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-            {tx('默认模型 ID (HARNESS2_API_MODEL)', 'Default Model ID (HARNESS2_API_MODEL)')}
+            {tx('默认模型 ID (SEC_AGENT_HARNESS2_API_MODEL)', 'Default Model ID (SEC_AGENT_HARNESS2_API_MODEL)')}
           </label>
           <input
             type="text"
@@ -125,7 +125,7 @@ export const UnifiedApiTab: React.FC<UnifiedApiTabProps> = ({
 
         <div>
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-            {tx('协议覆盖 (HARNESS2_API_PROTOCOL · 可选)', 'Protocol Override (HARNESS2_API_PROTOCOL)')}
+            {tx('协议覆盖 (SEC_AGENT_HARNESS2_API_PROTOCOL · 可选)', 'Protocol Override (SEC_AGENT_HARNESS2_API_PROTOCOL)')}
           </label>
           <select
             value={form.unifiedProtocol}

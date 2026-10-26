@@ -12,31 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for the shared API endpoint layer (harness2/api.py)."""
+"""Unit tests for the shared API endpoint layer (sec_agent_harness2/api.py)."""
 
 import json
 
 import pytest
 
-from harness2 import api
+from sec_agent_harness2 import api
 
 _ALL = (
-    "HARNESS2_API_BASE_URL",
-    "HARNESS2_API_KEY",
-    "HARNESS2_API_MODEL",
-    "HARNESS2_API_PROTOCOL",
-    "HARNESS2_CODEX_BASE_URL",
-    "HARNESS2_CODEX_API_KEY",
-    "HARNESS2_CODEX_MODEL",
-    "HARNESS2_CLAUDE_BASE_URL",
-    "HARNESS2_CLAUDE_API_KEY",
-    "HARNESS2_CLAUDE_PROTOCOL",
-    "HARNESS2_CLAUDE_MODEL",
-    "HARNESS2_OPENCODE_BASE_URL",
-    "HARNESS2_OPENCODE_API_KEY",
-    "HARNESS2_OPENCODE_PROTOCOL",
-    "HARNESS2_SOLVER_MODEL",
-    "HARNESS2_CODEX_MODEL",
+    "SEC_AGENT_HARNESS2_API_BASE_URL",
+    "SEC_AGENT_HARNESS2_API_KEY",
+    "SEC_AGENT_HARNESS2_API_MODEL",
+    "SEC_AGENT_HARNESS2_API_PROTOCOL",
+    "SEC_AGENT_HARNESS2_CODEX_BASE_URL",
+    "SEC_AGENT_HARNESS2_CODEX_API_KEY",
+    "SEC_AGENT_HARNESS2_CODEX_MODEL",
+    "SEC_AGENT_HARNESS2_CLAUDE_BASE_URL",
+    "SEC_AGENT_HARNESS2_CLAUDE_API_KEY",
+    "SEC_AGENT_HARNESS2_CLAUDE_PROTOCOL",
+    "SEC_AGENT_HARNESS2_CLAUDE_MODEL",
+    "SEC_AGENT_HARNESS2_OPENCODE_BASE_URL",
+    "SEC_AGENT_HARNESS2_OPENCODE_API_KEY",
+    "SEC_AGENT_HARNESS2_OPENCODE_PROTOCOL",
+    "SEC_AGENT_HARNESS2_SOLVER_MODEL",
+    "SEC_AGENT_HARNESS2_CODEX_MODEL",
     "ANTHROPIC_BASE_URL",
     "ANTHROPIC_API_KEY",
     "ANTHROPIC_AUTH_TOKEN",
@@ -56,9 +56,9 @@ def test_no_endpoint_configured():
 
 
 def test_shared_endpoint_reaches_every_substrate(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
-    monkeypatch.setenv("HARNESS2_API_KEY", "shared-key")
-    monkeypatch.setenv("HARNESS2_API_MODEL", "shared-model")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "shared-key")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_MODEL", "shared-model")
 
     for resolve, protocol in (
         (api.codex, "openai-responses"),
@@ -72,23 +72,23 @@ def test_shared_endpoint_reaches_every_substrate(monkeypatch):
 
 
 def test_codex_only_speaks_responses(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
-    monkeypatch.setenv("HARNESS2_API_PROTOCOL", "openai-chat")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_PROTOCOL", "openai-chat")
     assert api.codex().protocol == "openai-responses"
 
 
 def test_per_substrate_values_win(monkeypatch):
-    """A per-substrate variable beats the shared pair, but HARNESS2_* beats ANTHROPIC_*.
+    """A per-substrate variable beats the shared pair, but SEC_AGENT_HARNESS2_* beats ANTHROPIC_*.
 
     The ANTHROPIC_* fallback exists for hosts that export it themselves (Claude Code
     does); it must never outrank an endpoint the user configured for Harness2.
     """
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
-    monkeypatch.setenv("HARNESS2_API_KEY", "shared-key")
-    monkeypatch.setenv("HARNESS2_CODEX_BASE_URL", "https://codex.example.com/v1")
-    monkeypatch.setenv("HARNESS2_CODEX_API_KEY", "codex-key")
-    monkeypatch.setenv("HARNESS2_CLAUDE_BASE_URL", "https://claude.example.com")
-    monkeypatch.setenv("HARNESS2_CLAUDE_API_KEY", "claude-key")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "shared-key")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_CODEX_BASE_URL", "https://codex.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_CODEX_API_KEY", "codex-key")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_CLAUDE_BASE_URL", "https://claude.example.com")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_CLAUDE_API_KEY", "claude-key")
     monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://host-proxy.example.com")
     monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "host-token")
 
@@ -108,8 +108,8 @@ def test_anthropic_env_is_only_a_fallback(monkeypatch):
 
 
 def test_claude_native_uses_api_key(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://api.anthropic.com")
-    monkeypatch.setenv("HARNESS2_API_KEY", "sk-ant-x")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://api.anthropic.com")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "sk-ant-x")
     env = api.claude_env(api.claude(), {})
     assert env["ANTHROPIC_API_KEY"] == "sk-ant-x"
     assert "ANTHROPIC_AUTH_TOKEN" not in env
@@ -117,43 +117,43 @@ def test_claude_native_uses_api_key(monkeypatch):
 
 def test_claude_proxy_uses_auth_token(monkeypatch):
     """A non-Anthropic host must get AUTH_TOKEN; clawgod drops the key otherwise."""
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://proxy.example.com")
-    monkeypatch.setenv("HARNESS2_API_KEY", "proxy-key")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://proxy.example.com")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "proxy-key")
     env = api.claude_env(api.claude(), {})
     assert env["ANTHROPIC_AUTH_TOKEN"] == "proxy-key"
     assert "ANTHROPIC_API_KEY" not in env
 
 
 def test_claude_does_not_clobber_existing_values(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://proxy.example.com")
-    monkeypatch.setenv("HARNESS2_API_KEY", "proxy-key")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://proxy.example.com")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "proxy-key")
     env = api.claude_env(api.claude(), {"ANTHROPIC_AUTH_TOKEN": "caller-token"})
     assert env["ANTHROPIC_AUTH_TOKEN"] == "caller-token"
 
 
 def test_claude_openai_chat_is_refused(monkeypatch):
     """clawgod's chat mode needs a global provider.json, so it cannot be per-run."""
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://proxy.example.com")
-    monkeypatch.setenv("HARNESS2_API_KEY", "proxy-key")
-    monkeypatch.setenv("HARNESS2_CLAUDE_PROTOCOL", "openai-chat")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://proxy.example.com")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "proxy-key")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_CLAUDE_PROTOCOL", "openai-chat")
     with pytest.raises(ValueError, match="provider.json"):
         api.claude_env(api.claude(), {})
 
 
 def test_unknown_protocol_is_rejected(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://proxy.example.com")
-    monkeypatch.setenv("HARNESS2_OPENCODE_PROTOCOL", "graphql")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://proxy.example.com")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_OPENCODE_PROTOCOL", "graphql")
     with pytest.raises(ValueError, match="expected one of"):
         api.opencode()
 
 
 def test_opencode_config_shape(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
-    monkeypatch.setenv("HARNESS2_API_KEY", "k")
-    monkeypatch.setenv("HARNESS2_API_MODEL", "some-model")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "k")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_MODEL", "some-model")
 
     block = json.loads(api.opencode_config(api.opencode()))
-    provider = block["provider"]["harness2"]
+    provider = block["provider"]["sec_agent_harness2"]
     assert provider["npm"] == "@ai-sdk/openai-compatible"
     assert provider["options"]["baseURL"] == "https://shared.example.com/v1"
     assert provider["options"]["apiKey"] == "k"
@@ -161,51 +161,51 @@ def test_opencode_config_shape(monkeypatch):
 
 
 def test_opencode_config_anthropic_uses_native_sdk(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://proxy.example.com")
-    monkeypatch.setenv("HARNESS2_API_KEY", "k")
-    monkeypatch.setenv("HARNESS2_OPENCODE_PROTOCOL", "anthropic")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://proxy.example.com")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "k")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_OPENCODE_PROTOCOL", "anthropic")
 
     block = json.loads(api.opencode_config(api.opencode()))
-    assert block["provider"]["harness2"]["npm"] == "@ai-sdk/anthropic"
+    assert block["provider"]["sec_agent_harness2"]["npm"] == "@ai-sdk/anthropic"
 
 
 def test_describe_never_leaks_the_key(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
-    monkeypatch.setenv("HARNESS2_API_KEY", "super-secret-value")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "super-secret-value")
     assert "super-secret-value" not in api.describe(api.opencode())
 
 
 def test_opencode_env_adds_the_provider_block(monkeypatch):
-    """Without this OpenCode fails with `Model not found: harness2/<model>`."""
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
-    monkeypatch.setenv("HARNESS2_API_KEY", "k")
-    monkeypatch.setenv("HARNESS2_API_MODEL", "m")
+    """Without this OpenCode fails with `Model not found: sec_agent_harness2/<model>`."""
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "k")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_MODEL", "m")
 
     env = api.opencode_env(api.opencode(), {})
     block = json.loads(env["OPENCODE_CONFIG_CONTENT"])
-    assert block["provider"]["harness2"]["options"]["baseURL"] == "https://shared.example.com/v1"
+    assert block["provider"]["sec_agent_harness2"]["options"]["baseURL"] == "https://shared.example.com/v1"
 
 
 def test_opencode_env_keeps_a_callers_config(monkeypatch):
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
-    monkeypatch.setenv("HARNESS2_API_KEY", "k")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "k")
     env = api.opencode_env(api.opencode(), {"OPENCODE_CONFIG_CONTENT": '{"mine":1}'})
     assert env["OPENCODE_CONFIG_CONTENT"] == '{"mine":1}'
 
 
 def test_proposer_env_wires_shared_endpoint(monkeypatch):
-    from harness2.core.proposer import Proposer
-    from harness2.core.spec import ChannelSpec
+    from sec_agent_harness2.core.proposer import Proposer
+    from sec_agent_harness2.core.spec import ChannelSpec
 
-    monkeypatch.setenv("HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
-    monkeypatch.setenv("HARNESS2_API_KEY", "shared-key")
-    monkeypatch.setenv("HARNESS2_SOLVER_MODEL", "harness2/solver-m")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_BASE_URL", "https://shared.example.com/v1")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_API_KEY", "shared-key")
+    monkeypatch.setenv("SEC_AGENT_HARNESS2_SOLVER_MODEL", "sec_agent_harness2/solver-m")
 
-    oc_prop = Proposer(ChannelSpec("opencode", "harness2/improver-m"))
+    oc_prop = Proposer(ChannelSpec("opencode", "sec_agent_harness2/improver-m"))
     oc_env = oc_prop.env()
     block = json.loads(oc_env["OPENCODE_CONFIG_CONTENT"])
-    assert block["provider"]["harness2"]["options"]["baseURL"] == "https://shared.example.com/v1"
-    assert "improver-m" in block["provider"]["harness2"]["models"]
+    assert block["provider"]["sec_agent_harness2"]["options"]["baseURL"] == "https://shared.example.com/v1"
+    assert "improver-m" in block["provider"]["sec_agent_harness2"]["models"]
 
     cl_prop = Proposer(ChannelSpec("claude_cli", "improver-m"))
     cl_env = cl_prop.env()

@@ -31,7 +31,7 @@ from contextlib import redirect_stderr, redirect_stdout
 
 class AliasTests(unittest.TestCase):
     def test_bench_aliases_normalize(self):
-        from harness2.cli import _common as C
+        from sec_agent_harness2.cli import _common as C
 
         self.assertEqual(C.normalize_bench("jobbench"), "jb")
         self.assertEqual(C.normalize_bench("job-bench-eval"), "jb")
@@ -41,7 +41,7 @@ class AliasTests(unittest.TestCase):
         self.assertEqual(C.normalize_bench("jb"), "jb")
 
     def test_substrate_aliases_normalize(self):
-        from harness2.cli import _common as C
+        from sec_agent_harness2.cli import _common as C
 
         self.assertEqual(C.normalize_substrate("opencode"), "oc")
         self.assertEqual(C.normalize_substrate("codex"), "cx")
@@ -49,7 +49,7 @@ class AliasTests(unittest.TestCase):
         self.assertEqual(C.normalize_substrate("cx"), "cx")
 
     def test_unknown_values_pass_through_to_canonical_error(self):
-        from harness2.cli import _common as C
+        from sec_agent_harness2.cli import _common as C
 
         self.assertEqual(C.normalize_bench("nope"), "nope")
         with self.assertRaises(ValueError):
@@ -58,12 +58,12 @@ class AliasTests(unittest.TestCase):
 
 class PresetTests(unittest.TestCase):
     def _parse(self, *argv: str):
-        from harness2.cli import run_sweep as R
+        from sec_agent_harness2.cli import run_sweep as R
 
         return R._build_parser().parse_args(list(argv))
 
     def test_smoke_expands_per_benchmark(self):
-        from harness2.cli import _common as C
+        from sec_agent_harness2.cli import _common as C
 
         for bench, domain in (
             ("jb", "biostatisticians"),
@@ -97,7 +97,7 @@ class PresetTests(unittest.TestCase):
         self.assertEqual((only, capped), ("contracts", 3))
 
     def test_preset_smoke_dry_run_end_to_end(self):
-        from harness2.cli import run_sweep as R
+        from sec_agent_harness2.cli import run_sweep as R
 
         buf = io.StringIO()
         with redirect_stdout(buf):
@@ -106,7 +106,7 @@ class PresetTests(unittest.TestCase):
         self.assertIn("antitrust-competition", buf.getvalue())
 
     def test_full_name_alias_end_to_end(self):
-        from harness2.cli import run_sweep as R
+        from sec_agent_harness2.cli import run_sweep as R
 
         buf = io.StringIO()
         with redirect_stdout(buf):
@@ -120,7 +120,7 @@ class PresetTests(unittest.TestCase):
 
 class DispatcherTests(unittest.TestCase):
     def test_help_lists_one_command_per_stage(self):
-        from harness2.cli import main as M
+        from sec_agent_harness2.cli import main as M
 
         buf = io.StringIO()
         with redirect_stdout(buf), self.assertRaises(SystemExit) as cm:
@@ -131,7 +131,7 @@ class DispatcherTests(unittest.TestCase):
             self.assertIn(cmd, text)
 
     def test_unknown_command_is_a_two_with_hint(self):
-        from harness2.cli import main as M
+        from sec_agent_harness2.cli import main as M
 
         err = io.StringIO()
         with redirect_stderr(err):
@@ -140,7 +140,7 @@ class DispatcherTests(unittest.TestCase):
         self.assertIn("frobnicate", err.getvalue())
 
     def test_run_passthrough_matches_legacy(self):
-        from harness2.cli import main as M
+        from sec_agent_harness2.cli import main as M
 
         buf = io.StringIO()
         with redirect_stdout(buf):
@@ -149,7 +149,7 @@ class DispatcherTests(unittest.TestCase):
         self.assertIn("antitrust-competition", buf.getvalue())
 
     def test_sweep_alias_matches_run(self):
-        from harness2.cli import main as M
+        from sec_agent_harness2.cli import main as M
 
         buf = io.StringIO()
         with redirect_stdout(buf):
@@ -158,7 +158,7 @@ class DispatcherTests(unittest.TestCase):
         self.assertIn("antitrust-competition", buf.getvalue())
 
     def test_global_lang_flag_is_forwarded(self):
-        from harness2.cli import main as M
+        from sec_agent_harness2.cli import main as M
 
         buf = io.StringIO()
         with redirect_stdout(buf), self.assertRaises(SystemExit) as cm:
@@ -170,7 +170,7 @@ class DispatcherTests(unittest.TestCase):
         """check takes no --k/--mode: pipeline must not leak run identity into it."""
         from unittest import mock
 
-        from harness2.cli import main as M
+        from sec_agent_harness2.cli import main as M
 
         seen = {}
 
@@ -182,8 +182,8 @@ class DispatcherTests(unittest.TestCase):
             seen["run"] = list(argv)
             return 0
 
-        with mock.patch("harness2.cli.check.main", side_effect=fake_check), mock.patch(
-            "harness2.cli.run_sweep.main", side_effect=fake_run
+        with mock.patch("sec_agent_harness2.cli.check.main", side_effect=fake_check), mock.patch(
+            "sec_agent_harness2.cli.run_sweep.main", side_effect=fake_run
         ):
             rc = M.main(
                 ["pipeline", "--bench", "lab", "--preset", "smoke",

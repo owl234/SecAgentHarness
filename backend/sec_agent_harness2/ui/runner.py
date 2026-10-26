@@ -192,7 +192,7 @@ class ExecutionManager:
         cmd = [
             sys.executable,
             "-m",
-            "harness2.cli.responses_bridge",
+            "sec_agent_harness2.cli.responses_bridge",
             "--upstream",
             upstream,
             "--api-key",
@@ -220,10 +220,10 @@ class ExecutionManager:
                 if not line_bytes:
                     break
                 line = line_bytes.decode("utf-8", errors="replace").strip()
-                if "=" in line and line.startswith("HARNESS2_CODEX_"):
+                if "=" in line and line.startswith("SEC_AGENT_HARNESS2_CODEX_"):
                     k, _, v = line.partition("=")
                     settings[k.strip()] = v.strip()
-                if "HARNESS2_CODEX_API_KEY" in settings:
+                if "SEC_AGENT_HARNESS2_CODEX_API_KEY" in settings:
                     break
         except asyncio.TimeoutError:
             pass
@@ -243,7 +243,7 @@ class ExecutionManager:
             raise RuntimeError(f"Responses bridge exited immediately (code={proc.returncode})")
 
         resolved_port = port
-        base_url = settings.get("HARNESS2_CODEX_BASE_URL", "")
+        base_url = settings.get("SEC_AGENT_HARNESS2_CODEX_BASE_URL", "")
         if ":" in base_url:
             try:
                 resolved_port = int(base_url.rsplit(":", 1)[-1].split("/", 1)[0])

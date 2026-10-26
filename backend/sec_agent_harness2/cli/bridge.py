@@ -24,8 +24,8 @@ import socket
 import sys
 from pathlib import Path
 
-from harness2 import config
-from harness2 import i18n as I18N
+from sec_agent_harness2 import config
+from sec_agent_harness2 import i18n as I18N
 
 LITELLM_CONFIG = """model_list:
   - model_name: {model}
@@ -36,7 +36,7 @@ LITELLM_CONFIG = """model_list:
 litellm_settings:
   drop_params: true
 general_settings:
-  master_key: os.environ/HARNESS2_BRIDGE_KEY
+  master_key: os.environ/SEC_AGENT_HARNESS2_BRIDGE_KEY
 """
 
 
@@ -89,18 +89,18 @@ def main(argv=None):
     litellm_config.write_text(LITELLM_CONFIG.format(model=args.model), encoding="utf-8")
 
     settings = {
-        "HARNESS2_CODEX_BASE_URL": f"http://127.0.0.1:{port}/v1",
-        "HARNESS2_CODEX_API_KEY": endpoint["key"],
-        "HARNESS2_CODEX_MODEL": args.model,
+        "SEC_AGENT_HARNESS2_CODEX_BASE_URL": f"http://127.0.0.1:{port}/v1",
+        "SEC_AGENT_HARNESS2_CODEX_API_KEY": endpoint["key"],
+        "SEC_AGENT_HARNESS2_CODEX_MODEL": args.model,
     }
     if args.host != "127.0.0.1":
-        settings["HARNESS2_CODEX_CONTAINER_URL"] = f"http://host.docker.internal:{port}/v1"
+        settings["SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL"] = f"http://host.docker.internal:{port}/v1"
     print(I18N.t("bridge.hint", lang))
     print("\n".join(f"{name}={value}" for name, value in settings.items()), flush=True)
 
     env = {
         **os.environ,
-        "HARNESS2_BRIDGE_KEY": endpoint["key"],
+        "SEC_AGENT_HARNESS2_BRIDGE_KEY": endpoint["key"],
         "GOOGLE_CLOUD_PROJECT": config.VERTEX_PROJECT,
         "GOOGLE_CLOUD_LOCATION": config.VERTEX_REGION,
     }

@@ -15,14 +15,14 @@
 """One API endpoint and key, adapted to each substrate's wire protocol.
 
 The three CLIs do not speak the same protocol, so a single
-`HARNESS2_API_BASE_URL` / `HARNESS2_API_KEY` pair is translated per substrate:
+`SEC_AGENT_HARNESS2_API_BASE_URL` / `SEC_AGENT_HARNESS2_API_KEY` pair is translated per substrate:
 
     cx      openai-responses   Codex refuses anything but `wire_api = "responses"`
     claude  anthropic          native Messages API; `openai-chat` opts into clawgod's proxy
     oc      openai-chat        OpenAI-compatible provider block in opencode.json
 
 Per-substrate variables win over the shared pair, so an existing deployment that
-sets `HARNESS2_CODEX_*` or `ANTHROPIC_*` keeps working unchanged.
+sets `SEC_AGENT_HARNESS2_CODEX_*` or `ANTHROPIC_*` keeps working unchanged.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ PROTOCOLS = ("anthropic", "openai-chat", "openai-responses")
 
 # clawgod selects its translation proxy from provider.json, not from the environment.
 CLAW_GOD_PROVIDER = "claude"
-OPENCODE_PROVIDER = "harness2"
+OPENCODE_PROVIDER = "sec_agent_harness2"
 
 
 @dataclass(frozen=True)
@@ -70,7 +70,7 @@ def _first(*names: str) -> str:
 
 
 def _protocol(substrate_var: str, default: str) -> str:
-    value = _first(substrate_var, "HARNESS2_API_PROTOCOL") or default
+    value = _first(substrate_var, "SEC_AGENT_HARNESS2_API_PROTOCOL") or default
     if value not in PROTOCOLS:
         raise ValueError(
             f"{substrate_var} is {value!r}; expected one of {', '.join(PROTOCOLS)}"
@@ -80,58 +80,58 @@ def _protocol(substrate_var: str, default: str) -> str:
 
 def _shared() -> tuple[str, str, str]:
     return (
-        _first("HARNESS2_API_BASE_URL"),
-        _first("HARNESS2_API_KEY"),
-        _first("HARNESS2_API_MODEL"),
+        _first("SEC_AGENT_HARNESS2_API_BASE_URL"),
+        _first("SEC_AGENT_HARNESS2_API_KEY"),
+        _first("SEC_AGENT_HARNESS2_API_MODEL"),
     )
 
 
 def codex() -> Endpoint | None:
     """Codex speaks only the Responses API; there is no chat fallback in 0.144.6."""
     shared_url, shared_key, shared_model = _shared()
-    url = _first("HARNESS2_CODEX_BASE_URL") or shared_url
+    url = _first("SEC_AGENT_HARNESS2_CODEX_BASE_URL") or shared_url
     if not url:
         return None
     return Endpoint(
         base_url=url,
-        api_key=_first("HARNESS2_CODEX_API_KEY") or shared_key,
+        api_key=_first("SEC_AGENT_HARNESS2_CODEX_API_KEY") or shared_key,
         protocol="openai-responses",
-        model=_first("HARNESS2_CODEX_MODEL") or shared_model,
+        model=_first("SEC_AGENT_HARNESS2_CODEX_MODEL") or shared_model,
     )
 
 
 def claude() -> Endpoint | None:
     """Claude Code: native Messages by default, OpenAI chat through clawgod's proxy.
 
-    HARNESS2_* wins over ANTHROPIC_*: when Harness2 itself runs under Claude Code,
+    SEC_AGENT_HARNESS2_* wins over ANTHROPIC_*: when Harness2 itself runs under Claude Code,
     the host session exports ANTHROPIC_BASE_URL pointing at its own proxy, and
     inheriting that would silently send rollouts to the wrong endpoint.
     """
     shared_url, shared_key, shared_model = _shared()
-    url = _first("HARNESS2_CLAUDE_BASE_URL") or shared_url or _first("ANTHROPIC_BASE_URL")
+    url = _first("SEC_AGENT_HARNESS2_CLAUDE_BASE_URL") or shared_url or _first("ANTHROPIC_BASE_URL")
     if not url:
         return None
     return Endpoint(
         base_url=url,
-        api_key=_first("HARNESS2_CLAUDE_API_KEY")
+        api_key=_first("SEC_AGENT_HARNESS2_CLAUDE_API_KEY")
         or shared_key
         or _first("ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY"),
-        protocol=_protocol("HARNESS2_CLAUDE_PROTOCOL", "anthropic"),
-        model=_first("HARNESS2_CLAUDE_MODEL") or shared_model,
+        protocol=_protocol("SEC_AGENT_HARNESS2_CLAUDE_PROTOCOL", "anthropic"),
+        model=_first("SEC_AGENT_HARNESS2_CLAUDE_MODEL") or shared_model,
     )
 
 
 def opencode() -> Endpoint | None:
     """OpenCode: any OpenAI-compatible endpoint via a generated provider block."""
     shared_url, shared_key, shared_model = _shared()
-    url = _first("HARNESS2_OPENCODE_BASE_URL") or shared_url
+    url = _first("SEC_AGENT_HARNESS2_OPENCODE_BASE_URL") or shared_url
     if not url:
         return None
     return Endpoint(
         base_url=url,
-        api_key=_first("HARNESS2_OPENCODE_API_KEY") or shared_key,
-        protocol=_protocol("HARNESS2_OPENCODE_PROTOCOL", "openai-chat"),
-        model=_first("HARNESS2_SOLVER_MODEL") or shared_model,
+        api_key=_first("SEC_AGENT_HARNESS2_OPENCODE_API_KEY") or shared_key,
+        protocol=_protocol("SEC_AGENT_HARNESS2_OPENCODE_PROTOCOL", "openai-chat"),
+        model=_first("SEC_AGENT_HARNESS2_SOLVER_MODEL") or shared_model,
     )
 
 
@@ -147,7 +147,7 @@ def claude_env(endpoint: Endpoint, env: dict[str, str]) -> dict[str, str]:
         raise ValueError(
             "the claude substrate reaches a non-Anthropic endpoint only through clawgod's "
             "openai-chat proxy, which is configured by a single global provider.json; "
-            "set HARNESS2_CLAUDE_PROTOCOL=anthropic or point HARNESS2_API_BASE_URL at an "
+            "set SEC_AGENT_HARNESS2_CLAUDE_PROTOCOL=anthropic or point SEC_AGENT_HARNESS2_API_BASE_URL at an "
             "Anthropic-compatible endpoint"
         )
     env.setdefault("ANTHROPIC_BASE_URL", endpoint.base_url)
@@ -163,7 +163,7 @@ def claude_env(endpoint: Endpoint, env: dict[str, str]) -> dict[str, str]:
 def opencode_env(endpoint: Endpoint, env: dict[str, str]) -> dict[str, str]:
     """Add the provider block OpenCode needs to reach a shared endpoint.
 
-    OpenCode resolves `harness2/<model>` from configuration, not from the environment,
+    OpenCode resolves `sec_agent_harness2/<model>` from configuration, not from the environment,
     so without this the CLI fails with `Model not found` before it ever calls out.
     A caller that already set OPENCODE_CONFIG_CONTENT keeps its own.
     """

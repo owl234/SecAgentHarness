@@ -14,7 +14,7 @@ export const en: Record<ZhKey, string> = {
   'nav.library': 'Experience Library',
   'nav.benchmark': 'Benchmark & Evaluation',
   'nav.executor': 'API & Executors',
-  'nav.executor_title': 'Configure Unified API (HARNESS2_API_*) & Claude / OpenCode / Codex substrates',
+  'nav.executor_title': 'Configure Unified API (SEC_AGENT_HARNESS2_API_*) & Claude / OpenCode / Codex substrates',
   'nav.running': 'Running',
   'nav.ready': 'Ready',
   'nav.offline': 'Disconnected',

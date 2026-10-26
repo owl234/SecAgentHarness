@@ -19,7 +19,7 @@ ungraded (score=None), never as a zero. Re-running re-judges every selection, bu
 adapters serve cached judge details and a failed re-judge never replaces an existing
 graded row.
 
-    python3 -m harness2.cli.judge --bench jb --substrate oc --k 2 --modes parallel
+    python3 -m sec_agent_harness2.cli.judge --bench jb --substrate oc --k 2 --modes parallel
 
 With --bases it scores this namespace's reference executions instead, so the initial
 harness can be reported beside the adapted one.
@@ -149,7 +149,7 @@ def judge_bases(adapter, ns_dir: Path) -> int:
 def main(argv: list[str] | None = None) -> int:
     lang = I18N.get_lang()
     p = argparse.ArgumentParser(
-        prog="harness2.cli.judge", description=I18N.t("judge.desc", lang), formatter_class=C.HelpFormatter
+        prog="sec_agent_harness2.cli.judge", description=I18N.t("judge.desc", lang), formatter_class=C.HelpFormatter
     )
     C.add_cell_args(p.add_argument_group(I18N.t("sweep.group_cell", lang)))
     C.add_run_identity_args(p.add_argument_group(I18N.t("report.group_identity", lang)))

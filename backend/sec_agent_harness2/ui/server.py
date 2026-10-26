@@ -172,7 +172,7 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
     async def launch_demo(req: DemoLaunchRequest):
         args = [
             "-m",
-            "harness2.cli.demo",
+            "sec_agent_harness2.cli.demo",
             "--output",
             req.output,
             "--k",
@@ -189,7 +189,7 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
         modes_val = "parallel,sequential" if req.modes == "both" else req.modes
         args = [
             "-m",
-            "harness2.cli.run_sweep",
+            "sec_agent_harness2.cli.run_sweep",
             "--bench",
             req.bench,
             "--substrate",
@@ -220,15 +220,15 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
             extra_env["ANTHROPIC_API_KEY"] = req.claude_api_key
         if eff_model:
             if substrate_val == "claude":
-                extra_env["HARNESS2_CLAUDE_MODEL"] = eff_model
+                extra_env["SEC_AGENT_HARNESS2_CLAUDE_MODEL"] = eff_model
             elif substrate_val == "oc":
-                extra_env["HARNESS2_SOLVER_MODEL"] = eff_model
+                extra_env["SEC_AGENT_HARNESS2_SOLVER_MODEL"] = eff_model
             elif substrate_val == "cx":
-                extra_env["HARNESS2_CODEX_MODEL"] = eff_model
+                extra_env["SEC_AGENT_HARNESS2_CODEX_MODEL"] = eff_model
         if req.effort:
-            extra_env["HARNESS2_CLAUDE_EFFORT"] = req.effort
+            extra_env["SEC_AGENT_HARNESS2_CLAUDE_EFFORT"] = req.effort
         if substrate_val == "claude":
-            extra_env["HARNESS2_DEFAULT_EXECUTOR"] = "claude"
+            extra_env["SEC_AGENT_HARNESS2_DEFAULT_EXECUTOR"] = "claude"
 
         job = await runner.start_job("sweep", args, extra_env=extra_env)
         return {"status": "started", "job": job}
@@ -295,61 +295,61 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
 
         if req.executor_id == "unified":
             if eff_base is not None:
-                updates["HARNESS2_API_BASE_URL"] = eff_base
+                updates["SEC_AGENT_HARNESS2_API_BASE_URL"] = eff_base
             if req.api_key:
-                updates["HARNESS2_API_KEY"] = req.api_key
+                updates["SEC_AGENT_HARNESS2_API_KEY"] = req.api_key
             if req.model is not None:
-                updates["HARNESS2_API_MODEL"] = req.model
+                updates["SEC_AGENT_HARNESS2_API_MODEL"] = req.model
             if req.protocol is not None:
-                updates["HARNESS2_API_PROTOCOL"] = req.protocol
+                updates["SEC_AGENT_HARNESS2_API_PROTOCOL"] = req.protocol
         elif req.executor_id == "claude":
             if eff_base is not None:
-                updates["HARNESS2_CLAUDE_BASE_URL"] = eff_base
+                updates["SEC_AGENT_HARNESS2_CLAUDE_BASE_URL"] = eff_base
             if req.api_key:
-                updates["HARNESS2_CLAUDE_API_KEY"] = req.api_key
-                if not eff_base and not os.environ.get("HARNESS2_CLAUDE_BASE_URL"):
+                updates["SEC_AGENT_HARNESS2_CLAUDE_API_KEY"] = req.api_key
+                if not eff_base and not os.environ.get("SEC_AGENT_HARNESS2_CLAUDE_BASE_URL"):
                     updates["ANTHROPIC_API_KEY"] = req.api_key
             if req.model is not None:
-                updates["HARNESS2_CLAUDE_MODEL"] = req.model
+                updates["SEC_AGENT_HARNESS2_CLAUDE_MODEL"] = req.model
             if req.protocol is not None:
-                updates["HARNESS2_CLAUDE_PROTOCOL"] = req.protocol
+                updates["SEC_AGENT_HARNESS2_CLAUDE_PROTOCOL"] = req.protocol
             if req.effort is not None:
-                updates["HARNESS2_CLAUDE_EFFORT"] = req.effort
+                updates["SEC_AGENT_HARNESS2_CLAUDE_EFFORT"] = req.effort
             if req.cli_path is not None:
-                updates["HARNESS2_CLAWGOD_PATH"] = req.cli_path
+                updates["SEC_AGENT_HARNESS2_CLAWGOD_PATH"] = req.cli_path
         elif req.executor_id == "oc":
             if eff_base is not None:
-                updates["HARNESS2_OPENCODE_BASE_URL"] = eff_base
+                updates["SEC_AGENT_HARNESS2_OPENCODE_BASE_URL"] = eff_base
             if req.api_key:
-                updates["HARNESS2_OPENCODE_API_KEY"] = req.api_key
+                updates["SEC_AGENT_HARNESS2_OPENCODE_API_KEY"] = req.api_key
             if req.model is not None:
-                updates["HARNESS2_SOLVER_MODEL"] = req.model
+                updates["SEC_AGENT_HARNESS2_SOLVER_MODEL"] = req.model
             if req.protocol is not None:
-                updates["HARNESS2_OPENCODE_PROTOCOL"] = req.protocol
+                updates["SEC_AGENT_HARNESS2_OPENCODE_PROTOCOL"] = req.protocol
         elif req.executor_id == "cx":
             if eff_base is not None:
-                updates["HARNESS2_CODEX_BASE_URL"] = eff_base
+                updates["SEC_AGENT_HARNESS2_CODEX_BASE_URL"] = eff_base
             if req.container_url is not None:
-                updates["HARNESS2_CODEX_CONTAINER_URL"] = req.container_url
+                updates["SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL"] = req.container_url
             if req.api_key:
-                updates["HARNESS2_CODEX_API_KEY"] = req.api_key
+                updates["SEC_AGENT_HARNESS2_CODEX_API_KEY"] = req.api_key
             if req.model is not None:
-                updates["HARNESS2_CODEX_MODEL"] = req.model
+                updates["SEC_AGENT_HARNESS2_CODEX_MODEL"] = req.model
         elif req.executor_id == "vertex":
             if req.improver_model is not None:
-                updates["HARNESS2_IMPROVER_MODEL"] = req.improver_model
+                updates["SEC_AGENT_HARNESS2_IMPROVER_MODEL"] = req.improver_model
             if req.judge_model is not None:
-                updates["HARNESS2_JUDGE_MODEL"] = req.judge_model
+                updates["SEC_AGENT_HARNESS2_JUDGE_MODEL"] = req.judge_model
             elif req.model is not None:
-                updates["HARNESS2_JUDGE_MODEL"] = req.model
+                updates["SEC_AGENT_HARNESS2_JUDGE_MODEL"] = req.model
             if req.judge_base_url is not None:
-                updates["HARNESS2_JUDGE_BASE_URL"] = req.judge_base_url
+                updates["SEC_AGENT_HARNESS2_JUDGE_BASE_URL"] = req.judge_base_url
             elif eff_base is not None:
-                updates["HARNESS2_JUDGE_BASE_URL"] = eff_base
+                updates["SEC_AGENT_HARNESS2_JUDGE_BASE_URL"] = eff_base
             if req.judge_api_key:
-                updates["HARNESS2_JUDGE_API_KEY"] = req.judge_api_key
+                updates["SEC_AGENT_HARNESS2_JUDGE_API_KEY"] = req.judge_api_key
             elif req.api_key:
-                updates["HARNESS2_JUDGE_API_KEY"] = req.api_key
+                updates["SEC_AGENT_HARNESS2_JUDGE_API_KEY"] = req.api_key
             if req.vertex_project is not None:
                 updates["GOOGLE_CLOUD_PROJECT"] = req.vertex_project
             if req.vertex_location is not None:
@@ -378,17 +378,17 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
     @app.post("/api/executors/bridge/start")
     async def start_responses_bridge(req: BridgeControlRequest):
         scanner.sync_config_from_env()
-        upstream = (req.upstream or os.environ.get("HARNESS2_API_BASE_URL", "")).strip()
-        api_key = (req.api_key or os.environ.get("HARNESS2_API_KEY", "")).strip()
+        upstream = (req.upstream or os.environ.get("SEC_AGENT_HARNESS2_API_BASE_URL", "")).strip()
+        api_key = (req.api_key or os.environ.get("SEC_AGENT_HARNESS2_API_KEY", "")).strip()
         if not upstream:
             raise HTTPException(
                 status_code=400,
-                detail="启动 Responses 转换桥需要上游 Chat Completions 地址 (upstream 或 HARNESS2_API_BASE_URL)",
+                detail="启动 Responses 转换桥需要上游 Chat Completions 地址 (upstream 或 SEC_AGENT_HARNESS2_API_BASE_URL)",
             )
         if not api_key:
             raise HTTPException(
                 status_code=400,
-                detail="启动 Responses 转换桥需要上游 API Key (api_key 或 HARNESS2_API_KEY)",
+                detail="启动 Responses 转换桥需要上游 API Key (api_key 或 SEC_AGENT_HARNESS2_API_KEY)",
             )
         try:
             meta = await runner.start_bridge(
@@ -400,11 +400,11 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
         if req.auto_bind_codex and meta.get("settings"):
             settings = meta["settings"]
             updates: dict[str, str | None] = {
-                "HARNESS2_CODEX_BASE_URL": settings.get("HARNESS2_CODEX_BASE_URL"),
-                "HARNESS2_CODEX_API_KEY": settings.get("HARNESS2_CODEX_API_KEY"),
+                "SEC_AGENT_HARNESS2_CODEX_BASE_URL": settings.get("SEC_AGENT_HARNESS2_CODEX_BASE_URL"),
+                "SEC_AGENT_HARNESS2_CODEX_API_KEY": settings.get("SEC_AGENT_HARNESS2_CODEX_API_KEY"),
             }
-            if settings.get("HARNESS2_CODEX_CONTAINER_URL"):
-                updates["HARNESS2_CODEX_CONTAINER_URL"] = settings["HARNESS2_CODEX_CONTAINER_URL"]
+            if settings.get("SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL"):
+                updates["SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL"] = settings["SEC_AGENT_HARNESS2_CODEX_CONTAINER_URL"]
             scanner.persist_env_updates(workspace_root, updates, write_dotenv=True)
 
         return {

@@ -13,7 +13,7 @@ so setup works outside a source checkout.
 | `licenses/` | License copies covering those patches |
 
 Each runner retains its `LICENSE` and `PROVENANCE.md`. Research logic belongs in
-`harness2/core/`; benchmark interfaces belong in `harness2/benchmarks/`.
+`sec_agent_harness2/core/`; benchmark interfaces belong in `sec_agent_harness2/benchmarks/`.
 Setup downloads upstream checkouts and data into the invocation's `dependencies/`
 directory. Those downloads are excluded from version control.
 
