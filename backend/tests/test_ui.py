@@ -109,6 +109,18 @@ class UITests(unittest.TestCase):
         self.assertIn("components_summary", data)
         self.assertEqual(data["components_summary"]["scripts"]["status"], "modified")
 
+    def test_api_task_harness_by_category(self):
+        res = self.client.get("/api/runs/demo/tasks/ledger-1/harnesses/agg1")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("by_category", data)
+        by_cat = data["by_category"]
+        self.assertTrue(by_cat["c1"]["exists"])
+        self.assertFalse(by_cat["c1"]["diff_from_base"])
+        self.assertTrue(by_cat["c7"]["exists"])
+        self.assertTrue(by_cat["c7"]["diff_from_base"])
+        self.assertEqual(by_cat["c7"]["primary_path"], "scripts/summarize.py")
+
     def test_api_preflight(self):
         res = self.client.get("/api/preflight")
         self.assertEqual(res.status_code, 200)

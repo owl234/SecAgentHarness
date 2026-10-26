@@ -171,7 +171,23 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
     return runs
 
 
+_SWEEP_TS_SUFFIX = re.compile(r"-\d{8}T\d{6}Z$")
+
+
 def _resolve_run_dir(runs_root: Path, run_id: str) -> Path:
+    resolved = _resolve_run_dir_exact(runs_root, run_id)
+    if resolved.is_dir():
+        return resolved
+    # A sweep summary id (``<run_id>-<UTC timestamp>``) maps onto the adapt run it produced.
+    base_id = _SWEEP_TS_SUFFIX.sub("", run_id)
+    if base_id != run_id:
+        base = _resolve_run_dir_exact(runs_root, base_id)
+        if base.is_dir():
+            return base
+    return resolved
+
+
+def _resolve_run_dir_exact(runs_root: Path, run_id: str) -> Path:
     target = runs_root / run_id
     if target.is_dir():
         return target
@@ -778,6 +794,51 @@ def _build_pipeline_graph(
     return {"nodes": nodes, "edges": edges}
 
 
+def _map_rel_path_to_category(path_str: str) -> str:
+    norm = path_str.replace("\\", "/")
+    if norm in ("systemprompt.md", "AGENTS.md", "CLAUDE.md"):
+        return "c1"
+    if norm == "guardrails.md" or norm.startswith("guardrails/"):
+        return "c2"
+    if norm == "LongTermMEMORY.md" or norm.startswith("memory/"):
+        return "c3"
+    if norm.startswith("tool_descriptions") or norm.startswith("tool_guidance"):
+        return "c4"
+    if norm.startswith("sub_agents"):
+        return "c5"
+    if norm.startswith(("skills", ".agents/skills", ".claude/skills")):
+        return "c6"
+    if norm.startswith("scripts"):
+        return "c7"
+    if norm.startswith("plugin") or norm in (".codex/hooks.json", ".claude/settings.json"):
+        return "c8"
+    if norm.startswith("mcp") or norm == ".mcp.json":
+        return "c9"
+    return ""
+
+
+_PLACEHOLDER_READMES = frozenset({
+    "scripts/README.md",
+    "skills/README.md",
+    "plugin/README.md",
+    "plugins/README.md",
+    "mcp/README.md",
+    "sub_agents/README.md",
+})
+
+
+def _collect_category_files(raw_files: dict[str, str]) -> dict[str, dict[str, str]]:
+    grouped: dict[str, dict[str, str]] = {f"c{i}": {} for i in range(1, 10)}
+    for rel_path, content in sorted(raw_files.items()):
+        norm = rel_path.replace("\\", "/")
+        if norm in _PLACEHOLDER_READMES:
+            continue
+        cat = _map_rel_path_to_category(norm)
+        if cat in grouped:
+            grouped[cat][norm] = content
+    return grouped
+
+
 def get_harness_components(runs_root: Path, run_id: str, task_id: str, label: str) -> dict[str, Any]:
     """Retrieve all component files for a given harness label (base, inv1, agg1, etc.)."""
     run_dir = _resolve_run_dir(runs_root, run_id)
@@ -787,9 +848,13 @@ def get_harness_components(runs_root: Path, run_id: str, task_id: str, label: st
     if not matched_dirs:
         return {}
 
-    target_harness = matched_dirs[0] / "harnesses" / label
+    task_dir = matched_dirs[0]
+    target_harness = task_dir / "harnesses" / label
 
     components: dict[str, Any] = {
+        "run_id": run_id,
+        "task_id": task_id,
+        "label": label,
         "systemprompt": "",
         "guardrails": "",
         "memory": "",
@@ -800,6 +865,7 @@ def get_harness_components(runs_root: Path, run_id: str, task_id: str, label: st
         "plugins": {},
         "mcp": {},
         "raw_files": {},
+        "by_category": {},
     }
 
     # standard always-on
@@ -824,6 +890,25 @@ def get_harness_components(runs_root: Path, run_id: str, task_id: str, label: st
                     f.name: _safe_read_text(f) for f in sk.iterdir() if f.is_file()
                 }
 
+    # subagents
+    subagents_dir = target_harness / "sub_agents"
+    if subagents_dir.is_dir():
+        for sa in subagents_dir.iterdir():
+            if sa.is_dir():
+                components["subagents"][sa.name] = {
+                    f.name: _safe_read_text(f) for f in sa.iterdir() if f.is_file()
+                }
+            elif sa.is_file() and sa.name != "README.md":
+                components["subagents"][sa.name] = _safe_read_text(sa)
+
+    # plugins
+    for pdir_name in ("plugins", "plugin"):
+        pdir = target_harness / pdir_name
+        if pdir.is_dir():
+            for pf in pdir.iterdir():
+                if pf.is_file() and pf.name != "README.md":
+                    components["plugins"][pf.name] = _safe_read_text(pf)
+
     # mcp
     mcp_dir = target_harness / "mcp"
     if mcp_dir.is_dir():
@@ -834,8 +919,56 @@ def get_harness_components(runs_root: Path, run_id: str, task_id: str, label: st
     # all files flat map
     for f in target_harness.rglob("*"):
         if f.is_file():
-            rel_name = str(f.relative_to(target_harness))
+            rel_name = str(f.relative_to(target_harness)).replace("\\", "/")
             components["raw_files"][rel_name] = _safe_read_text(f)
+
+    # Compare against base harness if available
+    base_raw_files: dict[str, str] = {}
+    base_harness = task_dir / "harnesses" / "base"
+    if label != "base" and base_harness.is_dir():
+        for bf in base_harness.rglob("*"):
+            if bf.is_file():
+                rel_name = str(bf.relative_to(base_harness)).replace("\\", "/")
+                base_raw_files[rel_name] = _safe_read_text(bf)
+    else:
+        base_raw_files = dict(components["raw_files"])
+
+    cat_files_map = _collect_category_files(components["raw_files"])
+    base_cat_files_map = _collect_category_files(base_raw_files)
+
+    default_paths = {
+        "c1": "systemprompt.md",
+        "c2": "guardrails.md",
+        "c3": "LongTermMEMORY.md",
+        "c4": "tool_descriptions/tool_guidance.md",
+        "c5": "sub_agents/auditor/AGENT.md",
+        "c6": "skills/domain_sop/SKILL.md",
+        "c7": "scripts/helper.py",
+        "c8": "plugins/hook.ts",
+        "c9": "mcp/servers.json",
+    }
+
+    for cat_code in (f"c{i}" for i in range(1, 10)):
+        c_files = cat_files_map.get(cat_code, {})
+        b_files = base_cat_files_map.get(cat_code, {})
+        non_empty_files = {k: v for k, v in c_files.items() if v.strip()}
+        primary_path = next(iter(non_empty_files.keys()), next(iter(c_files.keys()), default_paths[cat_code]))
+        primary_content = c_files.get(primary_path, "")
+        base_primary_content = b_files.get(primary_path, next(iter(b_files.values()), ""))
+        char_count = sum(len(v) for v in c_files.values())
+        diff_from_base = (label != "base") and (c_files != b_files)
+        components["by_category"][cat_code] = {
+            "category": cat_code,
+            "exists": bool(non_empty_files),
+            "file_count": len(non_empty_files),
+            "char_count": char_count,
+            "primary_path": primary_path,
+            "primary_content": primary_content,
+            "base_primary_content": base_primary_content,
+            "files": c_files,
+            "base_files": b_files,
+            "diff_from_base": diff_from_base,
+        }
 
     return components
 

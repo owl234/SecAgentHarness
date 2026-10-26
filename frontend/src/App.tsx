@@ -24,6 +24,8 @@ export const App: React.FC = () => {
     setSelectedRunId,
     selectedTaskId,
     setSelectedTaskId,
+    selectedCategory,
+    setSelectedCategory,
     navigateRunAndTab,
   } = useUrlState();
 
@@ -240,7 +242,7 @@ export const App: React.FC = () => {
         {/* Main Content Area */}
         <main
           className={`flex-1 min-w-0 ${
-            currentTab === 'overview'
+            currentTab === 'overview' || currentTab === 'studio'
               ? 'max-w-[1720px] px-3 sm:px-6 py-4'
               : 'max-w-7xl px-4 sm:px-6 lg:px-8 py-8'
           } w-full mx-auto`}
@@ -252,8 +254,8 @@ export const App: React.FC = () => {
               onSelectRunId={(id) => setSelectedRunId(id)}
               systemStatus={systemStatus}
               liveStep={liveStep}
-              onNavigateToTab={(tab, runId, taskId) => {
-                navigateRunAndTab(runId || selectedRunId, tab, taskId);
+              onNavigateToTab={(tab, runId, taskId, category) => {
+                navigateRunAndTab(runId || selectedRunId, tab, taskId, category);
               }}
               onOpenConsole={() => setShowConsole(true)}
             />
@@ -296,8 +298,14 @@ export const App: React.FC = () => {
           {currentTab === 'studio' && (
             <ComponentStudio
               runs={runs}
-              onNavigateToRun={(runId) => {
-                navigateRunAndTab(runId, 'pipeline');
+              selectedRunId={selectedRunId}
+              onSelectRunId={(id) => setSelectedRunId(id)}
+              selectedTaskId={selectedTaskId}
+              onSelectTaskId={(tid) => setSelectedTaskId(tid)}
+              selectedCategory={selectedCategory}
+              onSelectCategory={(cat) => setSelectedCategory(cat)}
+              onNavigateToRun={(runId, taskId) => {
+                navigateRunAndTab(runId, 'pipeline', taskId);
               }}
             />
           )}

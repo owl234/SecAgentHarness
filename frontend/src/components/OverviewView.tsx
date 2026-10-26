@@ -24,7 +24,12 @@ interface OverviewViewProps {
   onSelectRunId?: (id: string) => void;
   systemStatus?: SystemStatus | null;
   liveStep?: LiveStageStep | null;
-  onNavigateToTab?: (tab: NavTabType, runId?: string, taskId?: string) => void;
+  onNavigateToTab?: (
+    tab: NavTabType,
+    runId?: string,
+    taskId?: string,
+    category?: ComponentCategory | null
+  ) => void;
   onOpenConsole?: () => void;
 }
 
@@ -451,11 +456,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         }}
         lang={lang}
         telemetryData={telemetryData}
-        onNavigateToTab={(tab) => {
+        onNavigateToTab={(tab, category) => {
           setSelectedNode(null);
           setSelectedComponentCode(null);
           if (onNavigateToTab) {
-            onNavigateToTab(tab as NavTabType, selectedRunId);
+            onNavigateToTab(tab as NavTabType, selectedRunId, undefined, category);
           }
         }}
       />

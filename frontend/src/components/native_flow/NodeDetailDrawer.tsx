@@ -21,7 +21,7 @@ interface NodeDetailDrawerProps {
   selectedComponentCode?: ComponentCategory | null;
   onClose: () => void;
   lang?: 'zh' | 'en';
-  onNavigateToTab?: (tab: string) => void;
+  onNavigateToTab?: (tab: string, category?: ComponentCategory | null) => void;
   telemetryData?: {
     stageCount?: number;
     chosenLabel?: string;
@@ -113,8 +113,8 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
               <span className="truncate">Path: {activeComponent.defaultPath}</span>
               {onNavigateToTab && (
                 <button
-                  onClick={() => onNavigateToTab('studio')}
-                  className="text-indigo-600 dark:text-indigo-400 font-sans font-semibold flex items-center gap-1 hover:underline ml-2 shrink-0"
+                  onClick={() => onNavigateToTab('studio', selectedComponentCode)}
+                  className="text-indigo-600 dark:text-indigo-400 font-sans font-semibold flex items-center gap-1 hover:underline ml-2 shrink-0 cursor-pointer"
                 >
                   <span>{isZh ? '在组件工作室调试' : 'Open in Studio'}</span>
                   <ExternalLink className="w-3 h-3" />
@@ -159,9 +159,11 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
                 if (!meta) return null;
                 const MetaIcon = meta.icon;
                 return (
-                  <div
+                  <button
                     key={code}
-                    className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-start gap-2.5"
+                    type="button"
+                    onClick={() => onNavigateToTab?.('studio', code)}
+                    className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/70 dark:bg-slate-900/60 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 hover:border-blue-500/40 flex items-start gap-2.5 transition-all cursor-pointer"
                   >
                     <div className={`p-1.5 rounded-lg shrink-0 ${meta.bgLight} ${meta.color}`}>
                       <MetaIcon className="w-4 h-4" />
@@ -171,15 +173,15 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
                         <span className="font-bold text-xs text-slate-900 dark:text-white">
                           {code} · {isZh ? meta.cnName : meta.name}
                         </span>
-                        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
-                          {meta.role}
+                        <span className="text-[10px] font-mono text-blue-600 dark:text-cyan-400">
+                          {isZh ? '进入工作室 ➔' : 'Open Studio ➔'}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
                         {isZh ? meta.desc : meta.enDesc}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -286,7 +288,12 @@ export const NodeDetailDrawer: React.FC<NodeDetailDrawerProps> = ({
       <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/90 dark:bg-slate-900/70 flex items-center justify-end gap-2">
         {onNavigateToTab && (
           <button
-            onClick={() => onNavigateToTab(node?.actionTab || 'studio')}
+            onClick={() =>
+              onNavigateToTab(
+                node?.actionTab || 'studio',
+                selectedComponentCode || node?.componentCodes?.[0] || null
+              )
+            }
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20 transition-all cursor-pointer"
           >
             <span>{isZh ? node?.actionLabelZh || '前往相关模块' : node?.actionLabelEn || 'Jump to Module'}</span>

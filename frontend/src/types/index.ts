@@ -1,7 +1,7 @@
 export interface RunItem {
   id: string;
   name: string;
-  type: 'demo' | 'sweep' | 'namespace';
+  type: 'demo' | 'sweep' | 'adapt' | 'namespace';
   path: string;
   task_count: number;
   completed_count: number;
@@ -238,7 +238,23 @@ export interface ComponentTemplate {
   extra_files?: Record<string, string>;
 }
 
+export interface SandboxCategorySnapshot {
+  category: ComponentCategory;
+  exists: boolean;
+  file_count: number;
+  char_count: number;
+  primary_path: string;
+  primary_content: string;
+  base_primary_content?: string;
+  files: Record<string, string>;
+  base_files?: Record<string, string>;
+  diff_from_base: boolean;
+}
+
 export interface HarnessSnapshot {
+  run_id?: string;
+  task_id?: string;
+  label?: string;
   systemprompt?: string;
   guardrails?: string;
   memory?: string;
@@ -248,6 +264,8 @@ export interface HarnessSnapshot {
   plugins?: Record<string, string>;
   scripts?: Record<string, string>;
   mcp?: Record<string, string>;
+  raw_files?: Record<string, string>;
+  by_category?: Partial<Record<ComponentCategory, SandboxCategorySnapshot>>;
   [key: string]: unknown;
 }
 

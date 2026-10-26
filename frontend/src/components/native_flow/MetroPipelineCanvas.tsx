@@ -21,7 +21,25 @@ interface MetroPipelineCanvasProps {
   mode?: 'parallel' | 'sequential';
   activeStepIndex?: number | null;
   liveStep?: LiveStageStep | null;
+  /** Optional per-station metric badges (keyed by FlowNode id), used by the analytics dashboard. */
+  stationBadges?: Record<string, StationBadge>;
 }
+
+export interface StationBadge {
+  label: string;
+  value: string;
+  sub?: string;
+  tone: 'neutral' | 'good' | 'bad' | 'accent';
+}
+
+const BADGE_TONE_CLASS: Record<StationBadge['tone'], string> = {
+  neutral:
+    'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200',
+  good: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-300',
+  bad: 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700/60 text-rose-700 dark:text-rose-300',
+  accent:
+    'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700/60 text-purple-700 dark:text-purple-300',
+};
 
 interface StationLayout {
   nodeId: string;
@@ -335,6 +353,7 @@ export const MetroPipelineCanvas: React.FC<MetroPipelineCanvasProps> = ({
   mode = 'parallel',
   activeStepIndex = null,
   liveStep = null,
+  stationBadges,
 }) => {
   const isZh = lang === 'zh';
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1244,6 +1263,27 @@ export const MetroPipelineCanvas: React.FC<MetroPipelineCanvasProps> = ({
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* Dashboard metric badge */}
+                  {stationBadges?.[node.id] && (
+                    <div
+                      className={`mt-1.5 px-2 py-1.5 rounded-lg border flex items-baseline justify-between gap-2 ${
+                        BADGE_TONE_CLASS[stationBadges[node.id].tone]
+                      }`}
+                    >
+                      <span className="text-[9px] font-semibold opacity-80 truncate">
+                        {stationBadges[node.id].label}
+                      </span>
+                      <span className="text-sm font-black font-mono leading-none">
+                        {stationBadges[node.id].value}
+                      </span>
+                      {stationBadges[node.id].sub && (
+                        <span className="text-[9px] font-mono opacity-70 shrink-0">
+                          {stationBadges[node.id].sub}
+                        </span>
+                      )}
                     </div>
                   )}
 

@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { NavTabType } from '../types';
+import { ComponentCategory, NavTabType } from '../types';
 
 const VALID_TABS: NavTabType[] = ['overview', 'workbench', 'dashboard', 'studio', 'pipeline', 'library', 'benchmark'];
+const VALID_CATS: ComponentCategory[] = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9'];
 
-function parseUrlParams(): { tab: NavTabType; runId: string; taskId: string } {
+function parseUrlParams(): {
+  tab: NavTabType;
+  runId: string;
+  taskId: string;
+  category: ComponentCategory | null;
+} {
   try {
     const params = new URLSearchParams(window.location.search);
     const rawTab = params.get('tab') as NavTabType | null;
@@ -15,9 +21,11 @@ function parseUrlParams(): { tab: NavTabType; runId: string; taskId: string } {
     }
     const runId = params.get('run') || '';
     const taskId = params.get('task') || '';
-    return { tab, runId, taskId };
+    const rawCat = params.get('cat') as ComponentCategory | null;
+    const category = rawCat && VALID_CATS.includes(rawCat) ? rawCat : null;
+    return { tab, runId, taskId, category };
   } catch {
-    return { tab: 'workbench', runId: '', taskId: '' };
+    return { tab: 'workbench', runId: '', taskId: '', category: null };
   }
 }
 
@@ -26,9 +34,18 @@ export function useUrlState() {
   const [currentTab, setCurrentTabState] = useState<NavTabType>(initial.tab);
   const [selectedRunId, setSelectedRunIdState] = useState<string>(initial.runId);
   const [selectedTaskId, setSelectedTaskIdState] = useState<string>(initial.taskId);
+  const [selectedCategory, setSelectedCategoryState] = useState<ComponentCategory | null>(
+    initial.category
+  );
 
   const syncToUrl = useCallback(
-    (nextTab: NavTabType, nextRunId: string, nextTaskId: string, replace: boolean = false) => {
+    (
+      nextTab: NavTabType,
+      nextRunId: string,
+      nextTaskId: string,
+      nextCategory: ComponentCategory | null,
+      replace: boolean = false
+    ) => {
       try {
         const params = new URLSearchParams(window.location.search);
         if (nextTab && nextTab !== 'workbench') {
@@ -45,6 +62,11 @@ export function useUrlState() {
           params.set('task', nextTaskId);
         } else {
           params.delete('task');
+        }
+        if (nextTab === 'studio' && nextCategory) {
+          params.set('cat', nextCategory);
+        } else {
+          params.delete('cat');
         }
         const searchStr = params.toString();
         const nextUrl = `${window.location.pathname}${searchStr ? `?${searchStr}` : ''}${window.location.hash}`;
@@ -67,6 +89,7 @@ export function useUrlState() {
       setCurrentTabState(parsed.tab);
       setSelectedRunIdState(parsed.runId);
       setSelectedTaskIdState(parsed.taskId);
+      setSelectedCategoryState(parsed.category);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -75,38 +98,54 @@ export function useUrlState() {
   const setCurrentTab = useCallback(
     (tab: NavTabType) => {
       setCurrentTabState(tab);
-      syncToUrl(tab, selectedRunId, selectedTaskId, false);
+      syncToUrl(tab, selectedRunId, selectedTaskId, tab === 'studio' ? selectedCategory : null, false);
     },
-    [selectedRunId, selectedTaskId, syncToUrl]
+    [selectedRunId, selectedTaskId, selectedCategory, syncToUrl]
   );
 
   const setSelectedRunId = useCallback(
     (runId: string, replace: boolean = false) => {
       setSelectedRunIdState(runId);
       setSelectedTaskIdState('');
-      syncToUrl(currentTab, runId, '', replace);
+      syncToUrl(currentTab, runId, '', selectedCategory, replace);
     },
-    [currentTab, syncToUrl]
+    [currentTab, selectedCategory, syncToUrl]
   );
 
   const setSelectedTaskId = useCallback(
     (taskId: string, replace: boolean = true) => {
       setSelectedTaskIdState(taskId);
-      syncToUrl(currentTab, selectedRunId, taskId, replace);
+      syncToUrl(currentTab, selectedRunId, taskId, selectedCategory, replace);
     },
-    [currentTab, selectedRunId, syncToUrl]
+    [currentTab, selectedRunId, selectedCategory, syncToUrl]
+  );
+
+  const setSelectedCategory = useCallback(
+    (cat: ComponentCategory | null, replace: boolean = true) => {
+      setSelectedCategoryState(cat);
+      syncToUrl(currentTab, selectedRunId, selectedTaskId, cat, replace);
+    },
+    [currentTab, selectedRunId, selectedTaskId, syncToUrl]
   );
 
   const navigateRunAndTab = useCallback(
-    (runId: string, targetTab?: NavTabType, taskId?: string) => {
+    (
+      runId: string,
+      targetTab?: NavTabType,
+      taskId?: string,
+      category?: ComponentCategory | null
+    ) => {
       const nextTab = targetTab || currentTab;
       const nextTask = taskId ?? (runId === selectedRunId ? selectedTaskId : '');
+      const nextCat =
+        category !== undefined ? category : nextTab === 'studio' ? selectedCategory : null;
       setCurrentTabState(nextTab);
       setSelectedRunIdState(runId);
       setSelectedTaskIdState(nextTask);
-      syncToUrl(nextTab, runId, nextTask, false);
+      setSelectedCategoryState(nextCat);
+      syncToUrl(nextTab, runId, nextTask, nextCat, false);
     },
-    [currentTab, selectedRunId, selectedTaskId, syncToUrl]
+    [currentTab, selectedRunId, selectedTaskId, selectedCategory, syncToUrl]
   );
 
   return {
@@ -116,6 +155,8 @@ export function useUrlState() {
     setSelectedRunId,
     selectedTaskId,
     setSelectedTaskId,
+    selectedCategory,
+    setSelectedCategory,
     navigateRunAndTab,
   };
 }
