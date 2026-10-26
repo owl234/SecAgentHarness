@@ -230,8 +230,8 @@ export const ComponentsTopologyFlow: React.FC<ComponentsTopologyFlowProps> = ({
           <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           <span>
             {isZh
-              ? 'Harness² 围绕模型开放了 8 个可编辑组件，按运行时角色分为上下文、接口、委派与中间件 4 大体系。'
-              : 'Harness² exposes 8 editable components across Context, Interface, Delegation, and Middleware roles.'}
+              ? 'SecAgentHarness² 围绕模型开放了 8 个可编辑组件，按运行时角色分为上下文、接口、委派与中间件 4 大体系。'
+              : 'SecAgentHarness² exposes 8 editable components across Context, Interface, Delegation, and Middleware roles.'}
           </span>
         </div>
         <span className="font-mono text-[11px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-700/50">

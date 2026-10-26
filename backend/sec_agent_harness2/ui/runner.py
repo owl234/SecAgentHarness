@@ -25,6 +25,57 @@ from pathlib import Path
 from typing import Any, AsyncGenerator
 
 
+STEP_NODES = [
+    {"index": 0, "nodeId": "s1-task-in", "stage": 1, "title": "任务规格与隔离接入"},
+    {"index": 1, "nodeId": "s1-prior-lib", "stage": 1, "title": "领域经验库先验"},
+    {"index": 2, "nodeId": "s1-base-roll", "stage": 1, "title": "基线探针试跑"},
+    {"index": 3, "nodeId": "s2-context-build", "stage": 2, "title": "对比证据包组装"},
+    {"index": 4, "nodeId": "s2-inv-levers", "stage": 2, "title": "通用工程杠杆 (INV)"},
+    {"index": 5, "nodeId": "s2-dom-levers", "stage": 2, "title": "业务领域杠杆 (DOM)"},
+    {"index": 6, "nodeId": "s2-validation-gate", "stage": 2, "title": "SurfaceSpec 规范检验"},
+    {"index": 7, "nodeId": "s2-probe-exec", "stage": 2, "title": "沙箱并发探针试跑"},
+    {"index": 8, "nodeId": "s3-compose-choice", "stage": 3, "title": "组合合成与模式分支"},
+    {"index": 9, "nodeId": "s4-blind-judge", "stage": 4, "title": "零标注无监督盲审"},
+    {"index": 10, "nodeId": "s5-reflector", "stage": 5, "title": "经验反思提炼"},
+    {"index": 11, "nodeId": "s5-update-lib", "stage": 5, "title": "沉淀领域经验库闭环"},
+]
+
+
+def detect_lifecycle_step(line: str) -> int | None:
+    """Identify stage transition step (0..11) from log stream."""
+    l = line.lower()
+    if "[lifecycle:" in l:
+        for s in STEP_NODES:
+            if s["nodeId"].lower() in l or f":{s['index']}]" in l:
+                return s["index"]
+
+    if any(k in l for k in ("index.md", "update_library", "persisting", "沉淀", "已写入经验库")):
+        return 11
+    if any(k in l for k in ("reflector", "reflecting", "cue", "lesson", "反思提炼")):
+        return 10
+    if any(k in l for k in ("chosen_label", "selection", "blind judge", "盲选", "裁决")):
+        return 9
+    if any(k in l for k in ("compose", "composition", "agg", "seq", "合成", "精炼")):
+        return 8
+    if any(k in l for k in ("_roll_many", "probe rollout", "rolling candidates", "并发探针")):
+        return 7
+    if any(k in l for k in ("surfacespec", "validation", "validate", "规范网关", "语法校验")):
+        return 6
+    if any(k in l for k in ("dom", "skill", "script", "subagent", "领域杠杆")):
+        return 5
+    if any(k in l for k in ("inv", "prompt", "guardrail", "tool contract", "工程杠杆")):
+        return 4
+    if any(k in l for k in ("contrastive evidence", "context.build", "差异切片", "证据包")):
+        return 3
+    if any(k in l for k in ("_roll_bases", "baseline probe", "base rollout", "基线探针")):
+        return 2
+    if any(k in l for k in ("library prior", "prior domain", "冷启动先验", "加载经验库")):
+        return 1
+    if any(k in l for k in ("taskspec", "spec seam", "started", "任务启动", "规格接入")):
+        return 0
+    return None
+
+
 class ExecutionManager:
     """Manages active CLI runs, capturing stdout/stderr and broadcasting events."""
 
@@ -138,6 +189,20 @@ class ExecutionManager:
         self, proc: asyncio.subprocess.Process, job: dict[str, Any]
     ) -> None:
         assert proc.stdout is not None
+        current_step: int = 0
+        job["current_step_index"] = 0
+        job["current_node_id"] = STEP_NODES[0]["nodeId"]
+
+        # Initial step 0 broadcast: Task Inflow & Coldstart
+        await self.broadcast("stage_step", {
+            "stepIndex": 0,
+            "nodeId": STEP_NODES[0]["nodeId"],
+            "stage": STEP_NODES[0]["stage"],
+            "status": "active",
+            "title": STEP_NODES[0]["title"],
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+
         while True:
             line_bytes = await proc.stdout.readline()
             if not line_bytes:
@@ -146,10 +211,37 @@ class ExecutionManager:
             self.logs.append(line)
             await self.broadcast("log", {"line": line, "timestamp": datetime.now(timezone.utc).isoformat()})
 
+            detected = detect_lifecycle_step(line)
+            if detected is not None and detected > current_step:
+                current_step = detected
+                job["current_step_index"] = current_step
+                job["current_node_id"] = STEP_NODES[current_step]["nodeId"]
+                await self.broadcast("stage_step", {
+                    "stepIndex": current_step,
+                    "nodeId": STEP_NODES[current_step]["nodeId"],
+                    "stage": STEP_NODES[current_step]["stage"],
+                    "status": "active",
+                    "title": STEP_NODES[current_step]["title"],
+                    "line": line,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+
         exit_code = await proc.wait()
         job["exit_code"] = exit_code
         job["finished_at"] = datetime.now(timezone.utc).isoformat()
         job["status"] = "completed" if exit_code == 0 else "failed"
+
+        if exit_code == 0:
+            job["current_step_index"] = 11
+            job["current_node_id"] = STEP_NODES[11]["nodeId"]
+            await self.broadcast("stage_step", {
+                "stepIndex": 11,
+                "nodeId": STEP_NODES[11]["nodeId"],
+                "stage": STEP_NODES[11]["stage"],
+                "status": "completed",
+                "title": STEP_NODES[11]["title"],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
 
         await self.broadcast("finish", job)
         await self.broadcast("refresh", {"timestamp": datetime.now(timezone.utc).isoformat()})

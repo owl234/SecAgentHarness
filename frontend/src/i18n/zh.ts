@@ -3,11 +3,11 @@
  */
 export const zh = {
   // ---- Navbar / shell ----
-  'nav.brand': 'Harness² 控制台',
-  'nav.badge': '递归自适应演进',
-  'nav.subtitle': '开放世界多智能体运行套件自动进化与基准评测系统',
+  'nav.brand': 'SecAgentHarness²',
+  'nav.badge': '网安智能体演进',
+  'nav.subtitle': '网络安全智能体套件递归演进与评测系统',
   'nav.overview': '流程展示大屏',
-  'nav.overview_title': 'Harness² 全景工作流程大屏：双层递归全生命周期流',
+  'nav.overview_title': 'SecAgentHarness² 全景工作流程大屏：双层递归全生命周期流',
   'nav.workbench': '执行工作台',
   'nav.dashboard': '数据与评测大盘',
   'nav.studio': '组件工作室',
@@ -20,7 +20,7 @@ export const zh = {
   'nav.ready': '服务就绪',
   'nav.offline': '连接中断',
   'nav.console_title': '切换实时执行日志监控终端',
-  'nav.guide_title': '查看 Harness² 理论体系概念指南 (c1..c9 / k预算 / DAG)',
+  'nav.guide_title': '查看 SecAgentHarness² 理论体系概念指南 (c1..c9 / k预算 / DAG)',
   'nav.theme_light': '切换为明亮模式',
   'nav.theme_dark': '切换为深色模式',
   'nav.lang': '中文',

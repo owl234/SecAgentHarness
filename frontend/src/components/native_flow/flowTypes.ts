@@ -1,4 +1,5 @@
 import React from 'react';
+import { ComponentCategory } from '../../types';
 
 export type FlowCategory =
   | 'entry'
@@ -14,6 +15,9 @@ export type FlowCategory =
 
 export interface FlowNode {
   id: string;
+  stage?: 1 | 2 | 3 | 4 | 5;
+  stepIndex?: number;
+  branch?: 'main' | 'inv' | 'dom';
   titleZh: string;
   titleEn: string;
   subtitleZh?: string;
@@ -24,6 +28,8 @@ export interface FlowNode {
   icon: React.ComponentType<{ className?: string }>;
   filePath?: string;
   formula?: string;
+  formulaExplanationZh?: string;
+  formulaExplanationEn?: string;
   descriptionZh: string;
   descriptionEn: string;
   invariantsZh?: string[];
@@ -35,6 +41,7 @@ export interface FlowNode {
   actionTab?: string;
   actionLabelZh?: string;
   actionLabelEn?: string;
+  componentCodes?: ComponentCategory[];
 }
 
 export interface FlowConnectorProps {

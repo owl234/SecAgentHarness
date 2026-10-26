@@ -269,7 +269,7 @@ export const ComponentStudio: React.FC<ComponentStudioProps> = ({
             <div className="flex items-center gap-2 mb-1.5">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
                 <Layers className="w-3.5 h-3.5" />
-                <span>{tx('Harness² 组件中枢', 'Harness² Component Hub')}</span>
+                <span>{tx('SecAgentHarness² 组件中枢', 'SecAgentHarness² Component Hub')}</span>
               </span>
               <span className="text-xs text-slate-400 font-mono">
                 {tx('c1 ~ c9 全架构体系', 'c1 ~ c9 Full Surface Architecture')}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { NavTabType, RunItem, SystemStatus } from './types';
+import { NavTabType, RunItem, SystemStatus, LiveStageStep } from './types';
 import { fetchRuns, fetchStatus, fetchLogs } from './api';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
@@ -35,6 +35,7 @@ export const App: React.FC = () => {
   const [showTerminologyModal, setShowTerminologyModal] = useState(false);
   const [showExecutorDrawer, setShowExecutorDrawer] = useState(false);
   const [executorRefreshVersion, setExecutorRefreshVersion] = useState(0);
+  const [liveStep, setLiveStep] = useState<LiveStageStep | null>(null);
 
   // Theme state: 'dark' | 'light'
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -133,12 +134,26 @@ export const App: React.FC = () => {
         } catch {}
       });
 
+      es.addEventListener('stage_step', (e: MessageEvent) => {
+        try {
+          const step = JSON.parse(e.data);
+          setLiveStep(step);
+        } catch {}
+      });
+
       es.addEventListener('start', (e: MessageEvent) => {
         try {
           const job = JSON.parse(e.data);
           setSystemStatus((prev) =>
             prev ? { ...prev, status: { ...prev.status, status: 'running', job } } : prev
           );
+          setLiveStep({
+            stepIndex: 0,
+            nodeId: 's1-task-in',
+            stage: 1,
+            status: 'active',
+            title: '任务规格与隔离接入',
+          });
         } catch {}
       });
 
@@ -157,6 +172,15 @@ export const App: React.FC = () => {
                 }
               : prev
           );
+          if (job.exit_code === 0) {
+            setLiveStep({
+              stepIndex: 11,
+              nodeId: 's5-update-lib',
+              stage: 5,
+              status: 'completed',
+              title: '沉淀领域经验库闭环',
+            });
+          }
           refreshRunsList();
         } catch {}
       });
@@ -165,6 +189,7 @@ export const App: React.FC = () => {
         setSystemStatus((prev) =>
           prev ? { ...prev, status: { ...prev.status, status: 'terminated' } } : prev
         );
+        setLiveStep(null);
         refreshRunsList();
       });
 
@@ -226,6 +251,7 @@ export const App: React.FC = () => {
               selectedRunId={selectedRunId}
               onSelectRunId={(id) => setSelectedRunId(id)}
               systemStatus={systemStatus}
+              liveStep={liveStep}
               onNavigateToTab={(tab, runId, taskId) => {
                 navigateRunAndTab(runId || selectedRunId, tab, taskId);
               }}
@@ -239,6 +265,8 @@ export const App: React.FC = () => {
               selectedRunId={selectedRunId}
               systemStatus={systemStatus}
               logs={logs}
+              liveStep={liveStep}
+              onNavigateToOverview={() => setCurrentTab('overview')}
               onSelectRun={handleSelectRun}
               onNavigateToDashboard={(runId) => {
                 navigateRunAndTab(runId || selectedRunId, 'dashboard');

@@ -183,7 +183,7 @@ export const TerminologyGuideModal: React.FC<TerminologyGuideModalProps> = ({ is
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                {tx('Harness² 核心概念与图解指南', 'Harness² Concepts & Architecture Guide')}
+                {tx('SecAgentHarness² 核心概念与图解指南', 'SecAgentHarness² Concepts & Architecture Guide')}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {tx(

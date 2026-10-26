@@ -336,6 +336,18 @@ export interface ExecutionJobInfo {
   exit_code?: number | null;
   started_at?: string;
   finished_at?: string;
+  current_step_index?: number;
+  current_node_id?: string;
+}
+
+export interface LiveStageStep {
+  stepIndex: number;
+  nodeId: string;
+  stage: number;
+  status: 'active' | 'completed';
+  title?: string;
+  line?: string;
+  timestamp?: string;
 }
 
 export interface SystemStatus {

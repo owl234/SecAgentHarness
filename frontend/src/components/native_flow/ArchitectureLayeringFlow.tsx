@@ -191,8 +191,8 @@ export const ArchitectureLayeringFlow: React.FC<ArchitectureLayeringFlowProps> =
           <Compass className="w-4 h-4 text-teal-600 dark:text-teal-400" />
           <span>
             {isZh
-              ? 'Harness² 严格遵循三轴正交分离：Method（方法轴）· Substrate（载体轴）· Benchmark（评测轴）绝对解耦。'
-              : 'Strict 3-Axis Decoupling: Optimization Method, Execution Substrates, and Benchmark Graders are 100% quarantined.'}
+              ? 'SecAgentHarness² 严格遵循三轴正交分离：Method（方法轴）· Substrate（载体轴）· Benchmark（评测轴）绝对解耦。'
+              : 'SecAgentHarness² adheres to strict 3-axis decoupling: Method, Substrate, and Benchmark are 100% quarantined.'}
           </span>
         </div>
         <span className="font-mono text-[11px] bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-700/50">
