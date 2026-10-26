@@ -84,7 +84,7 @@ export const EmbeddedLiveTerminal: React.FC<EmbeddedLiveTerminalProps> = ({
       className={`rounded-2xl border border-slate-800 bg-slate-950 flex flex-col overflow-hidden transition-all duration-300 shadow-lg ${
         isExpanded
           ? 'fixed inset-6 z-50 shadow-2xl ring-2 ring-blue-500/50'
-          : 'relative w-full h-[320px] min-h-[260px]'
+          : 'relative w-full flex-1 min-h-[340px] max-h-[480px]'
       }`}
     >
       {/* 1. Terminal Top Bar */}

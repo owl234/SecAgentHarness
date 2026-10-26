@@ -261,6 +261,23 @@ class UITests(unittest.TestCase):
                 os.environ.update(saved_env)
                 scanner.sync_config_from_env()
 
+    def test_infer_run_cell_and_judge_endpoint(self):
+        cell_lab = scanner.infer_run_cell(self.runs_root, "lab-oc-seq1")
+        self.assertEqual(cell_lab["bench"], "lab")
+        self.assertEqual(cell_lab["substrate"], "oc")
+        self.assertEqual(cell_lab["k"], 1)
+
+        cell_wb = scanner.infer_run_cell(self.runs_root, "wb-office-claude-agg2-20261026T120000Z")
+        self.assertEqual(cell_wb["bench"], "wb")
+        self.assertEqual(cell_wb["subset"], "office")
+        self.assertEqual(cell_wb["substrate"], "claude")
+        self.assertEqual(cell_wb["k"], 2)
+
+        # Offline demo runs should return a friendly 400 when passed to /api/execute/judge
+        res_demo_judge = self.client.post("/api/execute/judge", json={"run_id": "demo"})
+        self.assertEqual(res_demo_judge.status_code, 400)
+        self.assertIn("Demo", res_demo_judge.json()["detail"])
+
 
 if __name__ == "__main__":
     unittest.main()

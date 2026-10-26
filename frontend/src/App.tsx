@@ -7,8 +7,6 @@ import { OverviewView } from './components/OverviewView';
 import { WorkbenchView } from './components/WorkbenchView';
 import { DashboardView } from './components/DashboardView';
 import { ComponentStudio } from './components/ComponentStudio';
-import { PipelineView } from './components/PipelineView';
-import { LibraryView } from './components/LibraryView';
 import { LiveConsole } from './components/LiveConsole';
 import { TerminologyGuideModal } from './components/TerminologyGuideModal';
 import { ExecutorConfigDrawer } from './components/ExecutorConfigDrawer';
@@ -20,6 +18,8 @@ export const App: React.FC = () => {
   const {
     currentTab,
     setCurrentTab,
+    studioSubTab,
+    setStudioSubTab,
     selectedRunId,
     setSelectedRunId,
     selectedTaskId,
@@ -281,21 +281,24 @@ export const App: React.FC = () => {
             />
           )}
 
-          {(currentTab === 'dashboard' || currentTab === 'benchmark') && (
+          {(currentTab === 'dashboard' || currentTab === 'pipeline' || currentTab === 'benchmark') && (
             <DashboardView
               runs={runs}
               selectedRunId={selectedRunId}
               onSelectRunId={(id) => setSelectedRunId(id)}
               selectedTaskId={selectedTaskId}
               onSelectTaskId={setSelectedTaskId}
-              onNavigateToPipeline={(runId, taskId) => {
-                navigateRunAndTab(runId, 'pipeline', taskId);
+              onNavigateToStudio={(runId, taskId, category) => {
+                navigateRunAndTab(runId, 'studio', taskId, category);
+              }}
+              onNavigateToLibrary={(runId, taskId) => {
+                navigateRunAndTab(runId, 'library', taskId);
               }}
               onOpenConsole={() => setShowConsole(true)}
             />
           )}
 
-          {currentTab === 'studio' && (
+          {(currentTab === 'studio' || currentTab === 'library') && (
             <ComponentStudio
               runs={runs}
               selectedRunId={selectedRunId}
@@ -304,30 +307,11 @@ export const App: React.FC = () => {
               onSelectTaskId={(tid) => setSelectedTaskId(tid)}
               selectedCategory={selectedCategory}
               onSelectCategory={(cat) => setSelectedCategory(cat)}
+              subTab={studioSubTab}
+              onChangeSubTab={setStudioSubTab}
               onNavigateToRun={(runId, taskId) => {
-                navigateRunAndTab(runId, 'pipeline', taskId);
+                navigateRunAndTab(runId, 'dashboard', taskId);
               }}
-            />
-          )}
-
-          {currentTab === 'pipeline' && (
-            <PipelineView
-              runs={runs}
-              selectedRunId={selectedRunId}
-              onSelectRunId={(id) => setSelectedRunId(id)}
-              selectedTaskId={selectedTaskId}
-              onSelectTaskId={setSelectedTaskId}
-            />
-          )}
-
-          {currentTab === 'library' && (
-            <LibraryView
-              runs={runs}
-              selectedRunId={selectedRunId}
-              onSelectRunId={(id) => setSelectedRunId(id)}
-              selectedTaskId={selectedTaskId}
-              onSelectTaskId={setSelectedTaskId}
-              onNavigateToStudio={() => setCurrentTab('studio')}
             />
           )}
         </main>

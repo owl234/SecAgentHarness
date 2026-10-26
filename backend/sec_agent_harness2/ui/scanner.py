@@ -56,6 +56,53 @@ def _file_mtime_iso(path: Path) -> str:
         return ""
 
 
+def infer_run_cell(runs_root: Path, run_id: str) -> dict[str, Any]:
+    """Infer (bench, subset, substrate, k, seed, has_judged) from a run_id and its on-disk directory."""
+    run_dir = _resolve_run_dir(runs_root, run_id)
+    has_judged = (run_dir / "judged.json").is_file() or (run_dir / "base_judged.json").is_file()
+    base_id = _SWEEP_TS_SUFFIX.sub("", run_id)
+
+    bench: str | None = None
+    subset: str | None = None
+    substrate: str | None = None
+    k: int = 1
+    seed: int | None = None
+
+    # Check parent path if inside runs/<bench>/adapt/<run_id>
+    try:
+        rel_parts = run_dir.relative_to(runs_root).parts
+        if len(rel_parts) >= 2 and rel_parts[0] in ("jb", "wb", "lab"):
+            bench = rel_parts[0]
+    except Exception:
+        pass
+
+    # Match <bench>[-<subset>]-<substrate>-(agg|seq)<k>[-s<seed>]
+    m = re.match(
+        r"^(?P<bprefix>jb|lab|wb(?:-(?:office|web|code))?|demo)-(?P<sub>oc|cx|claude)-(?P<mode>agg|seq)(?P<k>\d+)(?:-s(?P<seed>\d+))?",
+        base_id,
+    )
+    if m:
+        bprefix = m.group("bprefix")
+        if bprefix.startswith("wb-"):
+            bench = "wb"
+            subset = bprefix.split("-", 1)[1]
+        elif bprefix in ("jb", "lab", "wb"):
+            bench = bprefix
+        substrate = m.group("sub")
+        k = int(m.group("k") or 1)
+        if m.group("seed"):
+            seed = int(m.group("seed"))
+
+    return {
+        "bench": bench,
+        "subset": subset,
+        "substrate": substrate,
+        "k": k,
+        "seed": seed,
+        "has_judged": has_judged,
+    }
+
+
 def list_runs(runs_root: Path) -> list[dict[str, Any]]:
     """Scan the runs root directory and identify all runs, demos, sweeps, and adapt benchmarks."""
     if not runs_root.is_dir():
@@ -83,6 +130,9 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
                     "updated_at": _file_mtime_iso(demo_json),
                     "domain": meta.get("domain", "accounting"),
                     "modes": ["agg", "seq"],
+                    "bench": "demo",
+                    "k": int(meta.get("k", 2)),
+                    "has_judged": False,
                 })
 
     # 2. Check for sweeps under _sweeps (top-level or per benchmark)
@@ -97,6 +147,7 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
         done = sum(int(d.get("done", 0)) for d in domain_reps)
         failed = sum(int(d.get("failed", 0)) for d in domain_reps)
         total = sum(len(d.get("tasks", [])) for d in domain_reps)
+        cell = infer_run_cell(runs_root, sw.stem)
         runs.append({
             "id": sw.stem,
             "name": f"扫描: {sw.stem}",
@@ -107,6 +158,7 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
             "failed_count": failed,
             "updated_at": _file_mtime_iso(sw),
             "modes": meta.get("modes", ["agg"]),
+            **cell,
         })
 
     # 3. Check for adapt runs (e.g. runs/<bench>/adapt/<run_id>)
@@ -131,6 +183,7 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
                     done_count += 1
 
             bench_name = adapt_dir.parent.parent.name
+            cell = infer_run_cell(runs_root, run_id)
             runs.append({
                 "id": run_id,
                 "name": f"{run_id} ({bench_name.upper()})",
@@ -142,6 +195,7 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
                 "updated_at": _file_mtime_iso(cfg_path) if cfg_path.is_file() else _file_mtime_iso(adapt_dir),
                 "domain": cfg.get("domains", ["general"])[0] if cfg.get("domains") else "general",
                 "modes": ["agg"],
+                **cell,
             })
 
     # 4. Check for standalone namespaces (e.g. jb-oc-agg1, or demo runs inside demo/runs)
@@ -156,6 +210,7 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
                     s_data = _safe_read_json(s)
                     if s_data and s_data.get("status") in ("ok", "skipped"):
                         ok_count += 1
+                cell = infer_run_cell(runs_root, p.name)
                 runs.append({
                     "id": p.name,
                     "name": p.name,
@@ -166,6 +221,7 @@ def list_runs(runs_root: Path) -> list[dict[str, Any]]:
                     "failed_count": len(task_summaries) - ok_count,
                     "updated_at": _file_mtime_iso(p),
                     "modes": ["agg"],
+                    **cell,
                 })
 
     return runs

@@ -1,8 +1,6 @@
 import React from 'react';
 import {
   Activity,
-  GitBranch,
-  BookOpen,
   BarChart3,
   Layers,
   Workflow,
@@ -19,7 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   setCurrentTab,
 }) => {
-  const { t } = useLang();
+  const { t, tx } = useLang();
 
   const navItems: {
     id: NavTabType;
@@ -31,40 +29,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'overview',
       label: t('nav.overview'),
-      subLabel: '双层递归全景流',
+      subLabel: tx('双层递归全景推演', 'Dual-Recursion Showcase'),
       icon: Workflow,
-      badge: '大屏',
+      badge: tx('大屏', 'Flow'),
     },
     {
       id: 'workbench',
       label: t('nav.workbench'),
-      subLabel: '任务调度与启动',
+      subLabel: tx('任务调度与实时终端', 'Dispatcher & Live Console'),
       icon: Activity,
+      badge: tx('调度', 'Run'),
     },
     {
       id: 'dashboard',
       label: t('nav.dashboard'),
-      subLabel: '历史运行与量化评估',
+      subLabel: tx('量化大盘与递归 DAG', 'Scores, DAG & Smart Diff'),
       icon: BarChart3,
+      badge: 'DAG·Diff',
     },
     {
       id: 'studio',
       label: t('nav.studio'),
-      subLabel: '9 大套件组件编辑',
+      subLabel: tx('c1~c9 装配与经验池', 'c1~c9 Surfaces & Library'),
       icon: Layers,
       badge: 'c1~c9',
-    },
-    {
-      id: 'pipeline',
-      label: t('nav.pipeline'),
-      subLabel: '递归拓扑与轨迹审阅',
-      icon: GitBranch,
-    },
-    {
-      id: 'library',
-      label: t('nav.library'),
-      subLabel: '跨任务持续演进经验',
-      icon: BookOpen,
     },
   ];
 

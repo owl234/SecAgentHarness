@@ -142,6 +142,7 @@ export async function launchSweep(payload: {
   split?: string;
   workers?: number;
   max_tasks?: number | null;
+  only_domains?: string | null;
   seed?: number | null;
   dry_run?: boolean;
   model?: string;
@@ -158,6 +159,28 @@ export async function launchSweep(payload: {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Failed' }));
     throw new Error(err.detail || t('api.launch_sweep'));
+  }
+  return res.json();
+}
+
+export async function launchJudge(payload: {
+  run_id?: string;
+  bench?: string;
+  subset?: string;
+  substrate?: string;
+  k?: number;
+  modes?: string;
+  seed?: number | null;
+  bases?: boolean;
+}): Promise<any> {
+  const res = await fetch(`${BASE}/execute/judge`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to launch judge' }));
+    throw new Error(err.detail || '启动评测判分失败');
   }
   return res.json();
 }

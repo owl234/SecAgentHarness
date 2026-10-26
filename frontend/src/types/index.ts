@@ -11,6 +11,12 @@ export interface RunItem {
   updated_at: string;
   domain?: string;
   modes: string[];
+  bench?: string | null;
+  subset?: string | null;
+  substrate?: string | null;
+  k?: number;
+  seed?: number | null;
+  has_judged?: boolean;
 }
 
 export interface TaskStageSummary {

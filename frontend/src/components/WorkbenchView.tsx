@@ -139,6 +139,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
             isFailed={isFailed}
             executorStatus={executorStatus}
             liveStep={liveStep}
+            runs={runs}
+            selectedRunId={selectedRunId}
             onParameterChange={handleParameterChange}
             onOpenConsole={onOpenConsole}
             onNavigateToDashboard={handleGoToDashboard}
@@ -146,7 +148,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
           />
         </div>
 
-        {/* Right Column: Composite Process Canvas & Embedded Live Terminal (~58% on LG) */}
+        {/* Right Column: 4-Phase Telemetry, Saved Runs & Embedded Live Terminal (~58% on LG) */}
         <div className="lg:col-span-7 flex flex-col">
           <CockpitRightPipeline
             logs={visibleLogs}
@@ -159,6 +161,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
             onClearLogs={() => setClearedBeforeCount(logs.length)}
             runs={runs}
             selectedRunId={selectedRunId}
+            onSelectRun={onSelectRun}
             onNavigateToTab={(tab) => {
               if (tab === 'studio' && onNavigateToStudio) onNavigateToStudio();
               else if (tab === 'dashboard') handleGoToDashboard();

@@ -101,6 +101,7 @@ class SweepLaunchRequest(BaseModel):
     split: str = Field(default="all")
     workers: int = Field(default=1, ge=1)
     max_tasks: int | None = Field(default=None)
+    only_domains: str | None = Field(default=None)
     seed: int | None = Field(default=None)
     dry_run: bool = Field(default=False)
     model: str | None = Field(default=None)
@@ -108,6 +109,17 @@ class SweepLaunchRequest(BaseModel):
     claude_model: str | None = Field(default=None)
     claude_thinking_budget: int | None = Field(default=None)
     claude_api_key: str | None = Field(default=None)
+
+
+class JudgeLaunchRequest(BaseModel):
+    run_id: str | None = Field(default=None, description="Optional run_id to infer bench/substrate/k")
+    bench: str | None = Field(default=None, description="jb | wb | lab 基准")
+    subset: str | None = Field(default=None, description="office | web | code (仅 wb 必填)")
+    substrate: str | None = Field(default=None, description="oc | cx | claude 执行基座")
+    k: int | None = Field(default=None, ge=1)
+    modes: str = Field(default="parallel,sequential")
+    seed: int | None = Field(default=None)
+    bases: bool = Field(default=False, description="是否对基线 base 进行打分 (base_judged.json)")
 
 
 def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
@@ -209,6 +221,8 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
             args.extend(["--subset", req.subset])
         if req.max_tasks is not None:
             args.extend(["--max-tasks", str(req.max_tasks)])
+        if req.only_domains and req.only_domains.strip():
+            args.extend(["--only-domains", req.only_domains.strip()])
         if req.seed is not None:
             args.extend(["--seed", str(req.seed)])
         if req.dry_run:
@@ -231,6 +245,61 @@ def create_app(workspace_root: Path, runs_root: Path | None = None) -> FastAPI:
             extra_env["SEC_AGENT_HARNESS2_DEFAULT_EXECUTOR"] = "claude"
 
         job = await runner.start_job("sweep", args, extra_env=extra_env)
+        return {"status": "started", "job": job}
+
+    @app.post("/api/execute/judge")
+    async def launch_judge(req: JudgeLaunchRequest):
+        bench = req.bench
+        subset = req.subset
+        substrate = req.substrate
+        k = req.k
+        seed = req.seed
+
+        if req.run_id:
+            inferred = scanner.infer_run_cell(runs_root, req.run_id)
+            if inferred.get("bench") == "demo" or req.run_id.startswith("demo"):
+                raise HTTPException(
+                    status_code=400,
+                    detail="本地离线 Demo 采用确定性验证闭环，无需调用外部 Judge 模型打分；仅 jb/wb/lab 基准运行支持 Judge 评测判分。",
+                )
+            bench = bench or inferred.get("bench")
+            subset = subset or inferred.get("subset")
+            substrate = substrate or inferred.get("substrate")
+            k = k or inferred.get("k") or 1
+            if seed is None:
+                seed = inferred.get("seed")
+
+        if not bench or bench not in ("jb", "wb", "lab"):
+            raise HTTPException(
+                status_code=400,
+                detail="无法确定目标评测基准 (jb | wb | lab)，请显式选择基准或选定有效的基准 Run。",
+            )
+        substrate_val = substrate or "oc"
+        k_val = k or 1
+        modes_val = "parallel,sequential" if req.modes == "both" else req.modes
+
+        args = [
+            "-m",
+            "sec_agent_harness2.cli.judge",
+            "--bench",
+            bench,
+            "--substrate",
+            substrate_val,
+            "--k",
+            str(k_val),
+            "--modes",
+            modes_val,
+        ]
+        if bench == "wb":
+            args.extend(["--subset", subset or "office"])
+        elif subset:
+            args.extend(["--subset", subset])
+        if seed is not None:
+            args.extend(["--seed", str(seed)])
+        if req.bases:
+            args.append("--bases")
+
+        job = await runner.start_job("judge", args)
         return {"status": "started", "job": job}
 
     @app.post("/api/execute/stop")
